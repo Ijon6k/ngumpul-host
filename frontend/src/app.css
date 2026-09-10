@@ -1,0 +1,280 @@
+@import "tailwindcss";
+
+@theme {
+	--color-canvas: var(--bg-canvas);
+	--color-surface: var(--bg-surface);
+	--color-surface-muted: var(--bg-muted);
+	--color-surface-hover: var(--bg-hover);
+	--color-hairline: var(--border-hairline);
+	--color-subtle: var(--border-subtle);
+
+	--color-ink: var(--text-main);
+	--color-ink-secondary: var(--text-secondary);
+	--color-ink-muted: var(--text-muted);
+
+	--color-sky: var(--accent-sky);
+	--color-sky-strong: var(--accent-strong);
+	--color-sky-soft: var(--accent-soft);
+	--color-orange: var(--accent-orange);
+
+	--color-status-ok: var(--color-success);
+	--color-status-warn: var(--color-warning);
+	--color-status-err: var(--color-danger);
+
+	--font-display: "Plus Jakarta Sans", "Geist", "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+	--font-sans: "Inter", "Geist", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+	--font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* ==============================================================================
+   Ngumpul Host — Quiet Technical & Editorial Design System Tokens
+   Inspired by Apple Minimalist Typography & Linear Obsidian Aesthetics
+   ============================================================================== */
+
+:root,
+html[data-theme="light"] {
+	--bg-canvas: #FAFBFC;
+	--bg-surface: #FFFFFF;
+	--bg-muted: #F3F5F7;
+	--bg-hover: #E9EDF1;
+
+	--border-hairline: #E1E6EB;
+	--border-subtle: #ECF0F4;
+
+	--text-main: #0E1114;
+	--text-secondary: #47545E;
+	--text-muted: #798791;
+
+	--accent-sky: #4A8FA8;
+	--accent-strong: #235266;
+	--accent-soft: #E3EEF3;
+	--accent-orange: #FF5500;
+	--accent-orange-hover: #E64C00;
+
+	--color-success: #2E8555;
+	--color-warning: #99732B;
+	--color-danger: #B84747;
+
+	--radius-btn: 8px;
+	--radius-panel: 10px;
+	--radius-card: 14px;
+
+	/* Backward compatible aliases */
+	--border: var(--border-hairline);
+	--surface: var(--bg-surface);
+	--surface-muted: var(--bg-muted);
+	--ink: var(--text-main);
+	--ink-secondary: var(--text-secondary);
+	--ink-muted: var(--text-muted);
+	--primary: var(--accent-sky);
+	--primary-strong: var(--accent-strong);
+}
+
+html[data-theme="dark"] {
+	--bg-canvas: #080A0D;
+	--bg-surface: #0E1217;
+	--bg-muted: #151A21;
+	--bg-hover: #1C232D;
+
+	--border-hairline: rgba(255, 255, 255, 0.08);
+	--border-subtle: rgba(255, 255, 255, 0.04);
+
+	--text-main: #F3F5F7;
+	--text-secondary: #8E9BA4;
+	--text-muted: #56646E;
+
+	--accent-sky: #7CB1C7;
+	--accent-strong: #50869C;
+	--accent-soft: #122129;
+	--accent-orange: #FF5500;
+	--accent-orange-hover: #FF6F2B;
+
+	--color-success: #45A36A;
+	--color-warning: #C29E4D;
+	--color-danger: #CC5454;
+
+	--radius-btn: 8px;
+	--radius-panel: 10px;
+	--radius-card: 14px;
+
+	--border: var(--border-hairline);
+	--surface: var(--bg-surface);
+	--surface-muted: var(--bg-muted);
+	--ink: var(--text-main);
+	--ink-secondary: var(--text-secondary);
+	--ink-muted: var(--text-muted);
+	--primary: var(--accent-sky);
+	--primary-strong: var(--accent-strong);
+}
+
+@layer base {
+	html {
+		font-family: var(--font-sans);
+		font-size: 16px;
+		line-height: 1.5;
+		background-color: var(--bg-canvas);
+		color: var(--text-main);
+		color-scheme: light dark;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		transition: background-color 0.2s ease, color 0.2s ease;
+	}
+
+	body {
+		min-height: 100vh;
+		background-color: var(--bg-canvas);
+		color: var(--text-main);
+		line-height: 1.5;
+		overflow-x: hidden;
+	}
+
+	h1, h2, h3, h4, h5, h6, .font-display {
+		font-family: var(--font-display);
+		color: var(--text-main);
+		letter-spacing: -0.02em;
+		line-height: 1.25;
+	}
+
+	p {
+		line-height: 1.6;
+	}
+
+	a {
+		color: inherit;
+		text-decoration: none;
+		transition: color 0.15s ease, opacity 0.15s ease;
+	}
+}
+
+@layer components {
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		padding: 0.5rem 1rem;
+		font-size: 0.875rem;
+		font-weight: 600;
+		border-radius: var(--radius-btn);
+		border: 1px solid transparent;
+		cursor: pointer;
+		white-space: nowrap;
+		transition: all 0.18s ease;
+		line-height: 1.25;
+	}
+
+	.btn:active {
+		transform: scale(0.98);
+	}
+
+	.btn-primary {
+		background-color: var(--text-main);
+		color: var(--bg-surface);
+		border-color: var(--text-main);
+	}
+
+	.btn-primary:hover {
+		opacity: 0.9;
+	}
+
+	.btn-orange {
+		background-color: var(--accent-orange);
+		color: #FFFFFF;
+		border-color: var(--accent-orange);
+	}
+
+	.btn-orange:hover {
+		background-color: var(--accent-orange-hover);
+		border-color: var(--accent-orange-hover);
+		color: #FFFFFF;
+	}
+
+	.btn-arrow {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: var(--radius-btn);
+		background-color: var(--accent-orange);
+		color: #FFFFFF;
+		transition: transform 0.15s ease, background-color 0.15s ease;
+	}
+
+	.btn-arrow:hover {
+		background-color: var(--accent-orange-hover);
+		transform: translate(1px, -1px);
+	}
+
+	.btn-secondary {
+		background-color: var(--bg-surface);
+		color: var(--text-main);
+		border-color: var(--border-hairline);
+	}
+
+	.btn-secondary:hover {
+		background-color: var(--bg-muted);
+		border-color: var(--border-hairline);
+	}
+
+	.btn-ghost {
+		background-color: transparent;
+		color: var(--text-secondary);
+		border-color: transparent;
+	}
+
+	.btn-ghost:hover {
+		background-color: var(--bg-muted);
+		color: var(--text-main);
+	}
+
+	.btn-sm {
+		padding: 0.35rem 0.75rem;
+		font-size: 0.8125rem;
+	}
+
+	.card-linear {
+		background-color: var(--bg-surface);
+		border: 1px solid var(--border-hairline);
+		border-radius: var(--radius-card);
+		transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	}
+
+	.card-linear:hover {
+		border-color: var(--border-hairline);
+	}
+
+	/* Status Dot */
+	.status-dot {
+		display: inline-block;
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+
+	.status-dot-online {
+		background-color: var(--color-success);
+	}
+
+	.status-dot-setup, .status-dot-pending {
+		background-color: var(--color-warning);
+	}
+
+	.status-dot-offline {
+		background-color: var(--color-danger);
+	}
+
+	.status-dot-archived {
+		background-color: var(--text-muted);
+	}
+
+	.font-mono {
+		font-family: var(--font-mono);
+	}
+}
+
+::selection {
+	background-color: var(--accent-soft);
+	color: var(--accent-strong);
+}

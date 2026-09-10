@@ -1,0 +1,100 @@
+# ==============================================================================
+# Ngumpul Host — Development Compose (builds from source)
+# Usage: docker compose -f docker-compose.dev.yml up --build
+# ==============================================================================
+
+services:
+
+  # 1. Reverse Proxy — Nginx (reads from ./nginx/nginx.conf, editable without rebuild)
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: ngumpul_nginx_dev
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-1111}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - ngumpul_net
+
+  # 2. Frontend — built from ./frontend/Dockerfile
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ngumpul_frontend_dev
+    restart: unless-stopped
+    environment:
+      PORT:        3000
+      NODE_ENV:    production
+      BACKEND_URL: http://backend:8080
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - ngumpul_net
+
+  # 3. Backend — built from ./backend/Dockerfile
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ngumpul_backend_dev
+    restart: unless-stopped
+    environment:
+      APP_ENV:         ${APP_ENV:-development}
+      APP_URL:         ${APP_URL:-http://localhost:1111}
+      PORT:            8080
+      DATABASE_URL:    postgres://${POSTGRES_USER:-ngumpul}:${POSTGRES_PASSWORD:-dev_password}@postgres:5432/${POSTGRES_DB:-ngumpul_db}?sslmode=disable
+      SESSION_SECRET:  ${SESSION_SECRET:-dev_secret_replace_in_production_min32c}
+      SESSION_SECURE:  ${SESSION_SECURE:-false}
+      STORAGE_PATH:    /data/uploads
+      BOOTSTRAP_ADMIN: ${BOOTSTRAP_ADMIN:-true}
+      ADMIN_EMAIL:     ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_USERNAME:  ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD:  ${ADMIN_PASSWORD:-change_me_immediately_1234}
+      ADMIN_NAME:      ${ADMIN_NAME:-Site Administrator}
+      SMTP_HOST:       ${SMTP_HOST:-}
+      SMTP_PORT:       ${SMTP_PORT:-587}
+      SMTP_USERNAME:   ${SMTP_USERNAME:-}
+      SMTP_PASSWORD:   ${SMTP_PASSWORD:-}
+      SMTP_FROM:       ${SMTP_FROM:-Ngumpul Host <no-reply@example.com>}
+    volumes:
+      - uploads_data_dev:/data/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ngumpul_net
+
+  # 4. Database — PostgreSQL 16 (port exposed for direct local access)
+  postgres:
+    image: postgres:16-alpine
+    container_name: ngumpul_postgres_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     ${POSTGRES_USER:-ngumpul}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev_password}
+      POSTGRES_DB:       ${POSTGRES_DB:-ngumpul_db}
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ngumpul} -d ${POSTGRES_DB:-ngumpul_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ngumpul_net
+
+networks:
+  ngumpul_net:
+    driver: bridge
+
+volumes:
+  postgres_data_dev:
+  uploads_data_dev:
