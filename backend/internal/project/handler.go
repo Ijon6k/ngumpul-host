@@ -3,8 +3,11 @@ package project
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
@@ -12,6 +15,16 @@ import (
 	"ngumpul-host/backend/internal/auth"
 	"ngumpul-host/backend/internal/response"
 )
+
+// ProjectActivity represents an event specifically associated with a project.
+type ProjectActivity struct {
+	ID        string         `json:"id"`
+	Type      string         `json:"type"`
+	Metadata  map[string]any `json:"metadata"`
+	CreatedAt time.Time      `json:"created_at"`
+	ActorName *string        `json:"actor_name"`
+	ActorUser *string        `json:"actor_username"`
+}
 
 // Handler handles public, user, and administrative project management endpoints.
 type Handler struct {
@@ -27,30 +40,80 @@ func NewHandler(db *pgxpool.Pool) *Handler {
 func (h *Handler) ListPublic(w http.ResponseWriter, r *http.Request) {
 	statusFilter := r.URL.Query().Get("status")
 	techFilter := r.URL.Query().Get("tech")
+	typeFilter := r.URL.Query().Get("type")
+	searchQuery := strings.TrimSpace(r.URL.Query().Get("q"))
+	pageStr := strings.TrimSpace(r.URL.Query().Get("page"))
+	limitStr := strings.TrimSpace(r.URL.Query().Get("limit"))
 
-	query := `
+	baseWhere := "WHERE p.visibility = 'PUBLIC'"
+	args := []any{}
+	argIdx := 1
+
+	if statusFilter != "" {
+		args = append(args, strings.ToUpper(statusFilter))
+		baseWhere += fmt.Sprintf(" AND p.status = $%d", argIdx)
+		argIdx++
+	}
+	if typeFilter != "" {
+		args = append(args, strings.ToUpper(typeFilter))
+		baseWhere += fmt.Sprintf(" AND p.hosting_type = $%d", argIdx)
+		argIdx++
+	}
+	if techFilter != "" {
+		args = append(args, techFilter)
+		baseWhere += fmt.Sprintf(" AND $%d = ANY(p.technology_stack)", argIdx)
+		argIdx++
+	}
+	if searchQuery != "" {
+		term := "%" + strings.ToLower(searchQuery) + "%"
+		args = append(args, term)
+		baseWhere += fmt.Sprintf(" AND (LOWER(p.name) LIKE $%d OR LOWER(p.description) LIKE $%d OR LOWER(u.username) LIKE $%d OR LOWER(u.display_name) LIKE $%d)", argIdx, argIdx, argIdx, argIdx)
+		argIdx++
+	}
+
+	// Count total records matching filter
+	countQuery := fmt.Sprintf(`
+		SELECT COUNT(*)
+		FROM projects p
+		JOIN users u ON u.id = p.owner_id
+		%s
+	`, baseWhere)
+
+	var totalCount int
+	if err := h.db.QueryRow(r.Context(), countQuery, args...).Scan(&totalCount); err != nil {
+		response.Error(w, http.StatusInternalServerError, "Database count error")
+		return
+	}
+
+	dataQuery := fmt.Sprintf(`
 		SELECT p.id, p.owner_id, p.name, p.slug, p.description, p.cover_image_url,
 		       p.repository_url, p.documentation_url, p.demo_url, p.technology_stack,
 		       p.hosting_type, p.public_url, p.status, p.visibility, p.created_at, p.updated_at, p.published_at,
 		       u.id, u.username, u.display_name, u.avatar_url, u.bio, u.role, u.created_at
 		FROM projects p
 		JOIN users u ON u.id = p.owner_id
-		WHERE p.visibility = 'PUBLIC'
-	`
-	args := []any{}
+		%s
+		ORDER BY p.published_at DESC NULLS LAST, p.created_at DESC
+	`, baseWhere)
 
-	if statusFilter != "" {
-		args = append(args, strings.ToUpper(statusFilter))
-		query += ` AND p.status = $` + string(rune('0'+len(args)))
+	page := 1
+	limit := 12
+	if pageStr != "" || limitStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
+		}
+		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+			if l > 50 {
+				limit = 50
+			} else {
+				limit = l
+			}
+		}
+		offset := (page - 1) * limit
+		dataQuery += fmt.Sprintf(" LIMIT %d OFFSET %d", limit, offset)
 	}
-	if techFilter != "" {
-		args = append(args, techFilter)
-		query += ` AND $` + string(rune('0'+len(args))) + ` = ANY(p.technology_stack)`
-	}
 
-	query += ` ORDER BY p.published_at DESC NULLS LAST, p.created_at DESC`
-
-	rows, err := h.db.Query(r.Context(), query, args...)
+	rows, err := h.db.Query(r.Context(), dataQuery, args...)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, "Failed to list projects")
 		return
@@ -72,9 +135,20 @@ func (h *Handler) ListPublic(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	totalPages := 1
+	if limit > 0 {
+		totalPages = (totalCount + limit - 1) / limit
+		if totalPages < 1 {
+			totalPages = 1
+		}
+	}
+
 	response.JSON(w, http.StatusOK, map[string]any{
-		"projects": list,
-		"total":    len(list),
+		"projects":    list,
+		"total":       totalCount,
+		"page":        page,
+		"limit":       limit,
+		"total_pages": totalPages,
 	})
 }
 
@@ -117,7 +191,36 @@ func (h *Handler) GetBySlug(w http.ResponseWriter, r *http.Request) {
 	}
 
 	p.Owner = &u
-	response.JSON(w, http.StatusOK, map[string]any{"project": p})
+
+	// Query project-specific public activity stream
+	activities := make([]ProjectActivity, 0)
+	actRows, err := h.db.Query(r.Context(), `
+		SELECT a.id, a.type, a.metadata, a.created_at, u.display_name, u.username
+		FROM activities a
+		LEFT JOIN users u ON u.id = a.actor_id
+		WHERE a.project_id = $1 AND a.visibility = 'PUBLIC'
+		ORDER BY a.created_at DESC
+		LIMIT 15
+	`, p.ID)
+	if err == nil {
+		defer actRows.Close()
+		for actRows.Next() {
+			var act ProjectActivity
+			var metaJSON []byte
+			if err := actRows.Scan(
+				&act.ID, &act.Type, &metaJSON, &act.CreatedAt,
+				&act.ActorName, &act.ActorUser,
+			); err == nil {
+				_ = json.Unmarshal(metaJSON, &act.Metadata)
+				activities = append(activities, act)
+			}
+		}
+	}
+
+	response.JSON(w, http.StatusOK, map[string]any{
+		"project":    p,
+		"activities": activities,
+	})
 }
 
 // ListMyProjects handles GET /api/me/projects

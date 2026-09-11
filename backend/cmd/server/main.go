@@ -15,6 +15,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 
+	"ngumpul-host/backend/internal/access"
 	"ngumpul-host/backend/internal/activity"
 	"ngumpul-host/backend/internal/admin"
 	"ngumpul-host/backend/internal/auth"
@@ -44,10 +45,13 @@ func main() {
 	defer pool.Close()
 
 	// Initialize services
-	sessionManager := auth.NewSessionManager(pool)
-	authHandler := auth.NewHandler(pool, sessionManager, cfg)
+	accessService := access.NewService(pool, cfg)
+	accessHandler := access.NewHandler(accessService, cfg)
 
-	storageService, err := storage.NewService(cfg)
+	sessionManager := auth.NewSessionManager(pool)
+	authHandler := auth.NewHandler(pool, sessionManager, cfg, accessService)
+
+	storageService, err := storage.NewService(cfg, pool)
 	if err != nil {
 		log.Fatalf("Fatal: Storage initialization failed: %v", err)
 	}
@@ -108,7 +112,9 @@ func main() {
 	apiRouter := chi.NewRouter()
 	apiRouter.Get("/health", healthHandler)
 
-	// Public Auth
+	// Public Auth & Access
+	apiRouter.Get("/auth/mode", accessHandler.GetRegistrationMode)
+	apiRouter.Get("/invitations/validate", accessHandler.ValidateInvitation)
 	apiRouter.Post("/auth/register", authHandler.Register)
 	apiRouter.Post("/auth/login", authHandler.Login)
 	apiRouter.Post("/auth/logout", authHandler.Logout)
@@ -155,6 +161,13 @@ func main() {
 		adminRouter.Get("/admin/users", adminHandler.ListUsers)
 		adminRouter.Patch("/admin/users/{id}/role", adminHandler.UpdateUserRole)
 		adminRouter.Patch("/admin/users/{id}/status", adminHandler.UpdateUserStatus)
+
+		// Access control & invitations
+		adminRouter.Get("/admin/settings", accessHandler.GetSettings)
+		adminRouter.Patch("/admin/settings", accessHandler.UpdateSettings)
+		adminRouter.Get("/admin/invitations", accessHandler.ListInvitations)
+		adminRouter.Post("/admin/invitations", accessHandler.CreateInvitation)
+		adminRouter.Post("/admin/invitations/{id}/revoke", accessHandler.RevokeInvitation)
 
 		// Project administration
 		adminRouter.Get("/admin/projects", projectHandler.AdminList)

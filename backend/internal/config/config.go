@@ -14,6 +14,12 @@ type Config struct {
 	SessionSecure  bool
 	StorageDriver  string
 	StoragePath    string
+	S3Endpoint     string
+	S3Region       string
+	S3Bucket       string
+	S3AccessKey    string
+	S3SecretKey    string
+	S3PublicURL    string
 	SMTPHost       string
 	SMTPPort       int
 	SMTPUsername   string
@@ -58,6 +64,12 @@ func Load() *Config {
 		SessionSecure:  sessionSecure,
 		StorageDriver:  getEnv("STORAGE_DRIVER", "local"),
 		StoragePath:    storagePath,
+		S3Endpoint:     getEnv("S3_ENDPOINT", "http://seaweedfs:8333"),
+		S3Region:       getEnv("S3_REGION", "us-east-1"),
+		S3Bucket:       getEnv("S3_BUCKET", "ngumpul-uploads"),
+		S3AccessKey:    os.Getenv("S3_ACCESS_KEY"),
+		S3SecretKey:    os.Getenv("S3_SECRET_KEY"),
+		S3PublicURL:    getEnv("S3_PUBLIC_URL", "/uploads"),
 		SMTPHost:       os.Getenv("SMTP_HOST"),
 		SMTPPort:       smtpPort,
 		SMTPUsername:   os.Getenv("SMTP_USERNAME"),

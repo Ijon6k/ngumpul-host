@@ -51,7 +51,14 @@ services:
       DATABASE_URL:    postgres://${POSTGRES_USER:-ngumpul}:${POSTGRES_PASSWORD:-dev_password}@postgres:5432/${POSTGRES_DB:-ngumpul_db}?sslmode=disable
       SESSION_SECRET:  ${SESSION_SECRET:-dev_secret_replace_in_production_min32c}
       SESSION_SECURE:  ${SESSION_SECURE:-false}
+      STORAGE_DRIVER:  ${STORAGE_DRIVER:-s3}
       STORAGE_PATH:    /data/uploads
+      S3_ENDPOINT:     ${S3_ENDPOINT:-http://seaweedfs:8333}
+      S3_REGION:       ${S3_REGION:-us-east-1}
+      S3_BUCKET:       ${S3_BUCKET:-ngumpul-uploads}
+      S3_ACCESS_KEY:   ${S3_ACCESS_KEY:-}
+      S3_SECRET_KEY:   ${S3_SECRET_KEY:-}
+      S3_PUBLIC_URL:   ${S3_PUBLIC_URL:-/uploads}
       BOOTSTRAP_ADMIN: ${BOOTSTRAP_ADMIN:-true}
       ADMIN_EMAIL:     ${ADMIN_EMAIL:-admin@example.com}
       ADMIN_USERNAME:  ${ADMIN_USERNAME:-admin}
@@ -112,6 +119,17 @@ services:
     networks:
       - ngumpul_net
 
+  # 6. Object Storage — SeaweedFS (S3-compatible, private internal network)
+  seaweedfs:
+    image: chrislusf/seaweedfs:3.75
+    container_name: ngumpul_seaweedfs_dev
+    restart: unless-stopped
+    command: "server -dir=/data -s3 -s3.port=8333"
+    volumes:
+      - seaweedfs_data_dev:/data
+    networks:
+      - ngumpul_net
+
 networks:
   ngumpul_net:
     driver: bridge
@@ -119,3 +137,4 @@ networks:
 volumes:
   postgres_data_dev:
   uploads_data_dev:
+  seaweedfs_data_dev:

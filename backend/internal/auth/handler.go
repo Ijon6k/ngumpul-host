@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -13,19 +14,27 @@ import (
 	"ngumpul-host/backend/internal/response"
 )
 
+// AccessService defines the required access operations for auth registration.
+type AccessService interface {
+	GetRegistrationMode(ctx context.Context) (string, error)
+	ConsumeInvitationTx(ctx context.Context, tx pgx.Tx, rawToken string, applicantEmail string) error
+}
+
 // Handler handles user registration, authentication sessions, and profile updates.
 type Handler struct {
-	db  *pgxpool.Pool
-	sm  *SessionManager
-	cfg *config.Config
+	db     *pgxpool.Pool
+	sm     *SessionManager
+	cfg    *config.Config
+	access AccessService
 }
 
 // NewHandler creates a new authentication handler.
-func NewHandler(db *pgxpool.Pool, sm *SessionManager, cfg *config.Config) *Handler {
+func NewHandler(db *pgxpool.Pool, sm *SessionManager, cfg *config.Config, access AccessService) *Handler {
 	return &Handler{
-		db:  db,
-		sm:  sm,
-		cfg: cfg,
+		db:     db,
+		sm:     sm,
+		cfg:    cfg,
+		access: access,
 	}
 }
 
@@ -77,14 +86,47 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		req.DisplayName = req.Username
 	}
 
+	// Check registration mode
+	if h.access != nil {
+		mode, err := h.access.GetRegistrationMode(r.Context())
+		if err != nil {
+			mode = "INVITE_ONLY"
+		}
+
+		if mode == "CLOSED" {
+			response.Error(w, http.StatusForbidden, "Registration is currently closed on this host")
+			return
+		}
+
+		if mode == "INVITE_ONLY" && strings.TrimSpace(req.InvitationToken) == "" {
+			response.Error(w, http.StatusBadRequest, "An invitation token is required to register")
+			return
+		}
+	}
+
 	passHash, err := HashPassword(req.Password)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, "Failed to process credentials")
 		return
 	}
 
+	// Transaction for atomic invitation consumption + user registration
+	tx, err := h.db.Begin(r.Context())
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, "Database error")
+		return
+	}
+	defer func() { _ = tx.Rollback(r.Context()) }()
+
+	if h.access != nil && strings.TrimSpace(req.InvitationToken) != "" {
+		if err := h.access.ConsumeInvitationTx(r.Context(), tx, req.InvitationToken, req.Email); err != nil {
+			response.Error(w, http.StatusBadRequest, err.Error())
+			return
+		}
+	}
+
 	var userID string
-	err = h.db.QueryRow(r.Context(), `
+	err = tx.QueryRow(r.Context(), `
 		INSERT INTO users (username, email, password_hash, display_name, role, status)
 		VALUES ($1, $2, $3, $4, 'USER', 'ACTIVE')
 		RETURNING id
@@ -103,13 +145,18 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create activity event: MEMBER_JOINED
-	_, _ = h.db.Exec(r.Context(), `
+	_, _ = tx.Exec(r.Context(), `
 		INSERT INTO activities (actor_id, type, metadata, visibility)
 		VALUES ($1, 'MEMBER_JOINED', $2, 'PUBLIC')
 	`, userID, map[string]string{
 		"title":   req.DisplayName + " joined Ngumpul",
 		"message": "Welcome " + req.DisplayName + " to the community",
 	})
+
+	if err := tx.Commit(r.Context()); err != nil {
+		response.Error(w, http.StatusInternalServerError, "Failed to commit user registration")
+		return
+	}
 
 	// Create session
 	session, err := h.sm.CreateSession(r.Context(), userID)

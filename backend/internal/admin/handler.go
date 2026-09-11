@@ -86,6 +86,25 @@ func (h *Handler) UpdateUserRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if targetUserID == adminUser.ID && req.Role != "ADMIN" {
+		response.Error(w, http.StatusBadRequest, "You cannot demote your own administrator account")
+		return
+	}
+
+	// Prevent demoting the last active administrator
+	if req.Role != "ADMIN" {
+		var currentRole string
+		err := h.db.QueryRow(r.Context(), "SELECT role FROM users WHERE id = $1", targetUserID).Scan(&currentRole)
+		if err == nil && currentRole == "ADMIN" {
+			var adminCount int
+			err := h.db.QueryRow(r.Context(), "SELECT COUNT(*) FROM users WHERE role = 'ADMIN' AND status = 'ACTIVE'").Scan(&adminCount)
+			if err == nil && adminCount <= 1 {
+				response.Error(w, http.StatusBadRequest, "Cannot demote the last remaining administrator on the system")
+				return
+			}
+		}
+	}
+
 	_, err := h.db.Exec(r.Context(), "UPDATE users SET role = $1, updated_at = NOW() WHERE id = $2", req.Role, targetUserID)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, "Database error")
@@ -113,8 +132,22 @@ func (h *Handler) UpdateUserStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if targetUserID == adminUser.ID {
-		response.Error(w, http.StatusBadRequest, "You cannot suspend your own account")
+		response.Error(w, http.StatusBadRequest, "You cannot suspend your own administrator account")
 		return
+	}
+
+	// Prevent suspending the last active administrator
+	if req.Status == "SUSPENDED" {
+		var currentRole string
+		err := h.db.QueryRow(r.Context(), "SELECT role FROM users WHERE id = $1", targetUserID).Scan(&currentRole)
+		if err == nil && currentRole == "ADMIN" {
+			var adminCount int
+			err := h.db.QueryRow(r.Context(), "SELECT COUNT(*) FROM users WHERE role = 'ADMIN' AND status = 'ACTIVE'").Scan(&adminCount)
+			if err == nil && adminCount <= 1 {
+				response.Error(w, http.StatusBadRequest, "Cannot suspend the last active administrator on the system")
+				return
+			}
+		}
 	}
 
 	_, err := h.db.Exec(r.Context(), "UPDATE users SET status = $1, updated_at = NOW() WHERE id = $2", req.Status, targetUserID)

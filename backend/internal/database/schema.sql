@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS projects (
     slug VARCHAR(128) UNIQUE NOT NULL,
     description TEXT NOT NULL DEFAULT '',
     cover_image_url TEXT NOT NULL DEFAULT '',
+    cover_image_key TEXT NOT NULL DEFAULT '',
     repository_url TEXT NOT NULL DEFAULT '',
     documentation_url TEXT NOT NULL DEFAULT '',
     demo_url TEXT NOT NULL DEFAULT '',
@@ -166,4 +167,52 @@ CREATE TABLE IF NOT EXISTS availability_incidents (
 );
 
 CREATE INDEX IF NOT EXISTS idx_avail_incidents_started ON availability_incidents(started_at DESC);
+
+-- Media objects storage metadata (tracks binaries persisted in SeaweedFS / S3 / Local)
+CREATE TABLE IF NOT EXISTS media_objects (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    purpose VARCHAR(32) NOT NULL DEFAULT 'UPLOAD',
+    object_key TEXT NOT NULL UNIQUE,
+    content_type VARCHAR(64) NOT NULL,
+    byte_size BIGINT NOT NULL,
+    width INT NOT NULL DEFAULT 0,
+    height INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_media_objects_owner_id ON media_objects(owner_id);
+CREATE INDEX IF NOT EXISTS idx_media_objects_object_key ON media_objects(object_key);
+
+-- Instance Settings (Key-Value configuration for self-hosted community node)
+CREATE TABLE IF NOT EXISTS instance_settings (
+    key VARCHAR(64) PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO instance_settings (key, value)
+VALUES ('registration_mode', 'INVITE_ONLY')
+ON CONFLICT (key) DO NOTHING;
+
+-- Invitations for controlled community entry
+CREATE TABLE IF NOT EXISTS invitations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    token_hash VARCHAR(64) NOT NULL UNIQUE,
+    token VARCHAR(128),
+    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    invited_email VARCHAR(255),
+    max_uses INT NOT NULL DEFAULT 1 CHECK (max_uses > 0),
+    used_count INT NOT NULL DEFAULT 0 CHECK (used_count >= 0),
+    expires_at TIMESTAMPTZ,
+    revoked_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE invitations ADD COLUMN IF NOT EXISTS token VARCHAR(128);
+
+CREATE INDEX IF NOT EXISTS idx_invitations_token_hash ON invitations(token_hash);
+CREATE INDEX IF NOT EXISTS idx_invitations_expires_at ON invitations(expires_at);
+CREATE INDEX IF NOT EXISTS idx_invitations_created_by ON invitations(created_by);
 
