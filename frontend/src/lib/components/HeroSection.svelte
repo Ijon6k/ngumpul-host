@@ -1,5 +1,6 @@
 <script lang="ts">
 	import MetricPillar from './MetricPillar.svelte';
+	import { ArrowRight } from 'phosphor-svelte';
 
 	export let hostSpecs: any = null;
 </script>
@@ -44,9 +45,10 @@
 			<div class="flex items-center gap-3.5 pt-1 flex-wrap">
 				<a
 					href="/projects"
-					class="px-5 py-2.5 text-sm font-medium rounded-lg bg-white text-neutral-950 hover:bg-neutral-100 transition-all shadow-sm active:scale-[0.98]"
+					class="px-5 py-2.5 text-sm font-medium rounded-lg bg-white text-neutral-950 hover:bg-neutral-100 transition-all shadow-sm active:scale-[0.98] inline-flex items-center gap-1.5"
 				>
-					Explore projects →
+					<span>Explore projects</span>
+					<ArrowRight size={14} weight="bold" />
 				</a>
 				<a
 					href="/register"

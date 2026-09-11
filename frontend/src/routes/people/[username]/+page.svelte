@@ -32,7 +32,11 @@
 	}
 </script>
 
-<div class="container mx-auto px-6 max-w-5xl py-12 pb-24 flex flex-col gap-10">
+<svelte:head>
+	<title>{member?.display_name ? `${member.display_name} (@${member.username}) · Ngumpul Host` : 'Member Profile · Ngumpul Host'}</title>
+</svelte:head>
+
+<div class="container mx-auto px-4 sm:px-6 max-w-5xl py-8 sm:py-12 pb-24 flex flex-col gap-8 sm:gap-10">
 	{#if loading}
 		<div class="py-24 text-center text-(--text-muted) font-mono text-xs">
 			<p>Resolving member profile...</p>

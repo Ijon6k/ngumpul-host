@@ -18,10 +18,15 @@
 	});
 </script>
 
-<div class="container mx-auto px-6 max-w-4xl py-14 pb-24 flex flex-col gap-10">
+<svelte:head>
+	<title>Activity · Ngumpul Host</title>
+	<meta name="description" content="A public chronological record of deployments, project publications, and community milestones." />
+</svelte:head>
+
+<div class="container mx-auto px-4 sm:px-6 max-w-4xl py-8 sm:py-12 pb-24 flex flex-col gap-8 sm:gap-10">
 	<header class="max-w-2xl">
-		<h1 class="font-display font-bold text-3xl sm:text-4xl text-(--text-main) tracking-tight mb-2">Activity</h1>
-		<p class="text-base sm:text-lg text-(--text-secondary) leading-relaxed">
+		<h1 class="font-sans font-normal text-3xl sm:text-4xl text-(--text-main) tracking-[-0.03em] mb-2">Activity</h1>
+		<p class="text-sm sm:text-base text-(--text-secondary) leading-relaxed font-normal">
 			A public chronological record of deployments, project publications, and community milestones.
 		</p>
 	</header>

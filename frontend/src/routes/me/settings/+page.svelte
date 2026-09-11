@@ -59,15 +59,19 @@
 	}
 </script>
 
-<div class="container mx-auto px-6 max-w-2xl py-12 pb-24 flex flex-col gap-8">
-	<div class="flex items-center gap-2 text-xs font-mono text-(--text-muted)">
-		<a href="/me" class="hover:text-(--text-main) transition-colors">Personal Space</a>
+<svelte:head>
+	<title>Profile Settings · Ngumpul Host</title>
+</svelte:head>
+
+<div class="container mx-auto px-4 sm:px-6 max-w-2xl py-8 sm:py-12 pb-24 flex flex-col gap-6 sm:gap-8">
+	<div class="flex items-center gap-2 text-xs text-(--text-muted)">
+		<a href="/me" class="hover:text-(--text-main) transition-colors">Workspace</a>
 		<span>/</span>
 		<span class="text-(--text-main) font-medium">Settings</span>
 	</div>
 
 	<header class="max-w-xl">
-		<h1 class="font-display font-bold text-3xl text-(--text-main) tracking-tight">Profile Settings</h1>
+		<h1 class="font-sans font-normal text-2xl sm:text-3xl text-(--text-main) tracking-[-0.03em]">Profile Settings</h1>
 		<p class="text-sm text-(--text-secondary) mt-1.5 leading-relaxed">
 			Manage how your identity and technical bio appear across the community roster.
 		</p>

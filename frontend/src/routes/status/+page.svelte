@@ -30,14 +30,13 @@
 	<meta name="description" content="Data-driven availability history and measured service latency for Ngumpul Host infrastructure." />
 </svelte:head>
 
-<div class="min-h-screen bg-(--bg-canvas) text-(--text-main) pb-24">
-	<main class="container mx-auto px-6 max-w-5xl pt-10 sm:pt-14 flex flex-col gap-9">
+<div class="container mx-auto px-4 sm:px-6 max-w-5xl py-8 sm:py-12 pb-24 flex flex-col gap-8 sm:gap-9">
 
-		<!-- 1. Header & Range Controls -->
-		<StatusHeader
-			selectedRange={$selectedRange}
-			onRangeChange={handleRangeChange}
-		/>
+	<!-- 1. Header & Range Controls -->
+	<StatusHeader
+		selectedRange={$selectedRange}
+		onRangeChange={handleRangeChange}
+	/>
 
 		<!-- 2. Loading State (when no cache exists) -->
 		{#if $statusQuery.isPending && !$statusQuery.data}
@@ -123,5 +122,5 @@
 			</footer>
 		{/if}
 
-	</main>
 </div>
+

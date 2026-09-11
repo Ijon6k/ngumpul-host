@@ -1,5 +1,5 @@
 <script lang="ts">
-	import StatusDot from './StatusDot.svelte';
+	import StatusDot from '$lib/components/StatusDot.svelte';
 </script>
 
 <footer class="mt-auto border-t border-(--border-hairline) py-12 px-6">

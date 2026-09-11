@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { AvailabilityBlock } from '$lib/types/status';
+	import { ArrowRight } from 'phosphor-svelte';
 
 	export let availabilityPercent: number | null = 100;
 	export let status: string = 'operational';
@@ -78,6 +79,9 @@
 	<!-- Footer with link to status page -->
 	<div class="pt-2 border-t border-neutral-800/80 flex items-center justify-between text-xs text-neutral-400 font-normal">
 		<span>Zero heartbeat spam · /proc telemetry</span>
-		<span class="text-neutral-500 group-hover:text-neutral-300 transition-colors">Status page →</span>
+		<span class="text-neutral-500 group-hover:text-neutral-300 transition-colors inline-flex items-center gap-1">
+			<span>Status page</span>
+			<ArrowRight size={11} weight="bold" />
+		</span>
 	</div>
 </a>

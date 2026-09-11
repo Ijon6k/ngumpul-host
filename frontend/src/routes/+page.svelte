@@ -5,6 +5,7 @@
 	import BentoGrid from '$lib/components/BentoGrid.svelte';
 	import ProjectCard from '$lib/components/ProjectCard.svelte';
 	import ActivityTimeline from '$lib/components/ActivityTimeline.svelte';
+	import { ArrowRight } from 'phosphor-svelte';
 
 	let projects: any[] = [];
 	let activities: any[] = [];
@@ -53,8 +54,9 @@
 						Side projects, hobby tools, and open-source experiments kept alive on this node.
 					</p>
 				</div>
-				<a href="/projects" class="text-sm font-medium text-(--cf-blue) hover:underline">
-					View all ({projects.length}) →
+				<a href="/projects" class="text-sm font-medium text-(--cf-blue) hover:underline inline-flex items-center gap-1">
+					<span>View all ({projects.length})</span>
+					<ArrowRight size={13} weight="bold" />
 				</a>
 			</div>
 
@@ -88,7 +90,8 @@
 
 			<div class="pt-2">
 				<a href="/activity" class="text-sm font-medium text-(--cf-blue) hover:underline inline-flex items-center gap-1">
-					View complete activity timeline →
+					<span>View complete activity timeline</span>
+					<ArrowRight size={13} weight="bold" />
 				</a>
 			</div>
 		</div>

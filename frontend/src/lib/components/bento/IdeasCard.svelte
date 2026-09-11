@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { Sparkle, ArrowRight } from 'phosphor-svelte';
+
 	export let projectsOnline: number = 3;
 	export let projectsTotal: number = 3;
 </script>
@@ -7,26 +9,16 @@
 	<!-- Background subtle decorative circles -->
 	<div class="absolute -right-6 -bottom-6 w-32 h-32 rounded-full border border-white/10 pointer-events-none"></div>
 
-	<!-- Top Dotted Glyph / Constellation -->
+	<!-- Top Glyph & Action Button -->
 	<div class="relative z-10 flex items-center justify-between">
-		<svg class="w-6 h-6 opacity-90" viewBox="0 0 32 32" fill="none">
-			<circle cx="16" cy="6" r="1.5" fill="white" />
-			<circle cx="12" cy="11" r="1.5" fill="white" />
-			<circle cx="16" cy="11" r="1.5" fill="white" />
-			<circle cx="20" cy="11" r="1.5" fill="white" />
-			<circle cx="8" cy="16" r="1.5" fill="white" />
-			<circle cx="12" cy="16" r="1.5" fill="white" />
-			<circle cx="16" cy="16" r="1.5" fill="white" />
-			<circle cx="20" cy="16" r="1.5" fill="white" />
-			<circle cx="24" cy="16" r="1.5" fill="white" />
-			<circle cx="16" cy="21" r="1.5" fill="white" />
-		</svg>
+		<Sparkle size={22} weight="regular" class="text-white opacity-90" />
 
 		<a
 			href="/register"
 			class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white text-neutral-900 text-xs font-medium hover:bg-neutral-100 transition-all active:scale-[0.98] shadow-xs"
 		>
-			Request a spot →
+			<span>Request a spot</span>
+			<ArrowRight size={12} weight="bold" />
 		</a>
 	</div>
 

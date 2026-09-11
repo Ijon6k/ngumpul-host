@@ -79,7 +79,11 @@
 	}
 </script>
 
-<div class="container mx-auto px-6 max-w-4xl py-12 pb-24 flex flex-col gap-8">
+<svelte:head>
+	<title>Project Management · Ngumpul Host</title>
+</svelte:head>
+
+<div class="container mx-auto px-4 sm:px-6 max-w-4xl py-8 sm:py-12 pb-24 flex flex-col gap-6 sm:gap-8">
 	<div class="flex items-center gap-2 text-xs text-(--text-muted)">
 		<a href="/me" class="hover:text-(--text-main) transition-colors">Workspace</a>
 		<span>/</span>
@@ -87,8 +91,8 @@
 	</div>
 
 	<header class="max-w-2xl">
-		<h1 class="font-display font-bold text-3xl text-(--text-main) tracking-tight">Project Management</h1>
-		<p class="text-sm text-(--text-secondary) mt-1.5 leading-relaxed">
+		<h1 class="font-sans font-normal text-2xl sm:text-3xl text-(--text-main) tracking-[-0.03em]">Project Management</h1>
+		<p class="text-xs sm:text-sm text-(--text-secondary) mt-1.5 leading-relaxed font-normal">
 			Update presentation-level details, repository links, documentation, and technology tags for your published workloads.
 		</p>
 	</header>

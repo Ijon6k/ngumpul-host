@@ -4,8 +4,7 @@
 	import { QueryClient, QueryClientProvider } from '@tanstack/svelte-query';
 	import { initAuth } from '$lib/stores/auth';
 	import { page } from '$app/stores';
-	import Header from '$lib/components/Header.svelte';
-	import Footer from '$lib/components/Footer.svelte';
+	import { Header, Footer } from '$lib/components/layout';
 
 	const queryClient = new QueryClient({
 		defaultOptions: {
@@ -20,6 +19,7 @@
 		initAuth();
 	});
 
+	$: isHome = $page.url.pathname === '/';
 	$: isAdminRoute = $page.url.pathname.startsWith('/admin');
 </script>
 
@@ -29,7 +29,10 @@
 	{:else}
 		<div class="min-h-screen flex flex-col bg-(--bg-canvas)">
 			<Header />
-			<main class="flex-1 shrink-0">
+			<!-- Page content offset:
+			     Home ('/') has 0 top padding so hero image flows seamlessly behind transparent navbar.
+			     All other pages have pt-[60px] to start cleanly below the fixed 60px navbar without overlap. -->
+			<main class="flex-1 shrink-0 {isHome ? '' : 'pt-[60px]'}">
 				<slot />
 			</main>
 			<Footer />

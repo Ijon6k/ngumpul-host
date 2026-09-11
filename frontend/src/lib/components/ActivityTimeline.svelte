@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { ArrowUpRight } from 'phosphor-svelte';
+
 	export let activities: Array<{
 		id: string;
 		type: string;
@@ -59,7 +61,7 @@
 							<div class="mt-1">
 								<a href="/projects/{item.project_slug}" class="text-xs font-medium text-(--accent-strong) hover:underline inline-flex items-center gap-1">
 									<span>{item.project_name || item.project_slug}</span>
-									<span>↗</span>
+									<ArrowUpRight size={12} weight="bold" />
 								</a>
 							</div>
 						{/if}

@@ -3,6 +3,21 @@
 	import { page } from '$app/stores';
 	import { user, logout } from '$lib/stores/auth';
 	import { api } from '$lib/api';
+	import {
+		SquaresFour,
+		Tray,
+		Folder,
+		Users,
+		Pulse,
+		Scroll,
+		ArrowSquareOut,
+		Lightning,
+		SidebarSimple,
+		SignOut,
+		List,
+		Sun,
+		Moon
+	} from 'phosphor-svelte';
 
 	let pendingCount = 0;
 	let theme = 'light';
@@ -10,13 +25,15 @@
 	let sidebarCollapsed = false;
 
 	onMount(async () => {
-		const storedTheme = localStorage.getItem('theme');
+		const storedTheme = localStorage.getItem('ngumpul_theme') || localStorage.getItem('theme');
 		if (storedTheme) {
 			theme = storedTheme;
 			document.documentElement.setAttribute('data-theme', theme);
+			document.documentElement.classList.toggle('dark', theme === 'dark');
 		} else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
 			theme = 'dark';
 			document.documentElement.setAttribute('data-theme', 'dark');
+			document.documentElement.classList.add('dark');
 		}
 
 		const storedCollapsed = localStorage.getItem('admin_sidebar_collapsed');
@@ -36,8 +53,10 @@
 
 	function toggleTheme() {
 		theme = theme === 'light' ? 'dark' : 'light';
+		localStorage.setItem('ngumpul_theme', theme);
 		localStorage.setItem('theme', theme);
 		document.documentElement.setAttribute('data-theme', theme);
+		document.documentElement.classList.toggle('dark', theme === 'dark');
 	}
 
 	function toggleSidebar() {
@@ -45,31 +64,31 @@
 		localStorage.setItem('admin_sidebar_collapsed', String(sidebarCollapsed));
 	}
 
-	const navItems = [
+	$: navItems = [
 		{
 			label: 'Overview',
 			href: '/admin',
 			exact: true,
-			icon: `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>`
+			icon: SquaresFour
 		},
 		{
 			label: 'Hosting Requests',
 			href: '/admin/requests',
 			exact: false,
 			badge: pendingCount,
-			icon: `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>`
+			icon: Tray
 		},
 		{
 			label: 'Projects',
 			href: '/admin/projects',
 			exact: false,
-			icon: `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>`
+			icon: Folder
 		},
 		{
 			label: 'Members',
 			href: '/admin/users',
 			exact: false,
-			icon: `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>`
+			icon: Users
 		}
 	];
 
@@ -78,13 +97,13 @@
 			label: 'System Health',
 			href: '/admin/system',
 			exact: false,
-			icon: `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>`
+			icon: Pulse
 		},
 		{
 			label: 'Audit Trail',
 			href: '/admin/audit',
 			exact: false,
-			icon: `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>`
+			icon: Scroll
 		}
 	];
 
@@ -152,11 +171,7 @@
 						aria-label="Minimize sidebar"
 						on:click={toggleSidebar}
 					>
-						<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<rect x="3" y="3" width="18" height="18" rx="2.5" />
-							<path d="M9 3v18" />
-							<path d="m16 15-3-3 3-3" />
-						</svg>
+						<SidebarSimple size={16} weight="regular" />
 					</button>
 				</div>
 			{:else}
@@ -177,11 +192,7 @@
 						</span>
 						<!-- Sidebar icon (Hover) -->
 						<span class="absolute inset-0 flex items-center justify-center text-(--text-main) opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200">
-							<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-								<rect x="3" y="3" width="18" height="18" rx="2.5" />
-								<path d="M9 3v18" />
-								<path d="m14 9 3 3-3 3" />
-							</svg>
+							<SidebarSimple size={18} weight="regular" />
 						</span>
 					</button>
 				</div>
@@ -208,7 +219,7 @@
 								on:click={() => (mobileMenuOpen = false)}
 							>
 								<div class="flex items-center gap-3">
-									<span class="shrink-0">{@html item.icon}</span>
+									<svelte:component this={item.icon} size={16} weight="regular" class="shrink-0" />
 									{#if !sidebarCollapsed}
 										<span>{item.label}</span>
 									{/if}
@@ -247,7 +258,7 @@
 								on:click={() => (mobileMenuOpen = false)}
 							>
 								<div class="flex items-center gap-3">
-									<span class="shrink-0">{@html item.icon}</span>
+									<svelte:component this={item.icon} size={16} weight="regular" class="shrink-0" />
 									{#if !sidebarCollapsed}
 										<span>{item.label}</span>
 									{/if}
@@ -272,9 +283,7 @@
 							title="Public Showcase"
 						>
 							<div class="flex items-center gap-3">
-								<svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-									<path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-								</svg>
+								<ArrowSquareOut size={16} weight="regular" class="shrink-0" />
 								{#if !sidebarCollapsed}
 									<span>Public Site</span>
 								{/if}
@@ -292,9 +301,7 @@
 							title="Public Status Page"
 						>
 							<div class="flex items-center gap-3">
-								<svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-									<path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-								</svg>
+								<Lightning size={16} weight="regular" class="shrink-0" />
 								{#if !sidebarCollapsed}
 									<span>Status Page</span>
 								{/if}
@@ -322,31 +329,34 @@
 					<div class="flex items-center gap-1 shrink-0">
 						<button
 							type="button"
-							class="p-1.5 rounded-md text-(--text-muted) hover:bg-(--bg-muted) hover:text-(--text-main) transition-colors cursor-pointer"
+							class="p-1.5 rounded-md text-(--text-muted) hover:bg-(--bg-muted) hover:text-(--text-main) transition-colors cursor-pointer flex items-center justify-center"
 							title="Toggle theme"
 							on:click={toggleTheme}
 						>
-							{theme === 'light' ? '◑' : '○'}
+							{#if theme === 'light'}
+								<Moon size={15} weight="regular" />
+							{:else}
+								<Sun size={15} weight="regular" />
+							{/if}
 						</button>
 						<button
 							type="button"
-							class="px-2 py-1 text-xs rounded-md text-(--text-muted) hover:bg-(--bg-muted) hover:text-(--color-danger) transition-colors cursor-pointer font-medium"
+							class="px-2 py-1 text-xs rounded-md text-(--text-muted) hover:bg-(--bg-muted) hover:text-(--color-danger) transition-colors cursor-pointer font-medium flex items-center gap-1"
 							title="Sign out"
 							on:click={logout}
 						>
-							Exit
+							<SignOut size={13} weight="regular" />
+							<span>Exit</span>
 						</button>
 					</div>
 				{:else}
 					<button
 						type="button"
-						class="w-full flex items-center justify-center p-1.5 rounded-md text-(--text-muted) hover:bg-(--bg-muted) hover:text-(--text-main) transition-colors cursor-pointer"
+						class="w-full flex items-center justify-center p-1.5 rounded-md text-(--text-muted) hover:bg-(--bg-muted) hover:text-(--color-danger) transition-colors cursor-pointer"
 						title="Sign out"
 						on:click={logout}
 					>
-						<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-						</svg>
+						<SignOut size={16} weight="regular" />
 					</button>
 				{/if}
 			</div>
@@ -367,9 +377,7 @@
 						aria-label="Open navigation menu"
 						on:click={() => (mobileMenuOpen = !mobileMenuOpen)}
 					>
-						<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7" />
-						</svg>
+						<List size={20} weight="regular" />
 					</button>
 
 					<!-- Breadcrumb Navigation: Clean, no logo -->

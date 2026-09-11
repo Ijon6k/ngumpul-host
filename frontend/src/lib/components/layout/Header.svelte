@@ -2,6 +2,7 @@
 	import { user } from '$lib/stores/auth';
 	import { page } from '$app/stores';
 	import ThemeToggle from './ThemeToggle.svelte';
+	import { ArrowSquareOut } from 'phosphor-svelte';
 
 	let scrollY = 0;
 
@@ -54,15 +55,16 @@
 
 		<!-- Right actions -->
 		<div class="flex items-center gap-2">
-			<ThemeToggle />
+			<ThemeToggle {isTransparent} />
 
 			{#if $user}
 				{#if $user.role === 'ADMIN'}
 					<a
 						href="/admin"
-						class="btn btn-sm text-[13px] {isTransparent ? 'bg-white/10 text-white hover:bg-white/20 border-white/20' : 'btn-secondary'}"
+						class="btn btn-sm text-[13px] inline-flex items-center gap-1.5 {isTransparent ? 'bg-white/10 text-white hover:bg-white/20 border-white/20' : 'btn-secondary'}"
 					>
-						Console <span class="text-xs opacity-70">↗</span>
+						<span>Console</span>
+						<ArrowSquareOut size={13} weight="regular" class="opacity-70" />
 					</a>
 				{/if}
 				<a

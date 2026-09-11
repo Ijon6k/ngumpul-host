@@ -3,6 +3,7 @@
 	import { user, logout } from '$lib/stores/auth';
 	import { api } from '$lib/api';
 	import StatusDot from '$lib/components/StatusDot.svelte';
+	import { Plus, Gear, SignOut, ArrowRight, ArrowSquareOut } from 'phosphor-svelte';
 
 	let myProjects: any[] = [];
 	let myRequests: any[] = [];
@@ -34,7 +35,11 @@
 	}
 </script>
 
-<div class="container mx-auto px-6 max-w-5xl py-10 pb-24 flex flex-col gap-9">
+<svelte:head>
+	<title>My Workspace · Ngumpul Host</title>
+</svelte:head>
+
+<div class="container mx-auto px-4 sm:px-6 max-w-5xl py-8 sm:py-12 pb-24 flex flex-col gap-8 sm:gap-9">
 	{#if $user}
 		<header class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-(--border-hairline)">
 			<div class="flex items-center gap-4">
@@ -56,14 +61,17 @@
 			</div>
 
 			<div class="flex items-center gap-2.5 flex-wrap">
-				<a href="/me/requests" class="btn btn-primary btn-sm">
-					+ Request Project
+				<a href="/me/requests" class="btn btn-primary btn-sm inline-flex items-center gap-1.5">
+					<Plus size={14} weight="bold" />
+					<span>Request Project</span>
 				</a>
-				<a href="/me/settings" class="btn btn-secondary btn-sm">
-					Settings
+				<a href="/me/settings" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5">
+					<Gear size={14} weight="regular" />
+					<span>Settings</span>
 				</a>
-				<button type="button" class="btn btn-secondary btn-sm cursor-pointer" on:click={logout}>
-					Sign out
+				<button type="button" class="btn btn-secondary btn-sm cursor-pointer inline-flex items-center gap-1.5" on:click={logout}>
+					<SignOut size={14} weight="regular" />
+					<span>Sign out</span>
 				</button>
 			</div>
 		</header>
@@ -75,7 +83,10 @@
 				<section class="flex flex-col gap-4">
 					<div class="flex items-baseline justify-between">
 						<h2 class="font-display text-lg font-bold text-(--text-main)">Hosted Applications</h2>
-						<a href="/me/projects" class="text-xs text-(--accent-strong) hover:underline font-medium">Manage details →</a>
+						<a href="/me/projects" class="text-xs text-(--accent-strong) hover:underline font-medium inline-flex items-center gap-1">
+							<span>Manage details</span>
+							<ArrowRight size={12} weight="bold" />
+						</a>
 					</div>
 
 					{#if myProjects.length === 0}
@@ -95,8 +106,9 @@
 												<a href="/projects/{proj.slug}" class="hover:text-(--accent-strong) transition-colors">{proj.name}</a>
 											</h3>
 											{#if proj.public_url}
-												<a href={proj.public_url} target="_blank" rel="noreferrer" class="text-xs text-(--accent-strong) hover:underline block mt-0.5">
-													{proj.public_url} ↗
+												<a href={proj.public_url} target="_blank" rel="noreferrer" class="text-xs text-(--accent-strong) hover:underline inline-flex items-center gap-1 mt-0.5">
+													<span>{proj.public_url}</span>
+													<ArrowSquareOut size={12} weight="regular" />
 												</a>
 											{/if}
 										</div>
@@ -123,7 +135,10 @@
 					<section class="flex flex-col gap-4">
 						<div class="flex items-baseline justify-between">
 							<h2 class="font-display text-lg font-bold text-(--text-main)">Submitted Requests</h2>
-							<a href="/me/requests" class="text-xs text-(--accent-strong) hover:underline font-medium">New request →</a>
+							<a href="/me/requests" class="text-xs text-(--accent-strong) hover:underline font-medium inline-flex items-center gap-1">
+								<span>New request</span>
+								<ArrowRight size={12} weight="bold" />
+							</a>
 						</div>
 
 						<div class="flex flex-col gap-3">

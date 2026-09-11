@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
 	import ProjectCard from '$lib/components/ProjectCard.svelte';
+	import { MagnifyingGlass } from 'phosphor-svelte';
 
 	let projects: any[] = [];
 	let loading = true;
@@ -37,21 +38,27 @@
 	});
 </script>
 
-<div class="container mx-auto px-6 max-w-6xl py-14 pb-24 flex flex-col gap-10">
+<svelte:head>
+	<title>Projects · Ngumpul Host</title>
+	<meta name="description" content="Independent applications, microservices, and experiments hosted on Ngumpul Host." />
+</svelte:head>
+
+<div class="container mx-auto px-4 sm:px-6 max-w-6xl py-8 sm:py-12 pb-24 flex flex-col gap-8 sm:gap-10">
 	<header class="max-w-2xl">
-		<h1 class="font-display font-bold text-3xl sm:text-4xl text-(--text-main) tracking-tight mb-2">Projects</h1>
-		<p class="text-base sm:text-lg text-(--text-secondary) leading-relaxed">
+		<h1 class="font-sans font-normal text-3xl sm:text-4xl text-(--text-main) tracking-[-0.03em] mb-2">Projects</h1>
+		<p class="text-sm sm:text-base text-(--text-secondary) leading-relaxed font-normal">
 			Independent applications, microservices, and experiments hosted or registered on our system.
 		</p>
 	</header>
 
 	<!-- Refined Filter Navigation (Segmented text controls without pills) -->
 	<div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pb-4 border-b border-(--border-hairline)">
-		<div class="w-full sm:max-w-sm">
+		<div class="relative w-full sm:max-w-sm">
+			<MagnifyingGlass size={15} weight="regular" class="absolute left-3 top-1/2 -translate-y-1/2 text-(--text-muted) pointer-events-none" />
 			<input
 				type="text"
 				placeholder="Filter by name, description, or stack..."
-				class="w-full px-3.5 py-2 bg-(--bg-surface) border border-(--border-hairline) focus:border-(--accent-sky) rounded-md text-xs sm:text-sm text-(--text-main) placeholder:text-(--text-muted) outline-none transition-colors"
+				class="w-full pl-9 pr-3.5 py-2 bg-(--bg-surface) border border-(--border-hairline) focus:border-(--accent-sky) rounded-md text-xs sm:text-sm text-(--text-main) placeholder:text-(--text-muted) outline-none transition-colors"
 				bind:value={searchQuery}
 			/>
 		</div>

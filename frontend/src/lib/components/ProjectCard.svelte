@@ -1,5 +1,6 @@
 <script lang="ts">
 	import StatusDot from './StatusDot.svelte';
+	import { ArrowUpRight } from 'phosphor-svelte';
 
 	export let project: {
 		id: string;
@@ -78,7 +79,8 @@
 					rel="noopener noreferrer"
 					class="font-medium text-(--accent-strong) hover:underline inline-flex items-center gap-1 shrink-0 text-xs"
 				>
-					Visit ↗
+					<span>Visit</span>
+					<ArrowUpRight size={13} weight="bold" />
 				</a>
 			{/if}
 		</div>

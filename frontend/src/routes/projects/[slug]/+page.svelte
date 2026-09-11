@@ -2,6 +2,19 @@
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import { api, extractError } from '$lib/api';
+	import {
+		CaretLeft,
+		Check,
+		Copy,
+		CheckCircle,
+		ShieldCheck,
+		GitBranch,
+		Cpu,
+		Globe,
+		Pulse,
+		ArrowUpRight,
+		GithubLogo
+	} from 'phosphor-svelte';
 
 	let project: any = null;
 	let loading = true;
@@ -59,8 +72,7 @@
 	<title>{project?.name ? `${project.name} · Ngumpul Host` : 'Project Details · Ngumpul Host'}</title>
 </svelte:head>
 
-<div class="min-h-[calc(100vh-64px)] bg-(--bg-canvas) text-(--text-main) transition-colors duration-200 py-8 sm:py-12 pb-24">
-	<div class="container mx-auto px-4 sm:px-6 max-w-6xl flex flex-col gap-6 sm:gap-8">
+<div class="container mx-auto px-4 sm:px-6 max-w-6xl py-8 sm:py-12 pb-24 flex flex-col gap-6 sm:gap-8">
 
 		{#if loading}
 			<div class="py-32 text-center text-(--text-muted) text-sm flex flex-col items-center justify-center gap-3">
@@ -92,9 +104,7 @@
 						href="/projects"
 						class="text-(--text-secondary) hover:text-(--text-main) text-xs flex items-center gap-1.5 transition-colors px-3 py-1.5 rounded-lg border border-(--border-hairline) bg-(--bg-surface)"
 					>
-						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<path d="m15 18-6-6 6-6" />
-						</svg>
+						<CaretLeft size={12} weight="bold" />
 						<span>Directory</span>
 					</a>
 
@@ -104,15 +114,10 @@
 						title="Copy URL"
 					>
 						{#if copied}
-							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-								<polyline points="20 6 9 17 4 12" />
-							</svg>
+							<Check size={12} weight="bold" class="text-emerald-500" />
 							<span class="text-emerald-500 font-medium">Copied!</span>
 						{:else}
-							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-								<rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-								<path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-							</svg>
+							<Copy size={12} weight="regular" />
 							<span>Share</span>
 						{/if}
 					</button>
@@ -187,10 +192,7 @@
 							<div class="flex items-center justify-between p-4 rounded-xl bg-(--bg-surface) border border-(--border-hairline) transition-all hover:border-(--cf-blue)/30">
 								<div class="flex items-center gap-3.5">
 									<div class="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
-										<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-											<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-											<polyline points="22 4 12 14.01 9 11.01" />
-										</svg>
+										<CheckCircle size={15} weight="regular" />
 									</div>
 									<div>
 										<h4 class="text-xs font-semibold text-(--text-main)">Container Health Check Passed</h4>
@@ -207,10 +209,7 @@
 							<div class="flex items-center justify-between p-4 rounded-xl bg-(--bg-surface) border border-(--border-hairline) transition-all hover:border-(--cf-blue)/30">
 								<div class="flex items-center gap-3.5">
 									<div class="w-8 h-8 rounded-full bg-sky-500/10 text-(--cf-blue) flex items-center justify-center shrink-0">
-										<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-											<rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-											<path d="M7 11V7a5 5 0 0 1 10 0v4" />
-										</svg>
+										<ShieldCheck size={15} weight="regular" />
 									</div>
 									<div>
 										<h4 class="text-xs font-semibold text-(--text-main)">Automated TLS 1.3 Handshake Verified</h4>
@@ -227,10 +226,7 @@
 							<div class="flex items-center justify-between p-4 rounded-xl bg-(--bg-surface) border border-(--border-hairline) transition-all hover:border-(--cf-blue)/30">
 								<div class="flex items-center gap-3.5">
 									<div class="w-8 h-8 rounded-full bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
-										<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-											<polyline points="16 18 22 12 16 6" />
-											<polyline points="8 6 2 12 8 18" />
-										</svg>
+										<GitBranch size={15} weight="regular" />
 									</div>
 									<div>
 										<h4 class="text-xs font-semibold text-(--text-main)">Container Image Rebuilt from Git</h4>
@@ -247,11 +243,7 @@
 							<div class="flex items-center justify-between p-4 rounded-xl bg-(--bg-surface) border border-(--border-hairline) transition-all hover:border-(--cf-blue)/30">
 								<div class="flex items-center gap-3.5">
 									<div class="w-8 h-8 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
-										<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-											<rect width="16" height="16" x="4" y="4" rx="2" />
-											<rect width="6" height="6" x="9" y="9" rx="1" />
-											<path d="M15 2v2" /><path d="M15 20v2" /><path d="M2 15h2" /><path d="M2 9h2" /><path d="M20 15h2" /><path d="M20 9h2" /><path d="M9 2v2" /><path d="M9 20v2" />
-										</svg>
+										<Cpu size={15} weight="regular" />
 									</div>
 									<div>
 										<h4 class="text-xs font-semibold text-(--text-main)">Cgroups v2 Resource Governance Applied</h4>
@@ -268,11 +260,7 @@
 							<div class="flex items-center justify-between p-4 rounded-xl bg-(--bg-surface) border border-(--border-hairline) transition-all hover:border-(--cf-blue)/30">
 								<div class="flex items-center gap-3.5">
 									<div class="w-8 h-8 rounded-full bg-teal-500/10 text-teal-400 flex items-center justify-center shrink-0">
-										<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-											<circle cx="12" cy="12" r="10" />
-											<path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
-											<path d="M2 12h20" />
-										</svg>
+										<Globe size={15} weight="regular" />
 									</div>
 									<div>
 										<h4 class="text-xs font-semibold text-(--text-main)">Community Workload Initialized</h4>
@@ -306,9 +294,7 @@
 											<span class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
 											<span>Testing...</span>
 										{:else}
-											<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-												<path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-											</svg>
+											<Pulse size={12} weight="bold" />
 											<span>Ping Endpoint</span>
 										{/if}
 									</button>
@@ -399,10 +385,7 @@
 										{#if copied}
 											<span class="text-emerald-500 text-[11px] font-sans">Copied!</span>
 										{:else}
-											<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-												<rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-												<path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-											</svg>
+											<Copy size={14} weight="regular" />
 										{/if}
 									</button>
 								</div>
@@ -552,10 +535,7 @@
 								class="btn w-full py-3 text-sm font-semibold rounded-xl bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 hover:opacity-90 transition-opacity shadow-sm flex items-center justify-center gap-2"
 							>
 								<span>Visit Application</span>
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-									<path d="M7 7h10v10" />
-									<path d="M7 17 17 7" />
-								</svg>
+								<ArrowUpRight size={14} weight="bold" />
 							</a>
 						{/if}
 
@@ -567,9 +547,7 @@
 									rel="noopener noreferrer"
 									class="btn py-2.5 text-xs font-semibold rounded-xl bg-(--bg-surface) text-(--text-main) border border-(--border-hairline) hover:bg-(--bg-muted) transition-colors flex items-center justify-center gap-1.5"
 								>
-									<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-										<path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
-									</svg>
+									<GithubLogo size={14} weight="regular" />
 									<span>Source Code</span>
 								</a>
 							{/if}
@@ -579,12 +557,12 @@
 								class="btn py-2.5 text-xs font-semibold rounded-xl bg-(--bg-surface) text-(--text-main) border border-(--border-hairline) hover:bg-(--bg-muted) transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
 							>
 								{#if copied}
-									<span class="text-emerald-500 font-medium">Copied!</span>
+									<span class="text-emerald-500 font-medium flex items-center gap-1">
+										<Check size={13} weight="bold" />
+										Copied!
+									</span>
 								{:else}
-									<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-										<rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-										<path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-									</svg>
+									<Copy size={13} weight="regular" />
 									<span>Copy Link</span>
 								{/if}
 							</button>
@@ -598,4 +576,4 @@
 		{/if}
 
 	</div>
-</div>
+
