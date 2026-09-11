@@ -16,7 +16,8 @@
 		SignOut,
 		List,
 		Sun,
-		Moon
+		Moon,
+		Gear
 	} from 'phosphor-svelte';
 
 	let pendingCount = 0;
@@ -104,6 +105,12 @@
 			href: '/admin/audit',
 			exact: false,
 			icon: Scroll
+		},
+		{
+			label: 'Settings',
+			href: '/admin/settings',
+			exact: false,
+			icon: Gear
 		}
 	];
 
@@ -124,6 +131,7 @@
 		if (p.startsWith('/admin/users')) return 'Members';
 		if (p.startsWith('/admin/system')) return 'System Health';
 		if (p.startsWith('/admin/audit')) return 'Audit Trail';
+		if (p.startsWith('/admin/settings')) return 'Instance Settings';
 		return 'Console';
 	}
 </script>

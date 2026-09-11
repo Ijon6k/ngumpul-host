@@ -1,11 +1,20 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
+	import { Table, TableRow, TableCell, type TableColumn } from '$lib/components/ui';
 
 	let logs: any[] = [];
 	let loading = true;
 	let searchQuery = '';
 	let actionFilter = 'ALL';
+
+	const columns: TableColumn[] = [
+		{ key: 'timestamp', label: 'Timestamp' },
+		{ key: 'actor', label: 'Actor' },
+		{ key: 'action', label: 'Action' },
+		{ key: 'target', label: 'Target' },
+		{ key: 'metadata', label: 'Metadata Context' }
+	];
 
 	async function loadLogs() {
 		loading = true;
@@ -51,13 +60,13 @@
 	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-(--border-hairline)">
 		<div>
 			<h1 class="font-display font-bold text-2xl text-(--text-main)">Immutable Audit Log</h1>
-			<p class="text-xs text-(--text-secondary) mt-1">
+			<p class="text-sm text-(--text-secondary) mt-1">
 				Cryptographic record of administrative operations, project state mutations, approvals, and security events.
 			</p>
 		</div>
 
 		<div class="flex items-center gap-2">
-			<button type="button" class="btn btn-secondary btn-sm font-mono text-xs" on:click={loadLogs}>
+			<button type="button" class="btn btn-secondary btn-sm font-mono text-xs sm:text-sm" on:click={loadLogs}>
 				Refresh
 			</button>
 		</div>
@@ -66,10 +75,10 @@
 	<!-- Filter & Search Controls -->
 	<div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
 		<div class="flex items-center gap-2">
-			<label for="audit-action-filter" class="text-xs font-mono text-(--text-muted)">Action:</label>
+			<label for="audit-action-filter" class="text-sm font-medium text-(--text-secondary)">Action:</label>
 			<select
 				id="audit-action-filter"
-				class="px-2.5 py-1 text-xs font-mono bg-(--bg-surface) border border-(--border-hairline) rounded text-(--text-main) outline-none focus:border-(--accent-sky)"
+				class="px-3 py-1.5 text-sm font-mono bg-(--bg-surface) border border-(--border-hairline) rounded text-(--text-main) outline-none focus:border-(--accent-sky)"
 				bind:value={actionFilter}
 			>
 				<option value="ALL">ALL ACTIONS</option>
@@ -79,71 +88,54 @@
 			</select>
 		</div>
 
-		<div class="w-full sm:w-64">
+		<div class="w-full sm:w-72">
 			<input
 				type="text"
 				placeholder="Filter audit ledger..."
 				bind:value={searchQuery}
-				class="w-full px-3 py-1.5 bg-(--bg-surface) border border-(--border-hairline) rounded text-xs text-(--text-main) placeholder:text-(--text-muted) outline-none focus:border-(--accent-sky) font-sans"
+				class="w-full px-3.5 py-2 bg-(--bg-surface) border border-(--border-hairline) rounded text-sm text-(--text-main) placeholder:text-(--text-muted) outline-none focus:border-(--accent-sky) font-sans"
 			/>
 		</div>
 	</div>
 
-	<!-- High-Density Audit Ledger Table -->
-	<div class="border border-(--border-hairline) rounded-md bg-(--bg-surface) overflow-hidden">
-		{#if loading}
-			<div class="p-10 text-center text-xs text-(--text-muted)">Reading immutable ledger...</div>
-		{:else if filteredLogs.length === 0}
-			<div class="p-10 text-center text-xs text-(--text-secondary)">
-				No audit entries match current filter.
-			</div>
-		{:else}
-			<div class="overflow-x-auto">
-				<table class="w-full text-left text-xs border-collapse font-sans">
-					<thead>
-						<tr class="border-b border-(--border-hairline) bg-(--bg-muted)/40 text-(--text-muted) text-xs">
-							<th class="px-5 py-2.5 font-medium">Timestamp</th>
-							<th class="px-5 py-2.5 font-medium">Actor</th>
-							<th class="px-5 py-2.5 font-medium">Action</th>
-							<th class="px-5 py-2.5 font-medium">Target</th>
-							<th class="px-5 py-2.5 font-medium">Metadata Context</th>
-						</tr>
-					</thead>
-					<tbody class="divide-y divide-(--border-hairline)">
-						{#each filteredLogs as log (log.id)}
-							<tr class="hover:bg-(--bg-muted)/25 transition-colors">
-								<td class="px-5 py-3.5 align-top font-mono text-[11px] text-(--text-muted) whitespace-nowrap">
-									{formatDate(log.created_at)}
-								</td>
-								<td class="px-5 py-3.5 align-top">
-									<strong class="text-(--text-main) font-medium">{log.actor_name || 'Administrator'}</strong>
-									{#if log.actor_username}
-										<span class="block text-[11px] font-mono text-(--text-muted)">@{log.actor_username}</span>
-									{/if}
-								</td>
-								<td class="px-5 py-3.5 align-top">
-									<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-(--bg-muted) text-(--text-main) border border-(--border-hairline)">
-										{log.action}
-									</span>
-								</td>
-								<td class="px-5 py-3.5 align-top font-mono text-[11px]">
-									<span class="text-(--text-main)">{log.target_type}</span>
-									{#if log.target_id}
-										<span class="text-(--text-muted) block text-[10px]">#{log.target_id.slice(0, 8)}</span>
-									{/if}
-								</td>
-								<td class="px-5 py-3.5 align-top">
-									{#if log.metadata && Object.keys(log.metadata).length > 0}
-										<pre class="text-[10px] font-mono text-(--text-secondary) bg-(--bg-muted)/60 p-2 rounded max-w-sm overflow-x-auto border border-(--border-subtle)">{JSON.stringify(log.metadata, null, 2)}</pre>
-									{:else}
-										<span class="text-[11px] font-mono text-(--text-muted)">—</span>
-									{/if}
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
-		{/if}
-	</div>
+	<!-- High-Density Audit Ledger Reusable Table -->
+	<Table
+		{columns}
+		items={filteredLogs}
+		{loading}
+		alignTop
+		loadingMessage="Reading immutable ledger..."
+		emptyMessage="No audit entries match current filter."
+		let:item={log}
+	>
+		<TableRow>
+			<TableCell alignTop mono class="text-xs text-(--text-muted) whitespace-nowrap">
+				{formatDate(log.created_at)}
+			</TableCell>
+			<TableCell alignTop>
+				<strong class="text-(--text-main) font-medium text-sm sm:text-base">{log.actor_name || 'Administrator'}</strong>
+				{#if log.actor_username}
+					<span class="block text-xs font-mono text-(--text-muted)">@{log.actor_username}</span>
+				{/if}
+			</TableCell>
+			<TableCell alignTop>
+				<span class="inline-flex items-center px-2.5 py-1 rounded text-xs font-mono font-medium bg-(--bg-muted) text-(--text-main) border border-(--border-hairline)">
+					{log.action}
+				</span>
+			</TableCell>
+			<TableCell alignTop mono class="text-xs sm:text-sm">
+				<span class="text-(--text-main)">{log.target_type}</span>
+				{#if log.target_id}
+					<span class="text-(--text-muted) block text-xs">#{log.target_id.slice(0, 8)}</span>
+				{/if}
+			</TableCell>
+			<TableCell alignTop>
+				{#if log.metadata && Object.keys(log.metadata).length > 0}
+					<pre class="text-xs font-mono text-(--text-secondary) bg-(--bg-muted)/60 p-2.5 rounded max-w-md overflow-x-auto border border-(--border-subtle)">{JSON.stringify(log.metadata, null, 2)}</pre>
+				{:else}
+					<span class="text-xs font-mono text-(--text-muted)">—</span>
+				{/if}
+			</TableCell>
+		</TableRow>
+	</Table>
 </div>

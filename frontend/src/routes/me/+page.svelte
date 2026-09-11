@@ -3,6 +3,7 @@
 	import { user, logout } from '$lib/stores/auth';
 	import { api } from '$lib/api';
 	import StatusDot from '$lib/components/StatusDot.svelte';
+	import ProjectCover from '$lib/components/ui/ProjectCover.svelte';
 	import { Plus, Gear, SignOut, ArrowRight, ArrowSquareOut } from 'phosphor-svelte';
 
 	let myProjects: any[] = [];
@@ -99,18 +100,28 @@
 					{:else}
 						<div class="flex flex-col gap-3">
 							{#each myProjects as proj}
-								<div class="bg-(--bg-surface) border border-(--border-hairline) rounded-md p-5 flex flex-col gap-3 hover:border-(--border-hairline) transition-colors">
+								<div class="bg-(--bg-surface) border border-(--border-hairline) rounded-md p-5 flex flex-col gap-3 hover:border-(--border-subtle) transition-colors">
 									<div class="flex items-start justify-between gap-4">
-										<div>
-											<h3 class="font-display text-base font-bold text-(--text-main)">
-												<a href="/projects/{proj.slug}" class="hover:text-(--accent-strong) transition-colors">{proj.name}</a>
-											</h3>
-											{#if proj.public_url}
-												<a href={proj.public_url} target="_blank" rel="noreferrer" class="text-xs text-(--accent-strong) hover:underline inline-flex items-center gap-1 mt-0.5">
-													<span>{proj.public_url}</span>
-													<ArrowSquareOut size={12} weight="regular" />
-												</a>
-											{/if}
+										<div class="flex items-start gap-3.5">
+											<a href="/projects/{proj.slug}" class="w-16 h-12 rounded-sm overflow-hidden shrink-0 border border-(--border-hairline) bg-(--bg-muted)">
+												<ProjectCover
+													src={proj.cover_image_url}
+													alt={proj.name}
+													name={proj.name}
+													aspectRatio="4/3"
+												/>
+											</a>
+											<div>
+												<h3 class="font-sans font-semibold text-base text-(--text-main)">
+													<a href="/projects/{proj.slug}" class="hover:text-(--accent-strong) transition-colors">{proj.name}</a>
+												</h3>
+												{#if proj.public_url}
+													<a href={proj.public_url} target="_blank" rel="noreferrer" class="text-xs text-(--accent-strong) hover:underline inline-flex items-center gap-1 mt-0.5">
+														<span>{proj.public_url}</span>
+														<ArrowSquareOut size={12} weight="regular" />
+													</a>
+												{/if}
+											</div>
 										</div>
 										<StatusDot status={proj.status} />
 									</div>

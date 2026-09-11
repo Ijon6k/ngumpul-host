@@ -23,25 +23,42 @@
 		}
 	})();
 
-	$: styleClasses = (() => {
+	$: colorClasses = (() => {
 		switch (normalized) {
 			case 'ONLINE':
 			case 'OPERATIONAL':
-				return 'bg-(--cf-green-pastel) text-(--cf-green-text)';
+				return {
+					dot: 'bg-emerald-500',
+					badge: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20'
+				};
 			case 'SETUP':
 			case 'PENDING':
-				return 'bg-amber-500/10 text-amber-700 dark:text-amber-400';
+				return {
+					dot: 'bg-amber-500',
+					badge: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20'
+				};
 			case 'OFFLINE':
 			case 'DEGRADED':
-				return 'bg-rose-500/10 text-rose-700 dark:text-rose-400';
+				return {
+					dot: 'bg-rose-500',
+					badge: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20'
+				};
+			case 'ARCHIVED':
 			default:
-				return 'bg-(--bg-muted) text-(--text-muted)';
+				return {
+					dot: 'bg-neutral-400 dark:bg-neutral-500',
+					badge: 'bg-(--bg-muted) text-(--text-muted) border-(--border-hairline)'
+				};
 		}
 	})();
 </script>
 
-<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium {styleClasses}" title={label}>
-	{#if showLabel}
+{#if showLabel}
+	<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border {colorClasses.badge}" title={label}>
+		<span class="w-1.5 h-1.5 rounded-full {colorClasses.dot} shrink-0"></span>
 		<span>{label}</span>
-	{/if}
-</span>
+	</span>
+{:else}
+	<span class="inline-block w-2 h-2 rounded-full {colorClasses.dot} shrink-0" title={label}></span>
+{/if}
+

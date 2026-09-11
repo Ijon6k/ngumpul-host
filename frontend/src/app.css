@@ -65,9 +65,10 @@ html[data-theme="light"] {
 	--color-warning: #99732B;
 	--color-danger: #B84747;
 
-	--radius-btn: 8px;
-	--radius-panel: 10px;
-	--radius-card: 14px;
+	--radius-btn: 4px;
+	--radius-panel: 6px;
+	--radius-card: 8px;
+	--radius-overlay: 12px;
 
 	/* Backward compatible aliases */
 	--border: var(--border-hairline);
@@ -113,9 +114,10 @@ html[data-theme="dark"],
 	--color-warning: #C29E4D;
 	--color-danger: #CC5454;
 
-	--radius-btn: 8px;
-	--radius-panel: 10px;
-	--radius-card: 14px;
+	--radius-btn: 4px;
+	--radius-panel: 6px;
+	--radius-card: 8px;
+	--radius-overlay: 12px;
 
 	--border: var(--border-hairline);
 	--surface: var(--bg-surface);

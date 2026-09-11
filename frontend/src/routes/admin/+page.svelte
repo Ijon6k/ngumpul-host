@@ -124,7 +124,7 @@
 					<div class="overflow-x-auto">
 						<table class="w-full text-left text-sm border-collapse font-sans">
 							<thead>
-								<tr class="border-b border-(--border-hairline) bg-(--bg-muted)/40 text-(--text-secondary) text-xs">
+								<tr class="border-b border-(--border-hairline) bg-(--bg-muted)/40 text-(--text-secondary) text-sm font-medium">
 									<th class="py-3 px-6 font-semibold">Project</th>
 									<th class="py-3 px-4 font-semibold">Requester</th>
 									<th class="py-3 px-4 font-semibold hidden md:table-cell">Repository</th>
@@ -136,23 +136,23 @@
 								{#each pendingRequests as req}
 									<tr class="hover:bg-(--bg-muted)/25 transition-colors">
 										<td class="py-4 px-6 font-medium text-(--text-main)">
-											<div class="font-semibold">{req.project_name}</div>
+											<div class="font-semibold text-sm sm:text-base">{req.project_name}</div>
 											{#if req.description}
-												<div class="text-xs text-(--text-secondary) mt-0.5 truncate max-w-sm">{req.description}</div>
+												<div class="text-xs sm:text-sm text-(--text-secondary) mt-0.5 truncate max-w-sm">{req.description}</div>
 											{/if}
 										</td>
 										<td class="py-4 px-4 text-(--text-secondary)">
-											<span class="font-medium text-(--text-main)">{req.requester?.display_name || 'Member'}</span>
+											<span class="font-medium text-sm sm:text-base text-(--text-main)">{req.requester?.display_name || 'Member'}</span>
 											<span class="block font-mono text-xs text-(--text-muted)">@{req.requester?.username}</span>
 										</td>
-										<td class="py-4 px-4 font-mono text-xs text-(--cf-blue) hidden md:table-cell">
+										<td class="py-4 px-4 font-mono text-xs sm:text-sm text-(--cf-blue) hidden md:table-cell">
 											<a href={req.repository_url} target="_blank" rel="noreferrer" class="hover:underline truncate block max-w-xs">
 												{req.repository_url} ↗
 											</a>
 										</td>
-										<td class="py-4 px-4 text-xs text-(--text-muted)">{formatDate(req.created_at)}</td>
+										<td class="py-4 px-4 text-xs sm:text-sm text-(--text-muted)">{formatDate(req.created_at)}</td>
 										<td class="py-4 px-6 text-right">
-											<a href="/admin/requests" class="btn btn-primary btn-sm text-xs py-1 px-3">
+											<a href="/admin/requests" class="btn btn-primary btn-sm text-xs sm:text-sm py-1.5 px-3">
 												Review →
 											</a>
 										</td>
@@ -167,7 +167,7 @@
 			<!-- 2. Real Ingress Domain & Reverse Proxy Routing Registry -->
 			<AdminPanel title="Subdomain & Ingress Proxy Registry" description="Assigned public subdomains and reverse-proxy routes mapped to isolated container instances" padding={false}>
 				<svelte:fragment slot="actions">
-					<a href="/admin/projects" class="btn btn-secondary btn-sm text-xs py-1.5 px-3">
+					<a href="/admin/projects" class="btn btn-secondary btn-sm text-xs sm:text-sm py-1.5 px-3">
 						+ Register route
 					</a>
 				</svelte:fragment>
@@ -175,7 +175,7 @@
 				<div class="overflow-x-auto">
 					<table class="w-full text-left text-sm border-collapse font-sans">
 						<thead>
-							<tr class="border-b border-(--border-hairline) bg-(--bg-muted)/40 text-(--text-secondary) text-xs">
+							<tr class="border-b border-(--border-hairline) bg-(--bg-muted)/40 text-(--text-secondary) text-sm font-medium">
 								<th class="py-3 px-6 font-semibold">Subdomain</th>
 								<th class="py-3 px-4 font-semibold">Project</th>
 								<th class="py-3 px-4 font-semibold hidden sm:table-cell">Routing Type</th>
@@ -191,7 +191,7 @@
 							{:else}
 								{#each projectsList as p}
 									<tr class="hover:bg-(--bg-muted)/25 transition-colors">
-										<td class="py-4 px-6 font-mono text-xs sm:text-sm font-semibold text-(--cf-blue)">
+										<td class="py-4 px-6 font-mono text-sm sm:text-base font-semibold text-(--cf-blue)">
 											{#if p.public_url}
 												<a href={p.public_url} target="_blank" rel="noreferrer" class="hover:underline flex items-center gap-1">
 													<span>{p.public_url.replace(/^https?:\/\//, '')}</span>
@@ -201,21 +201,21 @@
 												<span class="text-(--text-muted)">{p.slug}.ngumpul.local</span>
 											{/if}
 										</td>
-										<td class="py-4 px-4 font-medium text-(--text-main)">
+										<td class="py-4 px-4 font-medium text-sm sm:text-base text-(--text-main)">
 											<a href="/projects/{p.slug}" class="hover:text-(--cf-blue)">{p.name}</a>
 										</td>
 										<td class="py-4 px-4 hidden sm:table-cell">
-											<span class="px-2.5 py-0.5 rounded-md text-xs font-mono {p.hosting_type === 'HOSTED_HERE' ? 'bg-(--cf-pastel-bg) text-(--cf-pastel-text)' : 'bg-(--bg-muted) text-(--text-secondary)'}">
+											<span class="px-2.5 py-0.5 rounded-md text-xs sm:text-sm font-mono {p.hosting_type === 'HOSTED_HERE' ? 'bg-(--cf-pastel-bg) text-(--cf-pastel-text)' : 'bg-(--bg-muted) text-(--text-secondary)'}">
 												{p.hosting_type === 'HOSTED_HERE' ? 'Local Container' : 'External Proxy'}
 											</span>
 										</td>
 										<td class="py-4 px-4">
-											<span class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+											<span class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-emerald-600 dark:text-emerald-400">
 												<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
 												TLS 1.3 Active
 											</span>
 										</td>
-										<td class="py-4 px-6 text-right font-mono text-xs text-(--text-secondary)">
+										<td class="py-4 px-6 text-right font-mono text-xs sm:text-sm text-(--text-secondary)">
 											{p.slug}-upstream:80
 										</td>
 									</tr>
@@ -229,7 +229,7 @@
 			<!-- 3. Hosted Projects Directory -->
 			<AdminPanel title="Hosted Projects Directory" badge="{projectsList.length} registered" padding={false}>
 				<svelte:fragment slot="actions">
-					<a href="/admin/projects" class="btn btn-secondary btn-sm text-xs py-1.5 px-3">
+					<a href="/admin/projects" class="btn btn-secondary btn-sm text-xs sm:text-sm py-1.5 px-3">
 						Manage projects →
 					</a>
 				</svelte:fragment>
@@ -237,7 +237,7 @@
 				<div class="overflow-x-auto">
 					<table class="w-full text-left text-sm border-collapse font-sans">
 						<thead>
-							<tr class="border-b border-(--border-hairline) bg-(--bg-muted)/40 text-(--text-secondary) text-xs">
+							<tr class="border-b border-(--border-hairline) bg-(--bg-muted)/40 text-(--text-secondary) text-sm font-medium">
 								<th class="py-3 px-6 font-semibold">Project Name</th>
 								<th class="py-3 px-4 font-semibold">Owner</th>
 								<th class="py-3 px-4 font-semibold hidden md:table-cell">Tech Tags</th>
@@ -254,18 +254,18 @@
 								{#each projectsList as p}
 									<tr class="hover:bg-(--bg-muted)/25 transition-colors">
 										<td class="py-4 px-6 font-medium text-(--text-main)">
-											<a href="/projects/{p.slug}" class="font-semibold hover:text-(--cf-blue)">{p.name}</a>
+											<a href="/projects/{p.slug}" class="font-semibold text-sm sm:text-base hover:text-(--cf-blue)">{p.name}</a>
 											<span class="block font-mono text-xs text-(--text-muted)">/{p.slug}</span>
 										</td>
 										<td class="py-4 px-4 text-(--text-secondary)">
-											<span class="font-medium text-(--text-main)">{p.owner?.display_name || 'Community'}</span>
+											<span class="font-medium text-sm sm:text-base text-(--text-main)">{p.owner?.display_name || 'Community'}</span>
 											<span class="block font-mono text-xs text-(--text-muted)">@{p.owner?.username}</span>
 										</td>
 										<td class="py-4 px-4 hidden md:table-cell">
 											{#if p.technology_stack && p.technology_stack.length > 0}
 												<div class="flex items-center gap-1.5 flex-wrap">
 													{#each p.technology_stack.slice(0, 3) as tech}
-														<span class="text-xs font-mono px-2 py-0.5 rounded bg-(--bg-muted) text-(--text-secondary)">{tech}</span>
+														<span class="text-xs sm:text-sm font-mono px-2 py-0.5 rounded bg-(--bg-muted) text-(--text-secondary)">{tech}</span>
 													{/each}
 												</div>
 											{:else}
@@ -278,7 +278,7 @@
 											</span>
 										</td>
 										<td class="py-4 px-6 text-right">
-											<a href="/admin/projects" class="font-semibold text-xs text-(--cf-blue) hover:underline">
+											<a href="/admin/projects" class="font-semibold text-xs sm:text-sm text-(--cf-blue) hover:underline">
 												Edit →
 											</a>
 										</td>

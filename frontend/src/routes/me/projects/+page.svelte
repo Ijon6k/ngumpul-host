@@ -2,11 +2,14 @@
 	import { onMount } from 'svelte';
 	import { api, extractError } from '$lib/api';
 	import StatusDot from '$lib/components/StatusDot.svelte';
+	import ProjectCover from '$lib/components/ui/ProjectCover.svelte';
+	import { UploadSimple, ArrowSquareOut } from 'phosphor-svelte';
 
 	let projects: any[] = [];
 	let loading = true;
 	let editingProject: any = null;
 	let saving = false;
+	let uploadingCover = false;
 	let error: string | null = null;
 	let success: string | null = null;
 
@@ -16,6 +19,39 @@
 	let editDocs = '';
 	let editDemo = '';
 	let editTechRaw = '';
+
+	let fileInput: HTMLInputElement;
+
+	async function handleCoverUpload(event: Event) {
+		const target = event.target as HTMLInputElement;
+		if (!target.files || target.files.length === 0) return;
+		const file = target.files[0];
+
+		if (file.size > 10 * 1024 * 1024) {
+			error = 'File size exceeds maximum limit of 10 MB.';
+			return;
+		}
+
+		uploadingCover = true;
+		error = null;
+		try {
+			const formData = new FormData();
+			formData.append('file', file);
+			formData.append('purpose', 'cover');
+
+			const res = await api.post('/upload', formData, {
+				headers: { 'Content-Type': 'multipart/form-data' }
+			});
+			if (res.data?.url) {
+				editCover = res.data.url;
+			}
+		} catch (err) {
+			error = extractError(err);
+		} finally {
+			uploadingCover = false;
+			if (fileInput) fileInput.value = '';
+		}
+	}
 
 	async function loadProjects() {
 		loading = true;
@@ -144,9 +180,54 @@
 								<textarea id="e-desc" class="w-full px-3 py-1.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-xs text-(--text-main) outline-none focus:border-(--text-main)" rows="2" bind:value={editDesc}></textarea>
 							</div>
 
-							<div class="flex flex-col gap-1.5">
-								<label for="e-cover" class="text-xs font-medium text-(--text-main)">Cover Artwork URL</label>
-								<input id="e-cover" type="text" class="w-full px-3 py-1.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-xs text-(--text-main) outline-none focus:border-(--text-main)" placeholder="/assets/project_atlas_cover.jpg or https://..." bind:value={editCover} />
+							<div class="flex flex-col gap-2">
+								<label for="e-cover" class="text-xs font-medium text-(--text-main)">Project Cover Image</label>
+								<div class="flex flex-col sm:flex-row items-start gap-4">
+									<div class="w-32 sm:w-40 aspect-4/3 rounded-md overflow-hidden border border-(--border-hairline) bg-(--bg-muted) shrink-0">
+										<ProjectCover
+											src={editCover}
+											alt={proj.name}
+											name={proj.name}
+											aspectRatio="4/3"
+										/>
+									</div>
+									<div class="flex-1 flex flex-col gap-2 w-full">
+										<div class="flex items-center gap-2">
+											<input
+												type="file"
+												accept="image/jpeg,image/png,image/webp"
+												class="hidden"
+												bind:this={fileInput}
+												on:change={handleCoverUpload}
+											/>
+											<button
+												type="button"
+												class="btn btn-secondary btn-sm text-xs inline-flex items-center gap-1.5"
+												on:click={() => fileInput.click()}
+												disabled={uploadingCover}
+											>
+												<UploadSimple size={14} weight="bold" />
+												<span>{uploadingCover ? 'Uploading...' : 'Upload Cover (Max 10 MB)'}</span>
+											</button>
+											{#if editCover}
+												<button
+													type="button"
+													class="text-xs text-(--color-danger) hover:underline"
+													on:click={() => (editCover = '')}
+												>
+													Remove
+												</button>
+											{/if}
+										</div>
+										<input
+											id="e-cover"
+											type="text"
+											class="w-full px-3 py-1.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-xs font-mono text-(--text-main) outline-none focus:border-(--text-main)"
+											placeholder="Image URL /uploads/covers/... or https://..."
+											bind:value={editCover}
+										/>
+									</div>
+								</div>
 							</div>
 
 							<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">

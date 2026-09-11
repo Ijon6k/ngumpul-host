@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { api, extractError } from '$lib/api';
+	import { Table, TableRow, TableCell, type TableColumn } from '$lib/components/ui';
 
 	let requests: any[] = [];
 	let loading = true;
@@ -29,6 +30,15 @@
 	}
 
 	onMount(loadRequests);
+
+	const columns: TableColumn[] = [
+		{ key: 'project', label: 'Project & Specs' },
+		{ key: 'requester', label: 'Requester' },
+		{ key: 'repository', label: 'Repository' },
+		{ key: 'status', label: 'Status' },
+		{ key: 'submitted', label: 'Submitted' },
+		{ key: 'actions', label: 'Actions', align: 'right' }
+	];
 
 	$: filteredRequests = requests.filter((r) => {
 		const matchesFilter =
@@ -99,26 +109,26 @@
 	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-(--border-hairline)">
 		<div>
 			<h1 class="font-display font-bold text-2xl text-(--text-main)">Hosting Requests</h1>
-			<p class="text-xs text-(--text-secondary) mt-1">
+			<p class="text-sm text-(--text-secondary) mt-1">
 				Operational queue for community applications requesting server allocation and public proxy routes.
 			</p>
 		</div>
 
 		<div class="flex items-center gap-2">
-			<button type="button" class="btn btn-secondary btn-sm" on:click={loadRequests}>
+			<button type="button" class="btn btn-secondary btn-sm font-mono text-xs sm:text-sm" on:click={loadRequests}>
 				Refresh
 			</button>
 		</div>
 	</div>
 
 	{#if success}
-		<div class="p-3 bg-(--accent-soft) text-(--accent-strong) border border-(--accent-sky)/30 rounded text-xs font-mono flex items-center justify-between">
+		<div class="p-3 bg-(--accent-soft) text-(--accent-strong) border border-(--accent-sky)/30 rounded text-sm font-mono flex items-center justify-between">
 			<span>{success}</span>
 			<button type="button" on:click={() => (success = null)} class="text-(--accent-strong) font-bold">×</button>
 		</div>
 	{/if}
 	{#if error}
-		<div class="p-3 bg-red-950/20 text-(--color-danger) border border-(--color-danger)/30 rounded text-xs font-mono flex items-center justify-between">
+		<div class="p-3 bg-red-950/20 text-(--color-danger) border border-(--color-danger)/30 rounded text-sm font-mono flex items-center justify-between">
 			<span>{error}</span>
 			<button type="button" on:click={() => (error = null)} class="text-(--color-danger) font-bold">×</button>
 		</div>
@@ -126,7 +136,7 @@
 
 	<!-- Search & Filter Controls -->
 	<div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-		<div class="flex items-center gap-1 border border-(--border-hairline) rounded p-0.5 bg-(--bg-surface)">
+		<div class="flex items-center gap-1 border border-(--border-hairline) rounded p-1 bg-(--bg-surface)">
 			{#each [
 				{ id: 'ALL', label: 'All' },
 				{ id: 'PENDING', label: 'Pending' },
@@ -136,7 +146,7 @@
 			] as tab}
 				<button
 					type="button"
-					class="px-2.5 py-1 text-xs font-medium rounded transition-colors {activeFilter === tab.id ? 'bg-(--accent-soft) text-(--accent-strong) font-semibold' : 'text-(--text-secondary) hover:text-(--text-main)'}"
+					class="px-3 py-1.5 text-sm font-medium rounded transition-colors {activeFilter === tab.id ? 'bg-(--accent-soft) text-(--accent-strong) font-semibold' : 'text-(--text-secondary) hover:text-(--text-main)'}"
 					on:click={() => (activeFilter = tab.id)}
 				>
 					{tab.label}
@@ -144,123 +154,105 @@
 			{/each}
 		</div>
 
-		<div class="w-full sm:w-64">
+		<div class="w-full sm:w-72">
 			<input
 				type="text"
 				placeholder="Filter by project or owner..."
 				bind:value={searchQuery}
-				class="w-full px-3 py-1.5 bg-(--bg-surface) border border-(--border-hairline) rounded text-xs text-(--text-main) placeholder:text-(--text-muted) outline-none focus:border-(--accent-sky) font-sans"
+				class="w-full px-3.5 py-2 bg-(--bg-surface) border border-(--border-hairline) rounded text-sm text-(--text-main) placeholder:text-(--text-muted) outline-none focus:border-(--accent-sky) font-sans"
 			/>
 		</div>
 	</div>
 
-	<!-- High-Density Requests Table -->
-	<div class="border border-(--border-hairline) rounded-md bg-(--bg-surface) overflow-hidden">
-		{#if loading}
-			<div class="p-10 text-center text-xs text-(--text-muted)">Querying operational queue...</div>
-		{:else if filteredRequests.length === 0}
-			<div class="p-10 text-center text-xs text-(--text-secondary)">
-				No requests matching current criteria.
-			</div>
-		{:else}
-			<div class="overflow-x-auto">
-				<table class="w-full text-left text-xs border-collapse font-sans">
-					<thead>
-						<tr class="border-b border-(--border-hairline) bg-(--bg-muted)/40 text-(--text-muted) text-xs">
-							<th class="px-5 py-2.5 font-medium">Project & Specs</th>
-							<th class="px-5 py-2.5 font-medium">Requester</th>
-							<th class="px-5 py-2.5 font-medium">Repository</th>
-							<th class="px-5 py-2.5 font-medium">Status</th>
-							<th class="px-5 py-2.5 font-medium">Submitted</th>
-							<th class="px-5 py-2.5 text-right font-medium">Actions</th>
-						</tr>
-					</thead>
-					<tbody class="divide-y divide-(--border-hairline)">
-						{#each filteredRequests as req (req.id)}
-							<tr class="hover:bg-(--bg-muted)/25 transition-colors">
-								<td class="px-5 py-3.5 align-top">
-									<div class="font-semibold text-(--text-main)">{req.project_name}</div>
-									{#if req.description}
-										<div class="text-[11px] text-(--text-secondary) mt-0.5 max-w-sm line-clamp-1">{req.description}</div>
-									{/if}
-									{#if req.environment_specs && Object.keys(req.environment_specs).length > 0}
-										<div class="text-[10px] font-mono text-(--text-muted) mt-1">
-											{JSON.stringify(req.environment_specs)}
-										</div>
-									{/if}
-								</td>
-								<td class="px-5 py-3.5 align-top">
-									<span class="font-medium text-(--text-main)">{req.requester?.display_name || 'Member'}</span>
-									<span class="block text-[11px] font-mono text-(--text-muted)">@{req.requester?.username}</span>
-								</td>
-								<td class="px-5 py-3.5 align-top font-mono text-[11px]">
-									<a href={req.repository_url} target="_blank" rel="noreferrer" class="text-(--accent-strong) hover:underline block truncate max-w-xs">
-										{req.repository_url} ↗
-									</a>
-								</td>
-								<td class="px-5 py-3.5 align-top">
-									{#if req.status === 'PENDING'}
-										<span class="inline-flex items-center gap-1.5 text-[11px] font-mono font-medium px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-											<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-											PENDING
-										</span>
-									{:else if req.status === 'APPROVED' || req.status === 'SETUP'}
-										<span class="inline-flex items-center gap-1.5 text-[11px] font-mono font-medium px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-											<span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-											{req.status}
-										</span>
-									{:else if req.status === 'COMPLETED'}
-										<span class="inline-flex items-center gap-1.5 text-[11px] font-mono font-medium px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-											<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-											PUBLISHED
-										</span>
-									{:else}
-										<span class="inline-flex items-center gap-1.5 text-[11px] font-mono font-medium px-2 py-0.5 rounded bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
-											<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-											REJECTED
-										</span>
-									{/if}
-								</td>
-								<td class="px-5 py-3.5 align-top font-mono text-[11px] text-(--text-muted)">
-									{req.created_at ? new Date(req.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
-								</td>
-								<td class="px-5 py-3.5 align-top text-right whitespace-nowrap">
-									{#if req.status === 'PENDING'}
-										<div class="flex items-center justify-end gap-1.5">
-											<button
-												type="button"
-												class="btn btn-primary btn-sm text-[11px] py-0.5 px-2 font-mono"
-												on:click={() => openModal(req, 'approve')}
-											>
-												Approve
-											</button>
-											<button
-												type="button"
-												class="btn btn-secondary btn-sm text-[11px] py-0.5 px-2 font-mono text-(--color-danger)"
-												on:click={() => openModal(req, 'reject')}
-											>
-												Reject
-											</button>
-										</div>
-									{:else if req.status === 'APPROVED' || req.status === 'SETUP'}
-										<button
-											type="button"
-											class="btn btn-primary btn-sm text-[11px] py-0.5 px-2 font-mono"
-											on:click={() => openModal(req, 'complete')}
-										>
-											Publish URL ➔
-										</button>
-									{:else}
-										<span class="text-[11px] font-mono text-(--text-muted)">Closed</span>
-									{/if}
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
-		{/if}
-	</div>
+	<!-- High-Density Requests Reusable Table -->
+	<Table
+		{columns}
+		items={filteredRequests}
+		{loading}
+		alignTop
+		loadingMessage="Querying operational queue..."
+		emptyMessage="No requests matching current criteria."
+		let:item={req}
+	>
+		<TableRow>
+			<TableCell alignTop>
+				<div class="font-semibold text-sm sm:text-base text-(--text-main)">{req.project_name}</div>
+				{#if req.description}
+					<div class="text-xs text-(--text-secondary) mt-0.5 max-w-sm line-clamp-1">{req.description}</div>
+				{/if}
+				{#if req.environment_specs && Object.keys(req.environment_specs).length > 0}
+					<div class="text-xs font-mono text-(--text-muted) mt-1">
+						{JSON.stringify(req.environment_specs)}
+					</div>
+				{/if}
+			</TableCell>
+			<TableCell alignTop>
+				<span class="font-medium text-sm sm:text-base text-(--text-main)">{req.requester?.display_name || 'Member'}</span>
+				<span class="block text-xs font-mono text-(--text-muted)">@{req.requester?.username}</span>
+			</TableCell>
+			<TableCell alignTop mono class="text-xs">
+				<a href={req.repository_url} target="_blank" rel="noreferrer" class="text-(--accent-strong) hover:underline block truncate max-w-xs">
+					{req.repository_url} ↗
+				</a>
+			</TableCell>
+			<TableCell alignTop>
+				{#if req.status === 'PENDING'}
+					<span class="inline-flex items-center gap-1.5 text-xs font-mono font-medium px-2.5 py-1 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+						<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+						PENDING
+					</span>
+				{:else if req.status === 'APPROVED' || req.status === 'SETUP'}
+					<span class="inline-flex items-center gap-1.5 text-xs font-mono font-medium px-2.5 py-1 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+						<span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+						{req.status}
+					</span>
+				{:else if req.status === 'COMPLETED'}
+					<span class="inline-flex items-center gap-1.5 text-xs font-mono font-medium px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+						<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+						PUBLISHED
+					</span>
+				{:else}
+					<span class="inline-flex items-center gap-1.5 text-xs font-mono font-medium px-2.5 py-1 rounded bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
+						<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+						REJECTED
+					</span>
+				{/if}
+			</TableCell>
+			<TableCell alignTop mono class="text-xs text-(--text-muted)">
+				{req.created_at ? new Date(req.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+			</TableCell>
+			<TableCell alignTop align="right" class="whitespace-nowrap">
+				{#if req.status === 'PENDING'}
+					<div class="flex items-center justify-end gap-1.5">
+						<button
+							type="button"
+							class="btn btn-primary btn-sm text-xs py-1 px-2.5 font-mono"
+							on:click={() => openModal(req, 'approve')}
+						>
+							Approve
+						</button>
+						<button
+							type="button"
+							class="btn btn-secondary btn-sm text-xs py-1 px-2.5 font-mono text-(--color-danger)"
+							on:click={() => openModal(req, 'reject')}
+						>
+							Reject
+						</button>
+					</div>
+				{:else if req.status === 'APPROVED' || req.status === 'SETUP'}
+					<button
+						type="button"
+						class="btn btn-primary btn-sm text-xs py-1 px-2.5 font-mono"
+						on:click={() => openModal(req, 'complete')}
+					>
+						Publish URL ➔
+					</button>
+				{:else}
+					<span class="text-xs font-mono text-(--text-muted)">Closed</span>
+				{/if}
+			</TableCell>
+		</TableRow>
+	</Table>
 
 	<!-- Operational Action Modal -->
 	{#if activeRequest && actionType}
@@ -280,37 +272,37 @@
 				</div>
 
 				{#if actionType === 'complete'}
-					<div class="flex flex-col gap-1">
-						<label for="admin-public-url" class="text-xs font-mono font-medium text-(--text-secondary)">Assigned Public URL *</label>
+					<div class="flex flex-col gap-1.5">
+						<label for="admin-public-url" class="text-sm font-medium text-(--text-secondary)">Assigned Public URL *</label>
 						<input
 							id="admin-public-url"
 							type="url"
-							class="w-full px-3 py-1.5 bg-(--bg-muted) border border-(--border-hairline) rounded text-xs font-mono text-(--text-main) outline-none focus:border-(--accent-sky)"
+							class="w-full px-3.5 py-2 bg-(--bg-muted) border border-(--border-hairline) rounded text-sm font-mono text-(--text-main) outline-none focus:border-(--accent-sky)"
 							required
 							bind:value={publicURL}
 						/>
-						<span class="text-[10px] text-(--text-muted)">Must point to the configured reverse-proxy location.</span>
+						<span class="text-xs text-(--text-muted)">Must point to the configured reverse-proxy location.</span>
 					</div>
 				{/if}
 
-				<div class="flex flex-col gap-1">
-					<label for="admin-notes" class="text-xs font-mono font-medium text-(--text-secondary)">Operator Notes / Instructions</label>
+				<div class="flex flex-col gap-1.5">
+					<label for="admin-notes" class="text-sm font-medium text-(--text-secondary)">Operator Notes / Instructions</label>
 					<textarea
 						id="admin-notes"
 						rows="3"
-						class="w-full px-3 py-1.5 bg-(--bg-muted) border border-(--border-hairline) rounded text-xs text-(--text-main) outline-none focus:border-(--accent-sky)"
+						class="w-full px-3.5 py-2 bg-(--bg-muted) border border-(--border-hairline) rounded text-sm text-(--text-main) outline-none focus:border-(--accent-sky)"
 						placeholder="Optional feedback communicated to requester..."
 						bind:value={adminNotes}
 					></textarea>
 				</div>
 
-				<div class="flex items-center justify-end gap-2 pt-2 border-t border-(--border-hairline)">
-					<button type="button" class="btn btn-secondary btn-sm text-xs font-mono" on:click={closeModal}>
+				<div class="flex items-center justify-end gap-2 pt-3 border-t border-(--border-hairline)">
+					<button type="button" class="btn btn-secondary btn-sm text-sm font-medium px-4 py-2" on:click={closeModal}>
 						Cancel
 					</button>
 					<button
 						type="button"
-						class="btn btn-primary btn-sm text-xs font-mono"
+						class="btn btn-primary btn-sm text-sm font-medium px-4 py-2"
 						on:click={handleAction}
 						disabled={processing}
 					>

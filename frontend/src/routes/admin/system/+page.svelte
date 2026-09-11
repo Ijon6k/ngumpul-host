@@ -39,7 +39,7 @@
 	<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-(--border-hairline)">
 		<div>
 			<h1 class="font-display font-bold text-2xl text-(--text-main) tracking-tight">System Diagnostics</h1>
-			<p class="text-xs sm:text-sm text-(--text-secondary) mt-1">
+			<p class="text-sm text-(--text-secondary) mt-1">
 				Real-time runtime memory allocation, database connection pools, and container isolation.
 			</p>
 		</div>
@@ -47,7 +47,7 @@
 		<div>
 			<button
 				type="button"
-				class="btn btn-secondary btn-sm"
+				class="btn btn-secondary btn-sm text-xs sm:text-sm font-medium"
 				on:click={refresh}
 				disabled={refreshing}
 			>
@@ -57,43 +57,43 @@
 	</div>
 
 	{#if loading && !systemData}
-		<div class="p-16 text-center text-xs text-(--text-muted)">Querying runtime diagnostics...</div>
+		<div class="p-16 text-center text-sm text-(--text-muted)">Querying runtime diagnostics...</div>
 	{:else if systemData}
 		<!-- Status Strip (Linear Cards) -->
 		<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 			<div class="bg-(--bg-surface) border border-(--border-hairline) rounded-md p-5 flex flex-col gap-1.5">
-				<span class="text-xs text-(--text-muted)">Go Service Runtime</span>
+				<span class="text-sm text-(--text-secondary) font-medium">Go Service Runtime</span>
 				<div class="flex items-center gap-2 mt-1">
-					<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-					<span class="font-display text-xl font-bold text-emerald-600 dark:text-emerald-400">
+					<span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+					<span class="font-display text-2xl font-bold text-emerald-600 dark:text-emerald-400">
 						{systemData.application?.status || 'Healthy'}
 					</span>
 				</div>
-				<span class="text-xs text-(--text-muted) mt-2">
+				<span class="text-sm text-(--text-muted) mt-2">
 					Uptime: {formatUptime(systemData.application?.uptime_seconds)}
 				</span>
 			</div>
 
 			<div class="bg-(--bg-surface) border border-(--border-hairline) rounded-md p-5 flex flex-col gap-1.5">
-				<span class="text-xs text-(--text-muted)">PostgreSQL Engine</span>
+				<span class="text-sm text-(--text-secondary) font-medium">PostgreSQL Engine</span>
 				<div class="flex items-center gap-2 mt-1">
-					<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-					<span class="font-display text-xl font-bold text-emerald-600 dark:text-emerald-400">
+					<span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+					<span class="font-display text-2xl font-bold text-emerald-600 dark:text-emerald-400">
 						{systemData.database?.status || 'Healthy'}
 					</span>
 				</div>
-				<span class="text-xs text-(--text-muted) mt-2">
+				<span class="text-sm text-(--text-muted) mt-2">
 					Active Pool: {systemData.database?.acquired_conns || 0} / {systemData.database?.max_conns || 25}
 				</span>
 			</div>
 
 			<div class="bg-(--bg-surface) border border-(--border-hairline) rounded-md p-5 flex flex-col gap-1.5">
-				<span class="text-xs text-(--text-muted)">Nginx Ingress Proxy</span>
+				<span class="text-sm text-(--text-secondary) font-medium">Nginx Ingress Proxy</span>
 				<div class="flex items-center gap-2 mt-1">
-					<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-					<span class="font-display text-xl font-bold text-emerald-600 dark:text-emerald-400">Port :1111</span>
+					<span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+					<span class="font-display text-2xl font-bold text-emerald-600 dark:text-emerald-400">Port :1111</span>
 				</div>
-				<span class="text-xs text-(--text-muted) mt-2">
+				<span class="text-sm text-(--text-muted) mt-2">
 					Docker Bridge Isolation Active
 				</span>
 			</div>
@@ -104,13 +104,13 @@
 			<!-- Application Service Telemetry -->
 			<div class="border border-(--border-hairline) rounded-md bg-(--bg-surface) overflow-hidden flex flex-col">
 				<div class="px-5 py-3.5 border-b border-(--border-hairline) flex items-center justify-between">
-					<h2 class="font-semibold text-xs text-(--text-main)">
+					<h2 class="font-semibold text-sm sm:text-base text-(--text-main)">
 						Go Runtime Telemetry
 					</h2>
-					<span class="text-xs text-(--accent-strong)">PID: Internal</span>
+					<span class="text-xs sm:text-sm font-mono text-(--accent-strong)">PID: Internal</span>
 				</div>
 
-				<div class="p-5 flex flex-col gap-3 text-xs">
+				<div class="p-5 flex flex-col gap-3 text-sm">
 					<div class="flex items-center justify-between py-2 border-b border-(--border-hairline)">
 						<span class="text-(--text-secondary)">Active Goroutines</span>
 						<span class="font-bold text-(--text-main)">{systemData.application?.goroutines}</span>
@@ -133,13 +133,13 @@
 			<!-- Database Connection Pool -->
 			<div class="border border-(--border-hairline) rounded-md bg-(--bg-surface) overflow-hidden flex flex-col">
 				<div class="px-5 py-3.5 border-b border-(--border-hairline) flex items-center justify-between">
-					<h2 class="font-semibold text-xs text-(--text-main)">
+					<h2 class="font-semibold text-sm sm:text-base text-(--text-main)">
 						PostgreSQL Pool Telemetry
 					</h2>
-					<span class="text-xs text-(--accent-strong)">pgx / db-pool</span>
+					<span class="text-xs sm:text-sm font-mono text-(--accent-strong)">pgx / db-pool</span>
 				</div>
 
-				<div class="p-5 flex flex-col gap-3 text-xs">
+				<div class="p-5 flex flex-col gap-3 text-sm">
 					<div class="flex items-center justify-between py-2 border-b border-(--border-hairline)">
 						<span class="text-(--text-secondary)">Acquired (Active In-Flight)</span>
 						<span class="font-bold text-(--text-main)">{systemData.database?.acquired_conns}</span>
@@ -163,24 +163,24 @@
 		<!-- Container Environment Diagnostics -->
 		<div class="border border-(--border-hairline) rounded-md bg-(--bg-surface) p-5 flex flex-col gap-4">
 			<div class="flex items-center justify-between border-b border-(--border-hairline) pb-3">
-				<h3 class="font-semibold text-sm text-(--text-main)">Container Network Specification</h3>
-				<span class="text-xs text-(--text-muted)">Compose Isolation</span>
+				<h3 class="font-semibold text-base text-(--text-main)">Container Network Specification</h3>
+				<span class="text-xs sm:text-sm font-mono text-(--text-muted)">Compose Isolation</span>
 			</div>
-			<div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-				<div class="p-3 bg-(--bg-muted) rounded-md border border-(--border-hairline) flex flex-col gap-1">
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+				<div class="p-3.5 bg-(--bg-muted) rounded-md border border-(--border-hairline) flex flex-col gap-1">
 					<span class="text-xs text-(--text-muted)">Proxy Container</span>
-					<span class="font-semibold text-(--text-main)">ngumpul_nginx</span>
-					<span class="text-xs text-(--text-secondary)">Exposed: 0.0.0.0:1111 → 80</span>
+					<span class="font-semibold text-sm sm:text-base text-(--text-main)">ngumpul_nginx</span>
+					<span class="text-xs sm:text-sm font-mono text-(--text-secondary)">Exposed: 0.0.0.0:1111 → 80</span>
 				</div>
-				<div class="p-3 bg-(--bg-muted) rounded-md border border-(--border-hairline) flex flex-col gap-1">
+				<div class="p-3.5 bg-(--bg-muted) rounded-md border border-(--border-hairline) flex flex-col gap-1">
 					<span class="text-xs text-(--text-muted)">Backend Container</span>
-					<span class="font-semibold text-(--text-main)">ngumpul_backend</span>
-					<span class="text-xs text-(--text-secondary)">Internal: 8080 (No Host Bind)</span>
+					<span class="font-semibold text-sm sm:text-base text-(--text-main)">ngumpul_backend</span>
+					<span class="text-xs sm:text-sm font-mono text-(--text-secondary)">Internal: 8080 (No Host Bind)</span>
 				</div>
-				<div class="p-3 bg-(--bg-muted) rounded-md border border-(--border-hairline) flex flex-col gap-1">
+				<div class="p-3.5 bg-(--bg-muted) rounded-md border border-(--border-hairline) flex flex-col gap-1">
 					<span class="text-xs text-(--text-muted)">Frontend Container</span>
-					<span class="font-semibold text-(--text-main)">ngumpul_frontend</span>
-					<span class="text-xs text-(--text-secondary)">Internal: 3000 (No Host Bind)</span>
+					<span class="font-semibold text-sm sm:text-base text-(--text-main)">ngumpul_frontend</span>
+					<span class="text-xs sm:text-sm font-mono text-(--text-secondary)">Internal: 3000 (No Host Bind)</span>
 				</div>
 			</div>
 		</div>
