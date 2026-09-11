@@ -10,14 +10,17 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"ngumpul-host/backend/internal/config"
+	"ngumpul-host/backend/internal/response"
 )
 
+// Handler handles user registration, authentication sessions, and profile updates.
 type Handler struct {
 	db  *pgxpool.Pool
 	sm  *SessionManager
 	cfg *config.Config
 }
 
+// NewHandler creates a new authentication handler.
 func NewHandler(db *pgxpool.Pool, sm *SessionManager, cfg *config.Config) *Handler {
 	return &Handler{
 		db:  db,
@@ -53,10 +56,11 @@ func (h *Handler) clearSessionCookie(w http.ResponseWriter) {
 	http.SetCookie(w, cookie)
 }
 
+// Register handles POST /api/auth/register
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid request payload"})
+		response.Error(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
@@ -65,7 +69,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	req.DisplayName = strings.TrimSpace(req.DisplayName)
 
 	if req.Username == "" || req.Email == "" || len(req.Password) < 8 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Username, valid email, and password (minimum 8 characters) are required"})
+		response.Error(w, http.StatusBadRequest, "Username, valid email, and password (minimum 8 characters) are required")
 		return
 	}
 
@@ -75,7 +79,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 
 	passHash, err := HashPassword(req.Password)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to process credentials"})
+		response.Error(w, http.StatusInternalServerError, "Failed to process credentials")
 		return
 	}
 
@@ -87,14 +91,14 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	`, req.Username, req.Email, passHash, req.DisplayName).Scan(&userID)
 	if err != nil {
 		if strings.Contains(err.Error(), "users_username_key") {
-			writeJSON(w, http.StatusConflict, map[string]string{"error": "Username already taken"})
+			response.Error(w, http.StatusConflict, "Username already taken")
 			return
 		}
 		if strings.Contains(err.Error(), "users_email_key") {
-			writeJSON(w, http.StatusConflict, map[string]string{"error": "Email already registered"})
+			response.Error(w, http.StatusConflict, "Email already registered")
 			return
 		}
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Could not register account"})
+		response.Error(w, http.StatusInternalServerError, "Could not register account")
 		return
 	}
 
@@ -110,29 +114,30 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	// Create session
 	session, err := h.sm.CreateSession(r.Context(), userID)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Account created, but session could not be initialized"})
+		response.Error(w, http.StatusInternalServerError, "Account created, but session could not be initialized")
 		return
 	}
 
 	h.setSessionCookie(w, session.ID, session.ExpiresAt)
 
 	user, _ := h.sm.GetUserBySession(r.Context(), session.ID)
-	writeJSON(w, http.StatusCreated, map[string]any{
+	response.JSON(w, http.StatusCreated, map[string]any{
 		"message": "Account created successfully",
 		"user":    user,
 	})
 }
 
+// Login handles POST /api/auth/login
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid request payload"})
+		response.Error(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
 	req.EmailOrUsername = strings.TrimSpace(strings.ToLower(req.EmailOrUsername))
 	if req.EmailOrUsername == "" || req.Password == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Email/username and password are required"})
+		response.Error(w, http.StatusBadRequest, "Email/username and password are required")
 		return
 	}
 
@@ -148,64 +153,67 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "Invalid credentials"})
+			response.Error(w, http.StatusUnauthorized, "Invalid credentials")
 			return
 		}
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Authentication error"})
+		response.Error(w, http.StatusInternalServerError, "Authentication error")
 		return
 	}
 
 	if u.Status == "SUSPENDED" {
-		writeJSON(w, http.StatusForbidden, map[string]string{"error": "This account is suspended"})
+		response.Error(w, http.StatusForbidden, "This account is suspended")
 		return
 	}
 
 	valid, err := VerifyPassword(req.Password, passHash)
 	if err != nil || !valid {
-		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "Invalid credentials"})
+		response.Error(w, http.StatusUnauthorized, "Invalid credentials")
 		return
 	}
 
 	session, err := h.sm.CreateSession(r.Context(), u.ID)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Could not create session"})
+		response.Error(w, http.StatusInternalServerError, "Could not create session")
 		return
 	}
 
 	h.setSessionCookie(w, session.ID, session.ExpiresAt)
-	writeJSON(w, http.StatusOK, map[string]any{
+	response.JSON(w, http.StatusOK, map[string]any{
 		"message": "Login successful",
 		"user":    u,
 	})
 }
 
+// Logout handles POST /api/auth/logout
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	if cookie, err := r.Cookie(SessionCookieName); err == nil && cookie.Value != "" {
 		_ = h.sm.DeleteSession(r.Context(), cookie.Value)
 	}
 	h.clearSessionCookie(w)
-	writeJSON(w, http.StatusOK, map[string]string{"message": "Logged out successfully"})
+	response.JSON(w, http.StatusOK, map[string]string{"message": "Logged out successfully"})
 }
 
+// Me handles GET /api/me
 func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
 	user := GetUser(r.Context())
 	if user == nil {
-		writeJSON(w, http.StatusOK, map[string]any{"user": nil})
+		response.JSON(w, http.StatusOK, map[string]any{"user": nil})
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"user": user})
+	response.JSON(w, http.StatusOK, map[string]any{"user": user})
 }
 
+// UpdateProfile handles PATCH /api/me
 func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	user := GetUser(r.Context())
 	if user == nil {
-		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "Unauthorized"})
+		response.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	var req UpdateProfileRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid request payload"})
+		response.Error(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
 
@@ -223,18 +231,12 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		WHERE id = $4
 	`, user.DisplayName, user.Bio, user.AvatarURL, user.ID)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to update profile"})
+		response.Error(w, http.StatusInternalServerError, "Failed to update profile")
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]any{
+	response.JSON(w, http.StatusOK, map[string]any{
 		"message": "Profile updated",
 		"user":    user,
 	})
-}
-
-func writeJSON(w http.ResponseWriter, status int, data any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(data)
 }

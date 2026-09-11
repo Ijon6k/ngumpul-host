@@ -2,8 +2,9 @@ package auth
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
+
+	"ngumpul-host/backend/internal/response"
 )
 
 type contextKey string
@@ -12,7 +13,8 @@ const UserCtxKey contextKey = "user"
 
 const SessionCookieName = "ngumpul_session"
 
-func AuthMiddleware(sm *SessionManager) func(http.Handler) http.Handler {
+// Middleware extracts the session cookie and attaches the authenticated user to the request context.
+func Middleware(sm *SessionManager) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			cookie, err := r.Cookie(SessionCookieName)
@@ -30,7 +32,7 @@ func AuthMiddleware(sm *SessionManager) func(http.Handler) http.Handler {
 			}
 
 			if user.Status == "SUSPENDED" {
-				http.Error(w, `{"error":"Account is suspended"}`, http.StatusForbidden)
+				response.Error(w, http.StatusForbidden, "Account is suspended")
 				return
 			}
 
@@ -40,6 +42,10 @@ func AuthMiddleware(sm *SessionManager) func(http.Handler) http.Handler {
 	}
 }
 
+// AuthMiddleware is an alias for Middleware to support existing callers.
+var AuthMiddleware = Middleware
+
+// GetUser retrieves the authenticated user from the context.
 func GetUser(ctx context.Context) *User {
 	if u, ok := ctx.Value(UserCtxKey).(*User); ok {
 		return u
@@ -47,38 +53,28 @@ func GetUser(ctx context.Context) *User {
 	return nil
 }
 
+// RequireAuth enforces that a valid user is logged in.
 func RequireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user := GetUser(r.Context())
 		if user == nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{
-				"error": "Authentication required",
-			})
+			response.Error(w, http.StatusUnauthorized, "Authentication required")
 			return
 		}
 		next.ServeHTTP(w, r)
 	})
 }
 
+// RequireAdmin enforces that the logged in user has the ADMIN role.
 func RequireAdmin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user := GetUser(r.Context())
 		if user == nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{
-				"error": "Authentication required",
-			})
+			response.Error(w, http.StatusUnauthorized, "Authentication required")
 			return
 		}
 		if user.Role != "ADMIN" {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusForbidden)
-			_ = json.NewEncoder(w).Encode(map[string]string{
-				"error": "Administrator privilege required",
-			})
+			response.Error(w, http.StatusForbidden, "Administrator privilege required")
 			return
 		}
 		next.ServeHTTP(w, r)

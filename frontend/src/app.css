@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @theme {
 	--color-canvas: var(--bg-canvas);
 	--color-surface: var(--bg-surface);
@@ -21,8 +23,8 @@
 	--color-status-warn: var(--color-warning);
 	--color-status-err: var(--color-danger);
 
-	--font-display: "Plus Jakarta Sans", "Geist", "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
-	--font-sans: "Inter", "Geist", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+	--font-display: "Geist", "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+	--font-sans: "Geist", "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
 	--font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
@@ -51,6 +53,14 @@ html[data-theme="light"] {
 	--accent-orange: #FF5500;
 	--accent-orange-hover: #E64C00;
 
+	--cf-blue: #0284C7;
+	--cf-blue-hover: #0369A1;
+	--cf-pastel-bg: #E0F2FE;
+	--cf-pastel-border: #BAE6FD;
+	--cf-pastel-text: #0369A1;
+	--cf-green-pastel: #DCFCE7;
+	--cf-green-text: #15803D;
+
 	--color-success: #2E8555;
 	--color-warning: #99732B;
 	--color-danger: #B84747;
@@ -70,7 +80,9 @@ html[data-theme="light"] {
 	--primary-strong: var(--accent-strong);
 }
 
-html[data-theme="dark"] {
+html[data-theme="dark"],
+[data-theme="dark"],
+.dark {
 	--bg-canvas: #080A0D;
 	--bg-surface: #0E1217;
 	--bg-muted: #151A21;
@@ -88,6 +100,14 @@ html[data-theme="dark"] {
 	--accent-soft: #122129;
 	--accent-orange: #FF5500;
 	--accent-orange-hover: #FF6F2B;
+
+	--cf-blue: #38BDF8;
+	--cf-blue-hover: #7DD3FC;
+	--cf-pastel-bg: rgba(56, 189, 248, 0.12);
+	--cf-pastel-border: rgba(56, 189, 248, 0.25);
+	--cf-pastel-text: #7DD3FC;
+	--cf-green-pastel: rgba(34, 197, 94, 0.15);
+	--cf-green-text: #4ADE80;
 
 	--color-success: #45A36A;
 	--color-warning: #C29E4D;

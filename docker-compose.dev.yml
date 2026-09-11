@@ -64,6 +64,8 @@ services:
       SMTP_FROM:       ${SMTP_FROM:-Ngumpul Host <no-reply@example.com>}
     volumes:
       - uploads_data_dev:/data/uploads
+      - /etc/os-release:/host/etc/os-release:ro
+      - /sys:/host/sys:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -88,6 +90,25 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - ngumpul_net
+
+  # 5. External Heartbeat Checker (Independent probe outside backend to detect outages & state changes)
+  checker:
+    image: alpine:3.20
+    container_name: ngumpul_checker_dev
+    restart: unless-stopped
+    command: >
+      sh -c '
+        apk add --no-cache curl > /dev/null 2>&1
+        echo "External heartbeat checker active. Probing http://nginx/health every 300s..."
+        while true; do
+          sleep 300
+          curl -s -f http://nginx/health > /dev/null 2>&1 || echo "[$(date)] Server DOWN detected by external checker"
+        done
+      '
+    depends_on:
+      - nginx
     networks:
       - ngumpul_net
 

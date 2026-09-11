@@ -23,26 +23,25 @@
 		}
 	})();
 
-	$: dotColorClass = (() => {
+	$: styleClasses = (() => {
 		switch (normalized) {
 			case 'ONLINE':
 			case 'OPERATIONAL':
-				return 'bg-(--color-success)';
+				return 'bg-(--cf-green-pastel) text-(--cf-green-text)';
 			case 'SETUP':
 			case 'PENDING':
-				return 'bg-(--color-warning)';
+				return 'bg-amber-500/10 text-amber-700 dark:text-amber-400';
 			case 'OFFLINE':
 			case 'DEGRADED':
-				return 'bg-(--color-danger)';
+				return 'bg-rose-500/10 text-rose-700 dark:text-rose-400';
 			default:
-				return 'bg-(--text-muted)';
+				return 'bg-(--bg-muted) text-(--text-muted)';
 		}
 	})();
 </script>
 
-<span class="inline-flex items-center gap-1.5 text-xs text-(--text-secondary)" title={label}>
-	<span class="w-1.5 h-1.5 rounded-full shrink-0 {dotColorClass}"></span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium {styleClasses}" title={label}>
 	{#if showLabel}
-		<span class="font-medium">{label}</span>
+		<span>{label}</span>
 	{/if}
 </span>

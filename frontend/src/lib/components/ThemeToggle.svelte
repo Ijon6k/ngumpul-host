@@ -4,13 +4,19 @@
 	let theme = 'light';
 
 	onMount(() => {
-		const current = document.documentElement.getAttribute('data-theme') || 'light';
+		const current = document.documentElement.getAttribute('data-theme') || (document.documentElement.classList.contains('dark') ? 'dark' : 'light');
 		theme = current;
+		if (theme === 'dark') {
+			document.documentElement.classList.add('dark');
+		} else {
+			document.documentElement.classList.remove('dark');
+		}
 	});
 
 	function toggleTheme() {
 		theme = theme === 'light' ? 'dark' : 'light';
 		document.documentElement.setAttribute('data-theme', theme);
+		document.documentElement.classList.toggle('dark', theme === 'dark');
 		localStorage.setItem('ngumpul_theme', theme);
 	}
 </script>

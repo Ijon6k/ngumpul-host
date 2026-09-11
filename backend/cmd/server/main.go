@@ -15,16 +15,18 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 
-	"ngumpul-host/backend/internal/activities"
+	"ngumpul-host/backend/internal/activity"
 	"ngumpul-host/backend/internal/admin"
 	"ngumpul-host/backend/internal/auth"
+	"ngumpul-host/backend/internal/availability"
 	"ngumpul-host/backend/internal/config"
 	"ngumpul-host/backend/internal/database"
-	"ngumpul-host/backend/internal/notifications"
-	"ngumpul-host/backend/internal/projects"
-	"ngumpul-host/backend/internal/requests"
+	"ngumpul-host/backend/internal/hosting"
+	"ngumpul-host/backend/internal/notification"
+	"ngumpul-host/backend/internal/project"
 	"ngumpul-host/backend/internal/storage"
-	"ngumpul-host/backend/internal/users"
+	"ngumpul-host/backend/internal/system"
+	"ngumpul-host/backend/internal/user"
 )
 
 func main() {
@@ -45,16 +47,24 @@ func main() {
 	sessionManager := auth.NewSessionManager(pool)
 	authHandler := auth.NewHandler(pool, sessionManager, cfg)
 
-	storageService, err := storage.NewStorageService(cfg)
+	storageService, err := storage.NewService(cfg)
 	if err != nil {
 		log.Fatalf("Fatal: Storage initialization failed: %v", err)
 	}
 
-	usersHandler := users.NewHandler(pool)
-	projectsHandler := projects.NewHandler(pool)
-	requestsHandler := requests.NewHandler(pool)
-	activitiesHandler := activities.NewHandler(pool)
-	notificationsHandler := notifications.NewHandler(pool)
+	availService := availability.NewService(pool)
+	hostSpecs := system.GetHostSpecs()
+	if err := availService.Initialize(ctx, int64(hostSpecs.UptimeSeconds)); err != nil {
+		log.Printf("[Availability] Initialization warning: %v", err)
+	}
+	availService.StartHeartbeatWorker(ctx, 5*time.Minute)
+
+	systemHandler := system.NewHandler(pool, availService)
+	userHandler := user.NewHandler(pool)
+	projectHandler := project.NewHandler(pool)
+	hostingHandler := hosting.NewHandler(pool)
+	activityHandler := activity.NewHandler(pool)
+	notificationHandler := notification.NewHandler(pool)
 	adminHandler := admin.NewHandler(pool)
 
 	r := chi.NewRouter()
@@ -77,7 +87,7 @@ func main() {
 	}))
 
 	// Session extraction middleware
-	r.Use(auth.AuthMiddleware(sessionManager))
+	r.Use(auth.Middleware(sessionManager))
 
 	healthHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -94,73 +104,78 @@ func main() {
 	// Static uploaded files
 	r.Handle("/uploads/*", storageService.ServeHandler())
 
-	// API v1 Routes
-	r.Route("/api/v1", func(api chi.Router) {
-		api.Get("/health", healthHandler)
-		// Public Auth
-		api.Post("/auth/register", authHandler.Register)
-		api.Post("/auth/login", authHandler.Login)
-		api.Post("/auth/logout", authHandler.Logout)
-		api.Get("/me", authHandler.Me)
+	// Core API Router (mounted at /api and /api/v1 for full backwards-compatibility)
+	apiRouter := chi.NewRouter()
+	apiRouter.Get("/health", healthHandler)
 
-		// Public Resources
-		api.Get("/projects", projectsHandler.ListPublic)
-		api.Get("/projects/{slug}", projectsHandler.GetBySlug)
-		api.Get("/users", usersHandler.ListMembers)
-		api.Get("/users/{username}", usersHandler.GetMember)
-		api.Get("/activity", activitiesHandler.ListPublic)
-		api.Get("/status", adminHandler.GetPublicStatus)
+	// Public Auth
+	apiRouter.Post("/auth/register", authHandler.Register)
+	apiRouter.Post("/auth/login", authHandler.Login)
+	apiRouter.Post("/auth/logout", authHandler.Logout)
+	apiRouter.Get("/me", authHandler.Me)
 
-		// Authenticated User Routes
-		api.Group(func(userRouter chi.Router) {
-			userRouter.Use(auth.RequireAuth)
+	// Public Resources & Telemetry
+	apiRouter.Get("/projects", projectHandler.ListPublic)
+	apiRouter.Get("/projects/{slug}", projectHandler.GetBySlug)
+	apiRouter.Get("/users", userHandler.ListMembers)
+	apiRouter.Get("/users/{username}", userHandler.GetMember)
+	apiRouter.Get("/activity", activityHandler.ListPublic)
+	apiRouter.Get("/status", systemHandler.GetPublicStatus)
+	apiRouter.Get("/public/server", systemHandler.GetPublicServer)
 
-			// Personal space & profile
-			userRouter.Patch("/me", authHandler.UpdateProfile)
-			userRouter.Get("/me/projects", projectsHandler.ListMyProjects)
-			userRouter.Patch("/me/projects/{id}", projectsHandler.UpdateMyProject)
+	// Authenticated User Routes
+	apiRouter.Group(func(userRouter chi.Router) {
+		userRouter.Use(auth.RequireAuth)
 
-			// Hosting requests
-			userRouter.Post("/hosting-requests", requestsHandler.Submit)
-			userRouter.Get("/me/hosting-requests", requestsHandler.ListMyRequests)
+		// Personal space & profile
+		userRouter.Patch("/me", authHandler.UpdateProfile)
+		userRouter.Get("/me/projects", projectHandler.ListMyProjects)
+		userRouter.Patch("/me/projects/{id}", projectHandler.UpdateMyProject)
 
-			// Notifications
-			userRouter.Get("/me/notifications", notificationsHandler.ListMyNotifications)
-			userRouter.Patch("/me/notifications/{id}/read", notificationsHandler.MarkRead)
-			userRouter.Post("/me/notifications/read-all", notificationsHandler.MarkAllRead)
+		// Hosting requests
+		userRouter.Post("/hosting-requests", hostingHandler.Submit)
+		userRouter.Get("/me/hosting-requests", hostingHandler.ListMyRequests)
 
-			// File upload (avatars, covers)
-			userRouter.Post("/upload", storageService.UploadHandler)
-		})
+		// Notifications
+		userRouter.Get("/me/notifications", notificationHandler.ListMyNotifications)
+		userRouter.Patch("/me/notifications/{id}/read", notificationHandler.MarkRead)
+		userRouter.Post("/me/notifications/read-all", notificationHandler.MarkAllRead)
 
-		// Administrator Routes
-		api.Group(func(adminRouter chi.Router) {
-			adminRouter.Use(auth.RequireAdmin)
-
-			adminRouter.Get("/admin/stats", adminHandler.GetStats)
-
-			// Member management
-			adminRouter.Get("/admin/users", adminHandler.ListUsers)
-			adminRouter.Patch("/admin/users/{id}/role", adminHandler.UpdateUserRole)
-			adminRouter.Patch("/admin/users/{id}/status", adminHandler.UpdateUserStatus)
-
-			// Project administration
-			adminRouter.Get("/admin/projects", projectsHandler.AdminList)
-			adminRouter.Post("/admin/projects", projectsHandler.AdminCreate)
-			adminRouter.Patch("/admin/projects/{id}", projectsHandler.AdminUpdate)
-
-			// Hosting requests review
-			adminRouter.Get("/admin/hosting-requests", requestsHandler.AdminListRequests)
-			adminRouter.Post("/admin/hosting-requests/{id}/approve", requestsHandler.AdminApprove)
-			adminRouter.Post("/admin/hosting-requests/{id}/reject", requestsHandler.AdminReject)
-			adminRouter.Post("/admin/hosting-requests/{id}/complete", requestsHandler.AdminComplete)
-
-			// Administrative feeds & system telemetry
-			adminRouter.Get("/admin/activity", activitiesHandler.ListAdmin)
-			adminRouter.Get("/admin/system", adminHandler.GetSystemHealth)
-			adminRouter.Get("/admin/audit", adminHandler.ListAuditLogs)
-		})
+		// File upload (avatars, covers)
+		userRouter.Post("/upload", storageService.UploadHandler)
 	})
+
+	// Administrator Routes
+	apiRouter.Group(func(adminRouter chi.Router) {
+		adminRouter.Use(auth.RequireAdmin)
+
+		adminRouter.Get("/admin/stats", adminHandler.GetStats)
+
+		// Member management
+		adminRouter.Get("/admin/users", adminHandler.ListUsers)
+		adminRouter.Patch("/admin/users/{id}/role", adminHandler.UpdateUserRole)
+		adminRouter.Patch("/admin/users/{id}/status", adminHandler.UpdateUserStatus)
+
+		// Project administration
+		adminRouter.Get("/admin/projects", projectHandler.AdminList)
+		adminRouter.Post("/admin/projects", projectHandler.AdminCreate)
+		adminRouter.Patch("/admin/projects/{id}", projectHandler.AdminUpdate)
+
+		// Hosting requests review
+		adminRouter.Get("/admin/hosting-requests", hostingHandler.AdminListRequests)
+		adminRouter.Post("/admin/hosting-requests/{id}/approve", hostingHandler.AdminApprove)
+		adminRouter.Post("/admin/hosting-requests/{id}/reject", hostingHandler.AdminReject)
+		adminRouter.Post("/admin/hosting-requests/{id}/complete", hostingHandler.AdminComplete)
+
+		// Administrative feeds & system telemetry
+		adminRouter.Get("/admin/activity", activityHandler.ListAdmin)
+		adminRouter.Get("/admin/system", adminHandler.GetSystemHealth)
+		adminRouter.Get("/admin/audit", adminHandler.ListAuditLogs)
+	})
+
+	// Mount API routes at /api (canonical) and /api/v1 (compat)
+	r.Mount("/api", apiRouter)
+	r.Mount("/api/v1", apiRouter)
 
 	server := &http.Server{
 		Addr:         ":" + cfg.Port,
@@ -190,5 +205,6 @@ func main() {
 		log.Fatalf("Server forced to shutdown: %v", err)
 	}
 
+	availService.Stop()
 	log.Println("Backend server exited cleanly.")
 }

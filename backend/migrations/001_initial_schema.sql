@@ -127,3 +127,43 @@ CREATE TABLE IF NOT EXISTS system_status (
     response_time_ms INT NOT NULL DEFAULT 0,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb
 );
+
+-- Availability state transitions (persists only status changes, not every tick)
+CREATE TABLE IF NOT EXISTS availability_events (
+    id BIGSERIAL PRIMARY KEY,
+    status VARCHAR(16) NOT NULL, -- 'UP' or 'DOWN'
+    started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    ended_at TIMESTAMPTZ,
+    duration_seconds BIGINT DEFAULT 0,
+    latency_ms INT DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_avail_events_status ON availability_events(status);
+CREATE INDEX IF NOT EXISTS idx_avail_events_started ON availability_events(started_at);
+
+-- Availability persistent single-row state (tracks session and heartbeat in-place, zero row spamming)
+CREATE TABLE IF NOT EXISTS availability_state (
+    id INT PRIMARY KEY DEFAULT 1,
+    boot_id VARCHAR(64) NOT NULL,
+    started_at TIMESTAMPTZ NOT NULL,
+    last_seen_at TIMESTAMPTZ NOT NULL,
+    first_monitored_at TIMESTAMPTZ NOT NULL,
+    heartbeat_count BIGINT NOT NULL DEFAULT 1,
+    current_status VARCHAR(16) NOT NULL DEFAULT 'OPERATIONAL',
+    CONSTRAINT single_row_state CHECK (id = 1)
+);
+
+-- Meaningful downtime gaps and outage incidents only
+CREATE TABLE IF NOT EXISTS availability_incidents (
+    id BIGSERIAL PRIMARY KEY,
+    started_at TIMESTAMPTZ NOT NULL,
+    ended_at TIMESTAMPTZ NOT NULL,
+    duration_seconds BIGINT NOT NULL,
+    cause VARCHAR(64) NOT NULL,
+    details TEXT NOT NULL DEFAULT '',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_avail_incidents_started ON availability_incidents(started_at DESC);
+

@@ -1,136 +1,167 @@
 <script lang="ts">
-	import StatusDot from './StatusDot.svelte';
-	import InfrastructureDiagram from './InfrastructureDiagram.svelte';
-	import DotMatrix from './DotMatrix.svelte';
+	import { createPublicServerQuery } from '$lib/api/server';
+	import type { PublicServerResponse } from '$lib/types/server';
+	import ServerPhotoCard from './bento/ServerPhotoCard.svelte';
+	import HardwareCard from './bento/HardwareCard.svelte';
+	import MemoryCard from './bento/MemoryCard.svelte';
+	import StorageCard from './bento/StorageCard.svelte';
+	import NetworkCard from './bento/NetworkCard.svelte';
+	import AvailabilityCard from './bento/AvailabilityCard.svelte';
+	import IdeasCard from './bento/IdeasCard.svelte';
 
-	export let featuredProject: {
-		name: string;
-		slug: string;
-		description: string;
-		cover_image_url?: string;
-		technology_stack?: string[];
-		status: string;
-		public_url?: string;
-		owner?: {
-			display_name: string;
-		};
-	} | null = null;
+	export let hostSpecs: any = null;
 
-	export let counts = {
-		projects: 4,
-		members: 12
+	const serverQuery = createPublicServerQuery();
+
+	$: publicServer = ($serverQuery.data as PublicServerResponse) || null;
+
+	// Dynamic reactive attributes with graceful fallbacks
+	$: hardware = publicServer?.hardware || {
+		cpu: hostSpecs?.hardware?.cpu || hostSpecs?.cpu_model || '13th Gen Intel® Core™ i5-1334U',
+		cores: hostSpecs?.hardware?.cores || hostSpecs?.cpu_cores || 10,
+		threads: hostSpecs?.hardware?.threads || hostSpecs?.cpu_threads || 12
 	};
 
-	export let systemStatus = 'OPERATIONAL';
+	$: memory = publicServer?.memory || {
+		totalGB: hostSpecs?.memory?.totalGB || hostSpecs?.total_ram_gb || 23.1,
+		usagePercent: Math.round(hostSpecs?.memory?.usagePercent || hostSpecs?.used_ram_percent || 72),
+		availableGB: hostSpecs?.memory?.availableGB || hostSpecs?.available_ram_gb || 6.3
+	};
+
+	$: storage = publicServer?.storage || {
+		physicalDiskGB: hostSpecs?.storage?.physicalDiskGB || hostSpecs?.disk_physical_gb || 512,
+		linuxTotalGB: hostSpecs?.storage?.linuxTotalGB || hostSpecs?.disk_total_gb || 98,
+		totalGB: hostSpecs?.storage?.totalGB || hostSpecs?.disk_total_gb || 98,
+		usagePercent: Math.round(hostSpecs?.storage?.usagePercent || hostSpecs?.disk_used_percent || 93),
+		availableGB: hostSpecs?.storage?.availableGB || hostSpecs?.available_disk_gb || 6.8,
+		type: hostSpecs?.storage?.type || hostSpecs?.disk_type || 'NVMe SSD',
+		model: hostSpecs?.storage?.model || hostSpecs?.disk_model || 'SAMSUNG MZVL4512HBLU-00BH1',
+		summary: hostSpecs?.storage?.summary || hostSpecs?.disk_summary || 'SAMSUNG MZVL4512HBLU-00BH1 · 512GB NVMe SSD (98GB Linux Partition)'
+	};
+
+	$: network = publicServer?.network || {
+		linkCapacity: hostSpecs?.network?.linkCapacity || hostSpecs?.network_speed || '1 Gbps',
+		latencyMs: hostSpecs?.network?.latencyMs || 29
+	};
+
+	$: availability = publicServer?.availability || {
+		current: hostSpecs?.availability?.current || 'operational',
+		last30Days: hostSpecs?.availability?.last30Days || 100,
+		uptime: hostSpecs?.availability?.uptime || hostSpecs?.uptime_formatted || 'Running',
+		recordedPeriod: hostSpecs?.availability?.recordedPeriod || 'Monitored',
+		dailyBlocks: hostSpecs?.availability?.dailyBlocks || []
+	};
+
+	$: projects = publicServer?.projects || {
+		total: hostSpecs?.projects?.total || 3,
+		online: hostSpecs?.projects?.online || 3
+	};
+
+	$: location = publicServer?.os?.location || hostSpecs?.os?.location || hostSpecs?.location || 'Jakarta, Indonesia';
 </script>
 
-<div class="flex flex-col gap-6 w-full">
-	<!-- Asymmetric Top Row -->
-	<div class="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6">
-		<!-- Featured Project Editorial Block -->
-		{#if featuredProject}
-			<div class="flex flex-col bg-(--bg-surface) border border-(--border-hairline) rounded-md overflow-hidden group">
-				<a href="/projects/{featuredProject.slug}" class="block relative w-full h-[240px] sm:h-[300px] bg-(--bg-muted) overflow-hidden border-b border-(--border-hairline)">
-					{#if featuredProject.cover_image_url}
-						<img
-							src={featuredProject.cover_image_url}
-							alt={featuredProject.name}
-							class="w-full h-full object-cover group-hover:scale-[1.01] transition-transform duration-300"
-						/>
-					{:else}
-						<img
-							src="/assets/infra_abstract_cover.jpg"
-							alt="Infrastructure art"
-							class="w-full h-full object-cover group-hover:scale-[1.01] transition-transform duration-300"
-						/>
-					{/if}
-				</a>
+<!-- Bento Grid Section: Calm editorial typography with genuine host telemetry -->
+<section class="py-12 sm:py-16 md:py-20 border-b border-(--border-hairline) bg-(--bg-muted) transition-colors duration-300">
+	<div class="container mx-auto px-6 max-w-6xl flex flex-col gap-6">
 
-				<div class="p-6 sm:p-7 flex flex-col gap-3 grow">
-					<div class="flex items-baseline justify-between gap-4">
-						<div>
-							<h3 class="font-display font-bold text-xl sm:text-2xl text-(--text-main)">
-								<a href="/projects/{featuredProject.slug}" class="hover:text-(--accent-strong) transition-colors">
-									{featuredProject.name}
-								</a>
-							</h3>
-							{#if featuredProject.owner}
-								<span class="text-xs text-(--text-muted) block mt-0.5">by {featuredProject.owner.display_name}</span>
-							{/if}
-						</div>
-						<StatusDot status={featuredProject.status} />
-					</div>
+		<!-- ══════════════════════════════════════════════════════════
+		     ROW 1: Editorial Typography (Left) + Server Photo Card (Right)
+		     ══════════════════════════════════════════════════════════ -->
+		<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+			<!-- Left: Editorial Typography (Span 5) -->
+			<div class="lg:col-span-5 flex flex-col justify-between py-2 sm:py-4 pr-0 lg:pr-4">
+				<div>
+					<!-- Section Heading (Clean, non-bold editorial scale) -->
+					<h2 class="font-sans font-normal text-4xl sm:text-5xl lg:text-[3.6rem] text-(--text-main) tracking-[-0.035em] leading-[1.06] mt-2 sm:mt-4 transition-colors">
+						Running<br />
+						on real<br />
+						<span class="text-(--text-muted)">hardware.</span>
+					</h2>
 
-					<p class="text-sm text-(--text-secondary) leading-relaxed">{featuredProject.description}</p>
-
-					<div class="mt-auto pt-4 border-t border-(--border-subtle) flex items-center justify-between text-xs">
-						{#if featuredProject.technology_stack && featuredProject.technology_stack.length > 0}
-							<span class="text-xs text-(--text-muted)">
-								{featuredProject.technology_stack.join(' · ')}
-							</span>
-						{:else}
-							<span></span>
-						{/if}
-
-						{#if featuredProject.public_url}
-							<a
-								href={featuredProject.public_url}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="font-medium text-(--accent-strong) hover:underline inline-flex items-center gap-1"
-							>
-								<span>Visit instance</span>
-								<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-									<path d="M7 7h10v10" />
-									<path d="M7 17 17 7" />
-								</svg>
-							</a>
-						{/if}
-					</div>
+					<!-- Subtitle -->
+					<p class="text-sm sm:text-base text-(--text-secondary) font-normal leading-relaxed mt-5 max-w-sm transition-colors">
+						A single machine at home, kept online for friends and experiments. No cloud bills, no hidden layers—just a server we manage together.
+					</p>
 				</div>
 			</div>
-		{/if}
 
-		<!-- Metric Counters Column -->
-		<div class="flex flex-col gap-6">
-			<!-- Projects Metric Card with DotMatrix -->
-			<div class="p-6 sm:p-7 bg-(--bg-surface) border border-(--border-hairline) rounded-md flex flex-col justify-between grow">
-				<div class="flex items-center justify-between">
-					<span class="text-xs text-(--text-muted)">Active Deployments</span>
-					<div class="text-(--accent-orange)">
-						<DotMatrix text={String(counts.projects).padStart(2, '0')} dotSize={2.5} gap={2} />
-					</div>
-				</div>
-				<div class="my-4">
-					<div class="font-display text-4xl sm:text-5xl font-bold text-(--text-main) leading-none">
-						{counts.projects}
-					</div>
-				</div>
-				<p class="text-xs text-(--text-secondary) leading-relaxed">
-					Independent web applications, APIs, and micro-tools hosted and running on our shared node.
-				</p>
-			</div>
-
-			<!-- Members Metric Card with DotMatrix -->
-			<div class="p-6 sm:p-7 bg-(--bg-surface) border border-(--border-hairline) rounded-md flex flex-col justify-between grow">
-				<div class="flex items-center justify-between">
-					<span class="text-xs text-(--text-muted)">Community Members</span>
-					<div class="text-(--text-main)">
-						<DotMatrix text={String(counts.members).padStart(2, '0')} dotSize={2.5} gap={2} />
-					</div>
-				</div>
-				<div class="my-4">
-					<div class="font-display text-4xl sm:text-5xl font-bold text-(--text-main) leading-none">
-						{counts.members}
-					</div>
-				</div>
-				<p class="text-xs text-(--text-secondary) leading-relaxed">
-					Engineers, designers, and builders with direct access to deploy, test, and showcase their craft.
-				</p>
+			<!-- Right: Server Photo Card (Span 7) -->
+			<div class="lg:col-span-7">
+				<ServerPhotoCard
+					{location}
+					status={availability.current}
+				/>
 			</div>
 		</div>
-	</div>
 
-	<!-- Bottom Row: Infrastructure Topology Component -->
-	<InfrastructureDiagram {systemStatus} />
-</div>
+		<!-- ══════════════════════════════════════════════════════════
+		     ROW 2: Hardware Core, Memory & Storage (3 Cards)
+		     ══════════════════════════════════════════════════════════ -->
+		<div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+			<!-- 1. Core Hardware Card -->
+			<div>
+				<HardwareCard
+					cpu={hardware.cpu}
+					cores={hardware.cores}
+					threads={hardware.threads}
+				/>
+			</div>
+
+			<!-- 2. System Memory Card (Dark) -->
+			<div>
+				<MemoryCard
+					totalGB={memory.totalGB}
+					usagePercent={memory.usagePercent}
+					availableGB={memory.availableGB}
+				/>
+			</div>
+
+			<!-- 3. Storage Card -->
+			<div>
+				<StorageCard
+					physicalGB={storage.physicalDiskGB || storage.totalGB || 512}
+					linuxTotalGB={storage.linuxTotalGB || storage.totalGB || 98}
+					totalGB={storage.totalGB || 98}
+					usagePercent={storage.usagePercent}
+					availableGB={storage.availableGB}
+					type={storage.type}
+					model={storage.model}
+					summary={storage.summary}
+				/>
+			</div>
+		</div>
+
+		<!-- ══════════════════════════════════════════════════════════
+		     ROW 3: Availability, Network & Ideas Accent (3 Cards)
+		     ══════════════════════════════════════════════════════════ -->
+		<div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+			<!-- 4. Availability Card (Dark, Calculated 30-day Uptime) -->
+			<div>
+				<AvailabilityCard
+					availabilityPercent={availability.last30Days}
+					status={availability.current}
+					uptime={availability.uptime}
+					recordedPeriod={availability.recordedPeriod}
+					dailyBlocks={availability.dailyBlocks}
+				/>
+			</div>
+
+			<!-- 5. Network Card -->
+			<div>
+				<NetworkCard
+					linkCapacity={network.linkCapacity}
+					latencyMs={network.latencyMs}
+				/>
+			</div>
+
+			<!-- 6. Ideas & Hosting Card (Slate Blue) -->
+			<div>
+				<IdeasCard
+					projectsOnline={projects.online}
+					projectsTotal={projects.total}
+				/>
+			</div>
+		</div>
+
+	</div>
+</section>

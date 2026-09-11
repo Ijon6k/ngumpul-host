@@ -1,112 +1,127 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { api } from '$lib/api';
-	import StatusDot from '$lib/components/StatusDot.svelte';
+	import { writable } from 'svelte/store';
+	import { createStatusQuery } from '$lib/api/status';
+	import StatusHeader from '$lib/components/status/StatusHeader.svelte';
+	import StatusOverviewCard from '$lib/components/status/StatusOverviewCard.svelte';
+	import AvailabilityGrid from '$lib/components/status/AvailabilityGrid.svelte';
+	import ServiceHealthCard from '$lib/components/status/ServiceHealthCard.svelte';
+	import IncidentHistoryCard from '$lib/components/status/IncidentHistoryCard.svelte';
+	import StatusIndicator from '$lib/components/status/StatusIndicator.svelte';
 
-	let statusData: any = null;
-	let loading = true;
+	const selectedRange = writable<'1d' | '7d' | '30d'>('30d');
 
-	onMount(async () => {
-		try {
-			const res = await api.get('/status');
-			statusData = res.data;
-		} catch (err) {
-			console.error('Failed to load status:', err);
-		} finally {
-			loading = false;
-		}
-	});
+	// TanStack Query store hook with automated 60s background polling & query caching
+	const statusQuery = createStatusQuery(selectedRange);
 
-	function formatCheckTime(iso: string) {
-		try {
-			const d = new Date(iso);
-			return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-		} catch (_) {
-			return '';
-		}
+	$: timeUnitLabel =
+		$selectedRange === '1d'
+			? '24 cells · 1 cell / hour'
+			: $selectedRange === '7d'
+			? '7 cells · 1 cell / day'
+			: '30 cells · 1 cell / day';
+
+	function handleRangeChange(range: '1d' | '7d' | '30d') {
+		$selectedRange = range;
 	}
 </script>
 
-<div class="container mx-auto px-6 max-w-4xl py-12 pb-24 flex flex-col gap-9">
-	<header class="max-w-2xl">
-		<h1 class="font-display font-bold text-3xl sm:text-4xl text-(--text-main) tracking-tight mb-2">System Status</h1>
-		<p class="text-base sm:text-lg text-(--text-secondary) leading-relaxed">
-			Automated availability probes and response latency metrics for core infrastructure components.
-		</p>
-	</header>
+<svelte:head>
+	<title>System Status · Ngumpul Host</title>
+	<meta name="description" content="Data-driven availability history and measured service latency for Ngumpul Host infrastructure." />
+</svelte:head>
 
-	{#if loading}
-		<div class="py-20 text-center text-(--text-muted) text-xs">
-			<p>Querying telemetry probes...</p>
-		</div>
-	{:else if statusData}
-		<!-- Main Operational Banner -->
-		<div class="p-6 sm:p-8 bg-(--bg-surface) border border-(--border-hairline) rounded-md flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-			<div class="flex items-center gap-3.5">
-				<span class="w-3 h-3 rounded-full bg-(--color-success) shrink-0"></span>
-				<div>
-					<h2 class="font-display font-bold text-lg sm:text-xl text-(--text-main)">
-						{statusData.overall_status === 'OPERATIONAL' ? 'All Systems Operational' : 'Degraded Service Detected'}
-					</h2>
-					<span class="text-xs text-(--text-secondary)">Gateway probe verified · Zero critical faults</span>
+<div class="min-h-screen bg-(--bg-canvas) text-(--text-main) pb-24">
+	<main class="container mx-auto px-6 max-w-5xl pt-10 sm:pt-14 flex flex-col gap-9">
+
+		<!-- 1. Header & Range Controls -->
+		<StatusHeader
+			selectedRange={$selectedRange}
+			onRangeChange={handleRangeChange}
+		/>
+
+		<!-- 2. Loading State (when no cache exists) -->
+		{#if $statusQuery.isPending && !$statusQuery.data}
+			<div class="flex flex-col gap-6 animate-pulse" aria-busy="true">
+				<div class="h-32 bg-(--bg-muted) rounded-xl border border-(--border-hairline)"></div>
+				<div class="h-36 bg-(--bg-muted) rounded-xl border border-(--border-hairline)"></div>
+				<div class="h-44 bg-(--bg-muted) rounded-xl border border-(--border-hairline)"></div>
+			</div>
+
+		<!-- 3. Error State -->
+		{:else if $statusQuery.isError && !$statusQuery.data}
+			<div class="p-8 bg-(--bg-surface) border border-rose-200 dark:border-rose-900/40 rounded-xl flex flex-col items-center justify-center text-center gap-4">
+				<StatusIndicator status="DOWN" size="lg" />
+				<div class="max-w-md">
+					<h2 class="text-base font-medium text-(--text-main)">Telemetry Unavailable</h2>
+					<p class="text-xs text-(--text-secondary) mt-1">
+						{$statusQuery.error instanceof Error ? $statusQuery.error.message : 'Unable to connect to telemetry probes.'}
+					</p>
 				</div>
+				<button
+					type="button"
+					class="px-4 py-2 text-xs rounded-lg border border-(--border-hairline) bg-(--bg-muted) hover:bg-(--bg-hover) text-(--text-main) transition-colors cursor-pointer"
+					on:click={() => $statusQuery.refetch()}
+				>
+					Retry Connection
+				</button>
 			</div>
 
-			<div class="flex flex-col sm:items-end">
-				<span class="text-2xl sm:text-3xl font-bold font-display text-(--text-main) leading-none">{statusData.uptime_percentage || '99.85'}%</span>
-				<span class="text-xs text-(--text-muted) mt-1">30-day rolling uptime</span>
-			</div>
-		</div>
+		<!-- 4. Data-Driven 4-Section Content -->
+		{:else if $statusQuery.data}
+			<!-- Section 1: Overall Status -->
+			<StatusOverviewCard
+				overallStatus={$statusQuery.data.overall_status}
+				availability={$statusQuery.data.availability}
+				network={$statusQuery.data.network}
+			/>
 
-		<!-- 30-Day Historical Availability Bar -->
-		<div class="p-6 bg-(--bg-surface) border border-(--border-hairline) rounded-md flex flex-col gap-3">
-			<div class="flex items-center justify-between text-xs text-(--text-muted)">
-				<span>30 days ago</span>
-				<span class="text-(--color-success) font-medium">100% today</span>
-			</div>
-
-			<!-- 30 thin green/soft ticks -->
-			<div class="grid grid-cols-30 gap-1 h-6">
-				{#each Array(30) as _, i}
-					<div
-						class="rounded-[2px] bg-(--color-success)/80 hover:bg-(--color-success) transition-colors"
-						title="Day {i + 1}: 100% uptime"
-					></div>
-				{/each}
-			</div>
-
-			<div class="flex items-center justify-between text-xs text-(--text-muted) pt-2 border-t border-(--border-hairline)">
-				<span>Continuous HTTP health checks</span>
-				<span>Last probe: {formatCheckTime(statusData.checked_at)}</span>
-			</div>
-		</div>
-
-		<!-- Services Breakdown Table -->
-		<div class="bg-(--bg-surface) border border-(--border-hairline) rounded-md overflow-hidden">
-			<div class="px-6 py-3.5 border-b border-(--border-hairline) flex items-center justify-between text-xs text-(--text-muted)">
-				<span class="font-medium text-(--text-main)">Component Services</span>
-				<span>Target latency: &lt;100ms</span>
-			</div>
-
-			<div class="divide-y divide-(--border-hairline)">
-				{#each statusData.services || [] as service}
-					<div class="px-6 py-3.5 flex items-center justify-between text-sm">
-						<div class="flex items-center gap-3">
-							<span class="font-medium text-(--text-main)">{service.name}</span>
-							<span class="text-xs text-(--text-muted)">({service.response_time_ms} ms)</span>
-						</div>
-
-						<StatusDot status={service.status} />
+			<!-- Section 2: Availability History (Activity Heatmap) -->
+			<section class="bg-(--bg-surface) border border-(--border-hairline) rounded-xl p-6 sm:p-7 flex flex-col gap-5 shadow-xs">
+				<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+					<div>
+						<h3 class="text-base font-normal text-(--text-main)">
+							Availability History
+						</h3>
+						<p class="text-xs text-(--text-muted) mt-0.5">
+							Aggregated real telemetry for {$selectedRange === '1d' ? 'the past 24 hours' : $selectedRange === '7d' ? 'the past 7 days' : 'the past 30 days'}. Gray indicates unmonitored days.
+						</p>
 					</div>
-				{/each}
-			</div>
-		</div>
 
-		<!-- Operational Details -->
-		<div class="text-xs text-(--text-secondary) leading-relaxed p-1">
-			<p>
-				Ngumpul Host runs on Docker Compose behind Nginx listening on port 1111. All services are monitored by an internal health check loop verifying database connectivity, container responsiveness, and reverse proxy availability.
-			</p>
-		</div>
-	{/if}
+					<div class="text-xs font-mono text-(--text-secondary) self-start sm:self-auto">
+						{#if $statusQuery.data.availability?.has_sufficient_data}
+							{$statusQuery.data.availability.availability_formatted} uptime
+						{:else}
+							Collecting initial observations
+						{/if}
+					</div>
+				</div>
+
+				<AvailabilityGrid
+					blocks={$statusQuery.data.availability?.blocks || []}
+					{timeUnitLabel}
+					compact={false}
+				/>
+			</section>
+
+			<!-- Section 3: Service Health -->
+			<ServiceHealthCard
+				services={$statusQuery.data.services || []}
+				checkedAt={$statusQuery.data.checked_at}
+			/>
+
+			<!-- Section 4: Incident History -->
+			<IncidentHistoryCard
+				incidents={$statusQuery.data.availability?.incidents || []}
+			/>
+
+			<!-- Architectural Footnote -->
+			<footer class="text-xs text-(--text-muted) leading-relaxed px-1 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+				<p class="max-w-2xl">
+					Telemetry data is sourced directly from Linux kernel sessions (<code class="font-mono text-[11px]">/proc/uptime</code> and <code class="font-mono text-[11px]">boot_id</code>). Availability percentages reflect real recorded observation periods only.
+				</p>
+				<span class="shrink-0 text-right">Ngumpul Host · Bare Metal</span>
+			</footer>
+		{/if}
+
+	</main>
 </div>

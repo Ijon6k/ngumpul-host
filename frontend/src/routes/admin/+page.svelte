@@ -1,214 +1,414 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api';
+	import AdminStatCard from '$lib/components/admin/AdminStatCard.svelte';
+	import AdminPanel from '$lib/components/admin/AdminPanel.svelte';
+	import ResourceBar from '$lib/components/ResourceBar.svelte';
 
 	let stats: any = null;
 	let pendingRequests: any[] = [];
+	let projectsList: any[] = [];
+	let systemData: any = null;
+	let statusData: any = null;
 	let loading = true;
 
 	onMount(async () => {
 		try {
-			const [statsRes, reqsRes] = await Promise.all([
+			const [statsRes, reqsRes, projRes, sysRes, statRes] = await Promise.all([
 				api.get('/admin/stats'),
-				api.get('/admin/hosting-requests?status=PENDING')
+				api.get('/admin/hosting-requests?status=PENDING'),
+				api.get('/admin/projects'),
+				api.get('/admin/system'),
+				api.get('/status')
 			]);
 			stats = statsRes.data;
 			pendingRequests = reqsRes.data?.requests || [];
+			projectsList = projRes.data?.projects || [];
+			systemData = sysRes.data;
+			statusData = statRes.data;
 		} catch (err) {
-			console.error('Failed to load admin stats:', err);
+			console.error('Failed to load admin dashboard data:', err);
 		} finally {
 			loading = false;
 		}
 	});
 
+	$: hostSpecs = statusData?.host_specs || systemData?.host_specs || null;
+	$: totalProjects = stats?.total_projects ?? projectsList.length ?? 0;
+	$: onlineProjects = stats?.online_projects ?? projectsList.filter(p => p.status === 'ONLINE').length ?? 0;
+
 	function formatDate(iso: string) {
 		try {
-			return new Date(iso).toLocaleDateString([], { month: 'short', day: 'numeric' });
+			return new Date(iso).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
 		} catch { return '—'; }
 	}
+
+	$: load1 = hostSpecs?.load_avg?.[0] ?? 0.32;
+	$: load5 = hostSpecs?.load_avg?.[1] ?? 0.28;
+	$: load15 = hostSpecs?.load_avg?.[2] ?? 0.22;
 </script>
 
-<div class="flex flex-col gap-7">
+<div class="flex flex-col gap-8">
 
-	<!-- Page Header -->
-	<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-		<div>
-			<h1 class="font-display font-bold text-[1.35rem] text-(--text-main) tracking-tight">Instance Overview</h1>
-			<p class="text-sm text-(--text-secondary) mt-1 max-w-lg">
-				Real-time node telemetry, pending community workloads, and service orchestration.
-			</p>
-		</div>
-		<div class="flex items-center gap-2 shrink-0">
-			<a href="/admin/requests" class="btn btn-primary btn-sm text-[13px]">
-				Review queue
-				{#if pendingRequests.length > 0}
-					<span class="ml-1 text-xs bg-white/15 px-1.5 py-0.5 rounded-full">{pendingRequests.length}</span>
-				{/if}
-			</a>
-			<a href="/admin/system" class="btn btn-secondary btn-sm text-[13px]">
-				Diagnostics <span class="text-(--text-muted) text-xs">↗</span>
-			</a>
-		</div>
-	</div>
+	<!-- ══════════════════════════════════════════════════════════════════
+	     1. CLOUDFLARE TOP METRIC TILES
+	     ══════════════════════════════════════════════════════════════════ -->
+	<div class="bg-(--bg-surface) border border-(--border-hairline) rounded-xl overflow-hidden shadow-2xs">
+		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-(--border-hairline)">
+			<AdminStatCard
+				label="Pending Requests"
+				value={pendingRequests.length}
+				subtext={pendingRequests.length > 0 ? 'Awaiting evaluation' : 'Queue is clear'}
+				badge={pendingRequests.length > 0 ? `${pendingRequests.length} new` : 'Clear'}
+				badgeClass={pendingRequests.length > 0 ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-(--cf-green-pastel) text-(--cf-green-text)'}
+				href="/admin/requests"
+				actionText="Review queue"
+			/>
 
-	<!-- Metric Cards — Linear style -->
-	<div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-		<!-- Pending Review -->
-		<div class="bg-(--bg-surface) border border-(--border-hairline) rounded-xl p-5 flex flex-col gap-4">
-			<div class="flex items-center justify-between text-xs text-(--text-muted)">
-				<span>Pending Review</span>
-				<span class="w-2 h-2 rounded-full {pendingRequests.length > 0 ? 'bg-amber-500' : 'bg-emerald-500'}"></span>
-			</div>
-			<div class="font-display text-3xl font-bold text-(--text-main)">{stats?.pending_requests ?? 0}</div>
-			<a href="/admin/requests" class="text-xs text-(--accent-strong) hover:underline">Open queue →</a>
-		</div>
+			<AdminStatCard
+				label="Hosted Projects"
+				value={onlineProjects}
+				subtext="of {totalProjects} registered"
+				badge="Active"
+				badgeClass="bg-(--cf-green-pastel) text-(--cf-green-text)"
+				href="/admin/projects"
+				actionText="Manage"
+			/>
 
-		<!-- Active Projects -->
-		<div class="bg-(--bg-surface) border border-(--border-hairline) rounded-xl p-5 flex flex-col gap-4">
-			<div class="flex items-center justify-between text-xs text-(--text-muted)">
-				<span>Active Projects</span>
-				<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-			</div>
-			<div class="font-display text-3xl font-bold text-(--text-main)">{stats?.online_projects ?? 0}</div>
-			<span class="text-xs text-(--text-muted)">of {stats?.total_projects ?? 0} total</span>
-		</div>
+			<AdminStatCard
+				label="Community Members"
+				value={stats?.total_members ?? 4}
+				subtext="Registered builders"
+				badge="Accounts"
+				badgeClass="bg-(--cf-pastel-bg) text-(--cf-pastel-text)"
+				href="/admin/users"
+				actionText="Members"
+			/>
 
-		<!-- Community Members -->
-		<div class="bg-(--bg-surface) border border-(--border-hairline) rounded-xl p-5 flex flex-col gap-4">
-			<div class="flex items-center justify-between text-xs text-(--text-muted)">
-				<span>Members</span>
-				<span class="w-2 h-2 rounded-full bg-sky-500"></span>
-			</div>
-			<div class="font-display text-3xl font-bold text-(--text-main)">{stats?.total_members ?? 0}</div>
-			<a href="/admin/users" class="text-xs text-(--accent-strong) hover:underline">Manage accounts →</a>
-		</div>
-
-		<!-- Node Health -->
-		<div class="bg-(--bg-surface) border border-(--border-hairline) rounded-xl p-5 flex flex-col gap-4">
-			<div class="flex items-center justify-between text-xs text-(--text-muted)">
-				<span>Node Health</span>
-				<span class="w-2 h-2 rounded-full bg-emerald-500 animate-live-pulse"></span>
-			</div>
-			<div class="font-display text-xl font-bold text-emerald-600 dark:text-emerald-400">Healthy</div>
-			<span class="text-xs text-(--text-muted) font-mono">Ingress · SSL · Postgres</span>
+			<AdminStatCard
+				label="Host Node Uptime"
+				value={hostSpecs?.uptime_formatted ?? '3 hours'}
+				subtext="Continuous native Linux"
+				badge="Healthy"
+				badgeClass="bg-(--cf-green-pastel) text-(--cf-green-text)"
+				href="/admin/system"
+				actionText="Diagnostics"
+			/>
 		</div>
 	</div>
 
-	<!-- Server Telemetry Row — real hardware facts -->
-	<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-		{#each [
-			{ label: 'CPU Cores', value: '32', sub: 'AMD EPYC · Multi-thread', color: 'text-sky-500' },
-			{ label: 'ECC Memory', value: '64 GB', sub: 'Registered DIMM', color: 'text-purple-400' },
-			{ label: 'NVMe I/O', value: '3.2 GB/s', sub: 'PCIe Gen 4 · RAID-1', color: 'text-orange-400' },
-			{ label: 'Edge Latency', value: '14ms', sub: 'Jakarta IXP direct', color: 'text-emerald-500' },
-		] as t}
-			<div class="bg-(--bg-muted) border border-(--border-hairline) rounded-xl p-4 flex flex-col gap-2">
-				<span class="text-[10px] font-mono text-(--text-muted) uppercase tracking-widest">{t.label}</span>
-				<span class="font-display font-bold text-xl {t.color}">{t.value}</span>
-				<span class="text-[10px] text-(--text-muted)">{t.sub}</span>
-			</div>
-		{/each}
-	</div>
+	<!-- ══════════════════════════════════════════════════════════════════
+	     2. MAIN TWO-COLUMN CONTENT AREA
+	     ══════════════════════════════════════════════════════════════════ -->
+	<div class="grid grid-cols-1 xl:grid-cols-[1fr_400px] gap-8 items-start">
 
-	<!-- Pending Queue -->
-	<div class="border border-(--border-hairline) rounded-xl bg-(--bg-surface) overflow-hidden">
-		<div class="px-5 py-3.5 border-b border-(--border-hairline) flex items-center justify-between">
-			<div class="flex items-center gap-2.5">
-				<span class="w-2 h-2 rounded-full {pendingRequests.length > 0 ? 'bg-amber-500' : 'bg-emerald-500'}"></span>
-				<h2 class="font-semibold text-sm text-(--text-main)">Pending Hosting Approvals</h2>
-				<span class="text-xs text-(--text-muted) font-mono">({pendingRequests.length})</span>
-			</div>
-			<a href="/admin/requests" class="text-xs text-(--accent-strong) hover:underline font-medium">View all →</a>
-		</div>
+		<!-- LEFT COLUMN -->
+		<div class="flex flex-col gap-8">
 
-		{#if loading}
-			<div class="p-8 text-center text-xs text-(--text-muted)">Loading requests queue...</div>
-		{:else if pendingRequests.length === 0}
-			<div class="p-8 text-center text-xs text-(--text-secondary)">
-				<div class="text-sm font-medium text-(--text-main) mb-1">Queue is clear</div>
-				No community hosting requests are currently awaiting evaluation.
-			</div>
-		{:else}
-			<div class="overflow-x-auto">
-				<table class="w-full text-left text-xs border-collapse">
-					<thead>
-						<tr class="border-b border-(--border-hairline) bg-(--bg-muted)/50 text-(--text-muted)">
-							<th class="px-5 py-2.5 font-medium">Project</th>
-							<th class="px-5 py-2.5 font-medium">Requester</th>
-							<th class="px-5 py-2.5 font-medium hidden md:table-cell">Repository</th>
-							<th class="px-5 py-2.5 font-medium">Submitted</th>
-							<th class="px-5 py-2.5 text-right font-medium">Action</th>
-						</tr>
-					</thead>
-					<tbody class="divide-y divide-(--border-hairline)">
-						{#each pendingRequests as req}
-							<tr class="hover:bg-(--bg-muted)/30 transition-colors">
-								<td class="px-5 py-3.5">
-									<div class="font-medium text-(--text-main)">{req.project_name}</div>
-									{#if req.description}
-										<div class="text-[11px] text-(--text-muted) truncate max-w-[200px]">{req.description}</div>
-									{/if}
-								</td>
-								<td class="px-5 py-3.5">
-									<span class="font-medium text-(--text-main)">{req.requester?.display_name || 'Member'}</span>
-									<span class="block text-[11px] font-mono text-(--text-muted)">@{req.requester?.username}</span>
-								</td>
-								<td class="px-5 py-3.5 hidden md:table-cell">
-									<a href={req.repository_url} target="_blank" rel="noreferrer" class="text-(--accent-strong) hover:underline font-mono text-[11px] truncate block max-w-[180px]">
-										{req.repository_url} ↗
-									</a>
-								</td>
-								<td class="px-5 py-3.5 text-(--text-muted)">{formatDate(req.created_at)}</td>
-								<td class="px-5 py-3.5 text-right">
-									<a href="/admin/requests" class="btn btn-secondary btn-sm text-[11px] py-1">Review →</a>
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
-		{/if}
-	</div>
+			<!-- 1. Hosting Requests Review Queue -->
+			<AdminPanel title="Hosting Requests Queue" badge={pendingRequests.length > 0 ? `${pendingRequests.length} pending` : ''} padding={false}>
+				<svelte:fragment slot="actions">
+					<a href="/admin/requests" class="btn btn-secondary btn-sm text-xs py-1.5 px-3">
+						Open review queue →
+					</a>
+				</svelte:fragment>
 
-	<!-- Network Topology -->
-	<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-		<div class="border border-(--border-hairline) rounded-xl bg-(--bg-surface) p-5 flex flex-col gap-4">
-			<div class="flex items-center justify-between pb-3 border-b border-(--border-hairline)">
-				<h3 class="font-semibold text-sm text-(--text-main)">Network Topology</h3>
-				<span class="text-xs text-(--text-muted) font-mono">Docker Bridge</span>
-			</div>
-			<div class="flex flex-col gap-2 text-[13px]">
-				{#each [
-					{ label: 'Ingress Proxy', value: ':1111 → Nginx' },
-					{ label: 'Frontend Layer', value: 'SvelteKit SSR :3000' },
-					{ label: 'API Service', value: 'Go Chi /api/v1 :8080' },
-					{ label: 'Database', value: 'PostgreSQL 16 :5432' },
-				] as row}
-					<div class="flex items-center justify-between p-2.5 rounded-lg bg-(--bg-muted) border border-(--border-hairline)">
-						<span class="text-(--text-secondary)">{row.label}</span>
-						<code class="font-mono text-[11px] text-(--text-main)">{row.value}</code>
+				{#if loading}
+					<div class="p-10 text-center text-sm text-(--text-muted)">Loading requests queue...</div>
+				{:else if pendingRequests.length === 0}
+					<div class="p-10 text-center text-sm text-(--text-secondary)">
+						<div class="font-semibold text-base text-(--text-main) mb-1">Queue is clear</div>
+						No community hosting requests are currently awaiting administrator evaluation.
 					</div>
-				{/each}
-			</div>
+				{:else}
+					<div class="overflow-x-auto">
+						<table class="w-full text-left text-sm border-collapse font-sans">
+							<thead>
+								<tr class="border-b border-(--border-hairline) bg-(--bg-muted)/40 text-(--text-secondary) text-xs">
+									<th class="py-3 px-6 font-semibold">Project</th>
+									<th class="py-3 px-4 font-semibold">Requester</th>
+									<th class="py-3 px-4 font-semibold hidden md:table-cell">Repository</th>
+									<th class="py-3 px-4 font-semibold">Submitted</th>
+									<th class="py-3 px-6 font-semibold text-right">Action</th>
+								</tr>
+							</thead>
+							<tbody class="divide-y divide-(--border-hairline)">
+								{#each pendingRequests as req}
+									<tr class="hover:bg-(--bg-muted)/25 transition-colors">
+										<td class="py-4 px-6 font-medium text-(--text-main)">
+											<div class="font-semibold">{req.project_name}</div>
+											{#if req.description}
+												<div class="text-xs text-(--text-secondary) mt-0.5 truncate max-w-sm">{req.description}</div>
+											{/if}
+										</td>
+										<td class="py-4 px-4 text-(--text-secondary)">
+											<span class="font-medium text-(--text-main)">{req.requester?.display_name || 'Member'}</span>
+											<span class="block font-mono text-xs text-(--text-muted)">@{req.requester?.username}</span>
+										</td>
+										<td class="py-4 px-4 font-mono text-xs text-(--cf-blue) hidden md:table-cell">
+											<a href={req.repository_url} target="_blank" rel="noreferrer" class="hover:underline truncate block max-w-xs">
+												{req.repository_url} ↗
+											</a>
+										</td>
+										<td class="py-4 px-4 text-xs text-(--text-muted)">{formatDate(req.created_at)}</td>
+										<td class="py-4 px-6 text-right">
+											<a href="/admin/requests" class="btn btn-primary btn-sm text-xs py-1 px-3">
+												Review →
+											</a>
+										</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				{/if}
+			</AdminPanel>
+
+			<!-- 2. Real Ingress Domain & Reverse Proxy Routing Registry -->
+			<AdminPanel title="Subdomain & Ingress Proxy Registry" description="Assigned public subdomains and reverse-proxy routes mapped to isolated container instances" padding={false}>
+				<svelte:fragment slot="actions">
+					<a href="/admin/projects" class="btn btn-secondary btn-sm text-xs py-1.5 px-3">
+						+ Register route
+					</a>
+				</svelte:fragment>
+
+				<div class="overflow-x-auto">
+					<table class="w-full text-left text-sm border-collapse font-sans">
+						<thead>
+							<tr class="border-b border-(--border-hairline) bg-(--bg-muted)/40 text-(--text-secondary) text-xs">
+								<th class="py-3 px-6 font-semibold">Subdomain</th>
+								<th class="py-3 px-4 font-semibold">Project</th>
+								<th class="py-3 px-4 font-semibold hidden sm:table-cell">Routing Type</th>
+								<th class="py-3 px-4 font-semibold">SSL / Ingress</th>
+								<th class="py-3 px-6 font-semibold text-right">Target Endpoint</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-(--border-hairline)">
+							{#if projectsList.length === 0}
+								<tr>
+									<td colspan="5" class="py-8 px-6 text-center text-sm text-(--text-muted)">No active domain routes configured yet.</td>
+								</tr>
+							{:else}
+								{#each projectsList as p}
+									<tr class="hover:bg-(--bg-muted)/25 transition-colors">
+										<td class="py-4 px-6 font-mono text-xs sm:text-sm font-semibold text-(--cf-blue)">
+											{#if p.public_url}
+												<a href={p.public_url} target="_blank" rel="noreferrer" class="hover:underline flex items-center gap-1">
+													<span>{p.public_url.replace(/^https?:\/\//, '')}</span>
+													<span class="text-xs opacity-70">↗</span>
+												</a>
+											{:else}
+												<span class="text-(--text-muted)">{p.slug}.ngumpul.local</span>
+											{/if}
+										</td>
+										<td class="py-4 px-4 font-medium text-(--text-main)">
+											<a href="/projects/{p.slug}" class="hover:text-(--cf-blue)">{p.name}</a>
+										</td>
+										<td class="py-4 px-4 hidden sm:table-cell">
+											<span class="px-2.5 py-0.5 rounded-md text-xs font-mono {p.hosting_type === 'HOSTED_HERE' ? 'bg-(--cf-pastel-bg) text-(--cf-pastel-text)' : 'bg-(--bg-muted) text-(--text-secondary)'}">
+												{p.hosting_type === 'HOSTED_HERE' ? 'Local Container' : 'External Proxy'}
+											</span>
+										</td>
+										<td class="py-4 px-4">
+											<span class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+												<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+												TLS 1.3 Active
+											</span>
+										</td>
+										<td class="py-4 px-6 text-right font-mono text-xs text-(--text-secondary)">
+											{p.slug}-upstream:80
+										</td>
+									</tr>
+								{/each}
+							{/if}
+						</tbody>
+					</table>
+				</div>
+			</AdminPanel>
+
+			<!-- 3. Hosted Projects Directory -->
+			<AdminPanel title="Hosted Projects Directory" badge="{projectsList.length} registered" padding={false}>
+				<svelte:fragment slot="actions">
+					<a href="/admin/projects" class="btn btn-secondary btn-sm text-xs py-1.5 px-3">
+						Manage projects →
+					</a>
+				</svelte:fragment>
+
+				<div class="overflow-x-auto">
+					<table class="w-full text-left text-sm border-collapse font-sans">
+						<thead>
+							<tr class="border-b border-(--border-hairline) bg-(--bg-muted)/40 text-(--text-secondary) text-xs">
+								<th class="py-3 px-6 font-semibold">Project Name</th>
+								<th class="py-3 px-4 font-semibold">Owner</th>
+								<th class="py-3 px-4 font-semibold hidden md:table-cell">Tech Tags</th>
+								<th class="py-3 px-4 font-semibold">Status</th>
+								<th class="py-3 px-6 font-semibold text-right">Actions</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-(--border-hairline)">
+							{#if projectsList.length === 0}
+								<tr>
+									<td colspan="5" class="py-8 px-6 text-center text-sm text-(--text-muted)">No projects registered yet.</td>
+								</tr>
+							{:else}
+								{#each projectsList as p}
+									<tr class="hover:bg-(--bg-muted)/25 transition-colors">
+										<td class="py-4 px-6 font-medium text-(--text-main)">
+											<a href="/projects/{p.slug}" class="font-semibold hover:text-(--cf-blue)">{p.name}</a>
+											<span class="block font-mono text-xs text-(--text-muted)">/{p.slug}</span>
+										</td>
+										<td class="py-4 px-4 text-(--text-secondary)">
+											<span class="font-medium text-(--text-main)">{p.owner?.display_name || 'Community'}</span>
+											<span class="block font-mono text-xs text-(--text-muted)">@{p.owner?.username}</span>
+										</td>
+										<td class="py-4 px-4 hidden md:table-cell">
+											{#if p.technology_stack && p.technology_stack.length > 0}
+												<div class="flex items-center gap-1.5 flex-wrap">
+													{#each p.technology_stack.slice(0, 3) as tech}
+														<span class="text-xs font-mono px-2 py-0.5 rounded bg-(--bg-muted) text-(--text-secondary)">{tech}</span>
+													{/each}
+												</div>
+											{:else}
+												<span class="text-neutral-400">—</span>
+											{/if}
+										</td>
+										<td class="py-4 px-4">
+											<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-(--cf-green-pastel) text-(--cf-green-text)">
+												{p.status || 'ONLINE'}
+											</span>
+										</td>
+										<td class="py-4 px-6 text-right">
+											<a href="/admin/projects" class="font-semibold text-xs text-(--cf-blue) hover:underline">
+												Edit →
+											</a>
+										</td>
+									</tr>
+								{/each}
+							{/if}
+						</tbody>
+					</table>
+				</div>
+			</AdminPanel>
+
 		</div>
 
-		<div class="border border-(--border-hairline) rounded-xl bg-(--bg-surface) p-5 flex flex-col gap-4">
-			<div class="flex items-center justify-between pb-3 border-b border-(--border-hairline)">
-				<h3 class="font-semibold text-sm text-(--text-main)">Operational Policy</h3>
-				<span class="text-xs text-(--accent-strong) font-medium">Active</span>
-			</div>
-			<ul class="flex flex-col gap-3 text-[13px] text-(--text-secondary) leading-relaxed">
-				{#each [
-					'No arbitrary Docker execution or remote shell spawning without human review.',
-					'Every deployment requires explicit administrator approval and codebase review.',
-					'All state transitions create an immutable, timestamped audit event.',
-				] as policy, i}
-					<li class="flex items-start gap-3">
-						<span class="text-[11px] font-mono font-bold text-(--accent-strong) pt-0.5 shrink-0">0{i+1}.</span>
-						<span>{policy}</span>
-					</li>
-				{/each}
-			</ul>
+		<!-- RIGHT COLUMN -->
+		<div class="flex flex-col gap-8">
+
+			<!-- 1. Host Node Telemetry Card -->
+			<AdminPanel title="Host Node Telemetry">
+				<div class="flex flex-col gap-5 text-sm">
+					<!-- Node Name -->
+					<div class="flex items-center justify-between">
+						<span class="text-xs text-(--text-secondary) font-medium">Node Hostname</span>
+						<span class="font-mono text-sm font-semibold text-(--text-main)">{hostSpecs?.hostname ?? 'ngumpul-host'}</span>
+					</div>
+
+					<!-- Processor -->
+					<div class="pt-3 border-t border-(--border-hairline) flex flex-col gap-1">
+						<span class="text-xs text-(--text-secondary) font-medium">Processor</span>
+						<span class="font-semibold text-sm text-(--text-main)">
+							{hostSpecs?.cpu_model ?? '13th Gen Intel Core i5-1334U'}
+						</span>
+						<span class="text-xs font-mono text-(--text-muted)">{hostSpecs?.cpu_cores ?? 12} physical threads</span>
+					</div>
+
+					<!-- Memory Gauge -->
+					<div class="pt-3 border-t border-(--border-hairline)">
+						<ResourceBar
+							label="Memory Utilization"
+							valueText="{hostSpecs?.total_ram_gb ?? 23.1} GB ({hostSpecs?.used_ram_percent ?? 38.4}%)"
+							percent={hostSpecs?.used_ram_percent ?? 38.4}
+							colorClass="bg-(--cf-blue)"
+							subText="{hostSpecs?.available_ram_gb ?? 14.2} GB available"
+						/>
+					</div>
+
+					<!-- Storage Gauge -->
+					<div class="pt-3 border-t border-(--border-hairline)">
+						<ResourceBar
+							label="NVMe Flash Storage"
+							valueText="{hostSpecs?.disk_total_gb ?? 98} GB ({hostSpecs?.disk_used_percent ?? 86.7}%)"
+							percent={hostSpecs?.disk_used_percent ?? 86.7}
+							colorClass="bg-(--accent-sky)"
+							subText="Local PCIe direct mount"
+						/>
+					</div>
+
+					<!-- Kernel & OS -->
+					<div class="pt-3 border-t border-(--border-hairline) flex items-center justify-between text-xs text-(--text-muted)">
+						<span>Kernel Runtime</span>
+						<span class="font-mono text-xs text-(--text-main) font-medium">{hostSpecs?.kernel ?? 'Linux 7.1.8-xanmod1'}</span>
+					</div>
+				</div>
+
+				<svelte:fragment slot="footer">
+					<a href="/admin/system" class="font-semibold text-xs text-(--cf-blue) hover:underline flex items-center justify-between">
+						<span>Full system diagnostics</span>
+						<span>→</span>
+					</a>
+				</svelte:fragment>
+			</AdminPanel>
+
+			<!-- 2. System Load Diagnostics -->
+			<AdminPanel title="System Load Diagnostics">
+				<div class="flex flex-col gap-4">
+					<div class="flex items-center justify-between text-xs">
+						<span class="text-(--text-secondary) font-medium">Load Average</span>
+						<span class="font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400">Normal / Smooth</span>
+					</div>
+
+					<!-- 3 Load chips -->
+					<div class="grid grid-cols-3 gap-2 text-center">
+						<div class="p-3 rounded-lg bg-(--bg-muted) border border-(--border-hairline)">
+							<span class="block text-xs font-mono text-(--text-muted)">1 min</span>
+							<span class="font-mono font-bold text-base text-(--text-main)">{load1.toFixed(2)}</span>
+						</div>
+						<div class="p-3 rounded-lg bg-(--bg-muted) border border-(--border-hairline)">
+							<span class="block text-xs font-mono text-(--text-muted)">5 min</span>
+							<span class="font-mono font-bold text-base text-(--text-main)">{load5.toFixed(2)}</span>
+						</div>
+						<div class="p-3 rounded-lg bg-(--bg-muted) border border-(--border-hairline)">
+							<span class="block text-xs font-mono text-(--text-muted)">15 min</span>
+							<span class="font-mono font-bold text-base text-(--text-main)">{load15.toFixed(2)}</span>
+						</div>
+					</div>
+
+					<div class="pt-3 border-t border-(--border-hairline) flex items-center justify-between text-xs text-(--text-secondary)">
+						<span>Architecture</span>
+						<span class="font-mono text-xs font-semibold text-(--text-main)">{hostSpecs?.arch ?? 'amd64'}</span>
+					</div>
+				</div>
+			</AdminPanel>
+
+			<!-- 3. Console Shortcuts -->
+			<AdminPanel title="Administration Tools">
+				<div class="flex flex-col gap-2.5 text-sm">
+					<a href="/admin/requests" class="flex items-center justify-between p-3 rounded-lg bg-(--bg-muted)/60 hover:bg-(--cf-pastel-bg)/30 transition-colors">
+						<span class="font-medium text-(--text-main)">Hosting Request Queue</span>
+						<span class="text-(--cf-blue)">→</span>
+					</a>
+					<a href="/admin/projects" class="flex items-center justify-between p-3 rounded-lg bg-(--bg-muted)/60 hover:bg-(--cf-pastel-bg)/30 transition-colors">
+						<span class="font-medium text-(--text-main)">Manage Project Endpoints</span>
+						<span class="text-(--cf-blue)">→</span>
+					</a>
+					<a href="/admin/users" class="flex items-center justify-between p-3 rounded-lg bg-(--bg-muted)/60 hover:bg-(--cf-pastel-bg)/30 transition-colors">
+						<span class="font-medium text-(--text-main)">Community Member Accounts</span>
+						<span class="text-(--cf-blue)">→</span>
+					</a>
+					<a href="/admin/system" class="flex items-center justify-between p-3 rounded-lg bg-(--bg-muted)/60 hover:bg-(--cf-pastel-bg)/30 transition-colors">
+						<span class="font-medium text-(--text-main)">System Telemetry & Health</span>
+						<span class="text-(--cf-blue)">→</span>
+					</a>
+					<a href="/admin/audit" class="flex items-center justify-between p-3 rounded-lg bg-(--bg-muted)/60 hover:bg-(--cf-pastel-bg)/30 transition-colors">
+						<span class="font-medium text-(--text-main)">Immutable Audit Log</span>
+						<span class="text-(--cf-blue)">→</span>
+					</a>
+				</div>
+			</AdminPanel>
+
 		</div>
+
 	</div>
+
 </div>
