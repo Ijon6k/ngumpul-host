@@ -158,3 +158,11 @@ Nginx acts as the single public entry point:
 - Routes explicitly configured upstreams (SvelteKit frontend, Go backend API `/api/v1/`, uploaded media `/uploads/`).
 - Any unmatched/default request falls back to: `http://1111:80`.
 - Nginx is never configured as an open proxy.
+
+---
+
+## 7. Deep-Dive Documentation Links
+
+- **Technical Architecture, Database Schema, APIs & Uptime Formulas:** [`docs/technical.md`](./technical.md)
+- **Design System, Anti-Slop Guidelines & UI Tokens:** [`docs/design.md`](./design.md)
+
