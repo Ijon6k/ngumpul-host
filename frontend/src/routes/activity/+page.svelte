@@ -1,15 +1,16 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api } from '$lib/api';
+	import { activityApi } from '$lib/api';
+	import type { ActivityEvent } from '$lib/types/activity';
 	import ActivityTimeline from '$lib/components/ActivityTimeline.svelte';
 
-	let activities: any[] = [];
+	let activities: ActivityEvent[] = [];
 	let loading = true;
 
 	onMount(async () => {
 		try {
-			const res = await api.get('/activity');
-			activities = res.data?.activities || [];
+			const res = await activityApi.getPublicActivity();
+			activities = res.activities || [];
 		} catch (err) {
 			console.error('Failed to load activity:', err);
 		} finally {

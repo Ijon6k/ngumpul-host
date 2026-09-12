@@ -1,22 +1,21 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { api, extractError } from '$lib/api';
+	import { projectsApi, extractError } from '$lib/api';
 	import StatusDot from '$lib/components/StatusDot.svelte';
 	import ProjectCover from '$lib/components/ui/ProjectCover.svelte';
 	import ProjectAvailability from '$lib/components/ProjectAvailability.svelte';
 	import { Tabs, Timeline, TimelineItem } from '$lib/components/ui';
 	import {
 		ArrowUpRight,
-		GithubLogo,
-		BookOpen,
 		UploadSimple,
 		Check,
 		CaretLeft,
 		Trash
 	} from 'phosphor-svelte';
+	import { detectLinkInfo } from '$lib/utils/linkDetector';
 
-	let projectId = $page.params.id;
+	let projectId = $page.params.id || '';
 	let project: any = null;
 	let availability: any = null;
 	let activities: any[] = [];
@@ -60,14 +59,14 @@
 		error = null;
 		try {
 			const [projRes, visitsRes] = await Promise.all([
-				api.get(`/me/projects/${projectId}`),
-				api.get(`/me/projects/${projectId}/visits`)
+				projectsApi.getMyProject(projectId),
+				projectsApi.getMyProjectVisits(projectId)
 			]);
 
-			project = projRes.data?.project;
-			availability = projRes.data?.availability;
-			activities = projRes.data?.activities || [];
-			visitsData = visitsRes.data;
+			project = projRes.project;
+			availability = projRes.availability;
+			activities = projRes.activities || [];
+			visitsData = visitsRes;
 
 			if (project) {
 				formName = project.name || '';
@@ -98,15 +97,9 @@
 		uploadingCover = true;
 		saveError = null;
 		try {
-			const formData = new FormData();
-			formData.append('file', file);
-			formData.append('purpose', 'cover');
-
-			const res = await api.post('/upload', formData, {
-				headers: { 'Content-Type': 'multipart/form-data' }
-			});
-			if (res.data?.url) {
-				formCover = res.data.url;
+			const url = await projectsApi.uploadCover(file);
+			if (url) {
+				formCover = url;
 			}
 		} catch (err) {
 			saveError = extractError(err);
@@ -127,7 +120,7 @@
 			.filter(Boolean);
 
 		try {
-			await api.patch(`/me/projects/${projectId}`, {
+			await projectsApi.updateMyProject(projectId, {
 				name: formName,
 				description: formDesc,
 				cover_image_url: formCover,
@@ -330,23 +323,37 @@
 							</dd>
 						</div>
 						{#if project.repository_url}
+							{@const repoInfo = detectLinkInfo(project.repository_url, 'Source')}
 							<div class="flex items-baseline justify-between gap-4 py-1 border-b border-(--border-hairline)/50">
-								<dt class="text-(--text-muted)">Source</dt>
+								<dt class="text-(--text-muted)">{repoInfo.label}</dt>
 								<dd class="text-(--text-main) font-mono truncate max-w-[200px]">
-									<a href={project.repository_url} target="_blank" rel="noreferrer" class="hover:underline flex items-center gap-1">
-										<GithubLogo size={13} />
+									<a href={project.repository_url} target="_blank" rel="noreferrer" class="hover:underline flex items-center gap-1.5">
+										<svelte:component this={repoInfo.icon} size={13} />
 										<span class="truncate">{project.repository_url}</span>
 									</a>
 								</dd>
 							</div>
 						{/if}
 						{#if project.documentation_url}
+							{@const docInfo = detectLinkInfo(project.documentation_url, 'Documentation')}
 							<div class="flex items-baseline justify-between gap-4 py-1 border-b border-(--border-hairline)/50">
-								<dt class="text-(--text-muted)">Documentation</dt>
+								<dt class="text-(--text-muted)">{docInfo.label}</dt>
 								<dd class="text-(--text-main) font-mono truncate max-w-[200px]">
-									<a href={project.documentation_url} target="_blank" rel="noreferrer" class="hover:underline flex items-center gap-1">
-										<BookOpen size={13} />
+									<a href={project.documentation_url} target="_blank" rel="noreferrer" class="hover:underline flex items-center gap-1.5">
+										<svelte:component this={docInfo.icon} size={13} />
 										<span class="truncate">{project.documentation_url}</span>
+									</a>
+								</dd>
+							</div>
+						{/if}
+						{#if project.demo_url && project.demo_url !== project.public_url}
+							{@const demoInfo = detectLinkInfo(project.demo_url, 'Demo')}
+							<div class="flex items-baseline justify-between gap-4 py-1 border-b border-(--border-hairline)/50">
+								<dt class="text-(--text-muted)">{demoInfo.label}</dt>
+								<dd class="text-(--text-main) font-mono truncate max-w-[200px]">
+									<a href={project.demo_url} target="_blank" rel="noreferrer" class="hover:underline flex items-center gap-1.5">
+										<svelte:component this={demoInfo.icon} size={13} />
+										<span class="truncate">{project.demo_url}</span>
 									</a>
 								</dd>
 							</div>
@@ -544,34 +551,61 @@
 					<h2 class="text-sm font-medium text-(--text-main) tracking-tight">Links</h2>
 
 					<div class="flex flex-col gap-1.5">
-						<label for="p-demo" class="text-xs font-medium text-(--text-secondary)">Public URL</label>
+						<div class="flex items-center justify-between">
+							<label for="p-demo" class="text-xs font-medium text-(--text-secondary)">Public URL</label>
+							{#if formDemo}
+								{@const info = detectLinkInfo(formDemo)}
+								<span class="text-[11px] text-(--text-muted) flex items-center gap-1 font-mono">
+									<svelte:component this={info.icon} size={12} />
+									<span>{info.label}</span>
+								</span>
+							{/if}
+						</div>
 						<input
 							id="p-demo"
 							type="url"
 							bind:value={formDemo}
-							placeholder="https://..."
+							placeholder="https://your-service.domain"
 							class="text-xs px-3 py-2 rounded-sm border border-(--border-hairline) bg-(--bg-canvas) text-(--text-main) focus:border-(--accent-sky) outline-none font-mono"
 						/>
 					</div>
 
 					<div class="flex flex-col gap-1.5">
-						<label for="p-repo" class="text-xs font-medium text-(--text-secondary)">Source code repository</label>
+						<div class="flex items-center justify-between">
+							<label for="p-repo" class="text-xs font-medium text-(--text-secondary)">Source code repository (leave blank if closed source)</label>
+							{#if formRepo}
+								{@const info = detectLinkInfo(formRepo)}
+								<span class="text-[11px] text-(--text-muted) flex items-center gap-1 font-mono">
+									<svelte:component this={info.icon} size={12} />
+									<span>{info.label}</span>
+								</span>
+							{/if}
+						</div>
 						<input
 							id="p-repo"
 							type="url"
 							bind:value={formRepo}
-							placeholder="https://github.com/..."
+							placeholder="https://github.com/... or https://gitlab.com/..."
 							class="text-xs px-3 py-2 rounded-sm border border-(--border-hairline) bg-(--bg-canvas) text-(--text-main) focus:border-(--accent-sky) outline-none font-mono"
 						/>
 					</div>
 
 					<div class="flex flex-col gap-1.5">
-						<label for="p-docs" class="text-xs font-medium text-(--text-secondary)">Documentation</label>
+						<div class="flex items-center justify-between">
+							<label for="p-docs" class="text-xs font-medium text-(--text-secondary)">Documentation / Project notes</label>
+							{#if formDocs}
+								{@const info = detectLinkInfo(formDocs)}
+								<span class="text-[11px] text-(--text-muted) flex items-center gap-1 font-mono">
+									<svelte:component this={info.icon} size={12} />
+									<span>{info.label}</span>
+								</span>
+							{/if}
+						</div>
 						<input
 							id="p-docs"
 							type="url"
 							bind:value={formDocs}
-							placeholder="https://docs..."
+							placeholder="https://docs.google.com/... or Notion / GitBook / Drive"
 							class="text-xs px-3 py-2 rounded-sm border border-(--border-hairline) bg-(--bg-canvas) text-(--text-main) focus:border-(--accent-sky) outline-none font-mono"
 						/>
 					</div>

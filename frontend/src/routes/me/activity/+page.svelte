@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api, extractError } from '$lib/api';
+	import { activityApi, extractError } from '$lib/api';
+	import type { ActivityEvent } from '$lib/types/activity';
 	import { Timeline, TimelineItem } from '$lib/components/ui';
 
-	let activities: any[] = [];
+	let activities: ActivityEvent[] = [];
 	let loading = true;
 	let error: string | null = null;
 
@@ -11,8 +12,8 @@
 		loading = true;
 		error = null;
 		try {
-			const res = await api.get('/me/activity');
-			activities = res.data?.activities || [];
+			const res = await activityApi.getMyActivity();
+			activities = res.activities || [];
 		} catch (err) {
 			error = extractError(err);
 		} finally {

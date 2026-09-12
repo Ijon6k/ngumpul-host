@@ -1,6 +1,6 @@
 # REST API Specification & Data Contracts
 
-> **Base URLs:** `/api` (canonical) and `/api/v1` (compatibility)  
+> **Base URL:** `/api` (canonical) and `/go/{slug}` (outbound tracking redirect)  
 > **Content-Type:** `application/json`  
 > **Authentication:** Stateful cookie `ngumpul_session` (`HttpOnly; SameSite=Lax`)  
 > **Location:** [`docs/backend/api.md`](./api.md)
@@ -131,6 +131,27 @@
     }
     ```
 
+- **`GET /api/projects/{slug}/comments`**
+  - **Response (200 OK):**
+    ```json
+    {
+      "comments": [
+        {
+          "id": "...",
+          "content": "Impressive performance on bare metal.",
+          "created_at": "2026-09-11T14:30:00Z",
+          "author": {
+            "id": "...",
+            "username": "erik",
+            "display_name": "Erik Maulana",
+            "avatar_url": null
+          },
+          "is_deleted": false
+        }
+      ]
+    }
+    ```
+
 - **`GET /api/users`**
   - **Response (200 OK):** `{ "members": [ ... ] }`
 
@@ -185,8 +206,10 @@ Requests must include a valid `ngumpul_session` cookie.
 - **`POST /api/me/notifications/read-all`**: Marks all member notifications as read.
 - **`POST /api/projects/{slug}/comments`**: Posts a comment on a project showcase (rate limit: 5/10m per user).
 - **`DELETE /api/comments/{id}`**: Soft-deletes a comment. Permitted for comment author, project owner, or operator.
-- **`POST /api/reports`**: Submits a moderation report against a project or comment (rate limit: 5/10m per user/IP).
-  - **Payload:** `{ "target_type": "PROJECT" | "COMMENT", "target_id": "...", "reason": "SPAM" | "ABUSE_HARASSMENT" | "INAPPROPRIATE" | "MALICIOUS_SUSPICIOUS" | "OTHER", "details": "..." }`
+- **`POST /api/projects/{slug}/report`**: Submits a moderation report against a project (rate limit: 5/10m per user/IP).
+  - **Payload:** `{ "reason": "SPAM" | "ABUSE_HARASSMENT" | "INAPPROPRIATE" | "MALICIOUS_SUSPICIOUS" | "OTHER", "details": "..." }`
+- **`POST /api/comments/{id}/report`**: Submits a moderation report against a comment (rate limit: 5/10m per user/IP).
+  - **Payload:** `{ "reason": "SPAM" | "ABUSE_HARASSMENT" | "INAPPROPRIATE" | "MALICIOUS_SUSPICIOUS" | "OTHER", "details": "..." }`
 - **`POST /api/upload`**: Multipart file upload (`multipart/form-data`, file key: `file`, optional form field: `purpose` (`avatar` | `cover`)). Hard size limit: 10MB. Allowed MIME types: `image/jpeg`, `image/png`, `image/webp` (SVGs rejected). Enforces dimension sanity checks ($\le 4096\text{px}$). Returns `{ "url": "/uploads/covers/uuid.webp", "object_key": "covers/uuid.webp", "byte_size": 123456, "content_type": "image/webp", "width": 1200, "height": 900 }`.
 
 ---
@@ -202,7 +225,8 @@ Requests must possess `role == 'ADMIN'`.
 - **`POST /api/admin/invitations/{id}/revoke`**: Revokes an active invitation token immediately.
 - **`GET /api/admin/stats`**: Aggregate counts for total members, active projects, pending requests, and `open_reports`.
 - **`GET /api/admin/reports`**: Lists community moderation reports (`?status=OPEN|REVIEWED|RESOLVED|DISMISSED`).
-- **`PATCH /api/admin/reports/{id}`**: Updates report status (`{ "status": "RESOLVED" | "DISMISSED" | "REVIEWED", "resolution_notes": "..." }`).
+- **`POST /api/admin/reports/{id}/resolve`**: Resolves a moderation report (`{ "resolution_notes": "..." }`).
+- **`POST /api/admin/reports/{id}/dismiss`**: Dismisses a moderation report (`{ "resolution_notes": "..." }`).
 - **`GET /api/admin/comments`**: Lists all project comments with report count, author, and soft-delete status. Supports `?search=...` and `?project_id=...`.
 - **`DELETE /api/admin/comments/{id}`**: Soft-deletes a comment as operator.
 - **`GET /api/admin/users`**: Lists all members with email, status, and role.

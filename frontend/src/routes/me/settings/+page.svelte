@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { user } from '$lib/stores/auth';
-	import { api, extractError } from '$lib/api';
+	import { authApi, extractError } from '$lib/api';
 
 	let displayName = $user?.display_name || '';
 	let bio = $user?.bio || '';
@@ -18,15 +18,10 @@
 		uploading = true;
 		error = null;
 
-		const formData = new FormData();
-		formData.append('file', file);
-
 		try {
-			const res = await api.post('/upload', formData, {
-				headers: { 'Content-Type': 'multipart/form-data' }
-			});
-			if (res.data?.url) {
-				avatarURL = res.data.url;
+			const url = await authApi.uploadAvatar(file);
+			if (url) {
+				avatarURL = url;
 			}
 		} catch (err) {
 			error = extractError(err);
@@ -41,14 +36,14 @@
 		success = null;
 
 		try {
-			const res = await api.patch('/me', {
+			const res = await authApi.updateProfile({
 				display_name: displayName,
 				bio,
 				avatar_url: avatarURL
 			});
 
-			if (res.data?.user) {
-				user.set(res.data.user);
+			if (res.user) {
+				user.set(res.user);
 			}
 			success = 'Profile settings saved successfully.';
 		} catch (err) {

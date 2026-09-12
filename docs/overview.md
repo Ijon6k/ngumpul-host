@@ -134,7 +134,7 @@ Visual characteristics:
 - **Deployment:** Docker Compose
 - **Authentication:** Server-side sessions + Argon2id
 - **File Storage:** Local filesystem abstraction (`/data/uploads`)
-- **API:** REST `/api/v1`
+- **API:** REST `/api` (canonical) and outbound tracking redirect `/go/{slug}`
 
 ---
 
@@ -155,14 +155,21 @@ Single-instance, multi-user application. One deployment represents one community
 
 ### Reverse Proxy & Routing Principles
 Nginx acts as the single public entry point:
-- Routes explicitly configured upstreams (SvelteKit frontend, Go backend API `/api/v1/`, uploaded media `/uploads/`).
+- Routes explicitly configured upstreams (SvelteKit frontend, Go backend API `/api/`, uploaded media `/uploads/`, outbound tracking `/go/`).
 - Any unmatched/default request falls back to: `http://1111:80`.
 - Nginx is never configured as an open proxy.
 
 ---
 
-## 7. Deep-Dive Documentation Links
+## 7. Master Documentation Directory
 
-- **Technical Architecture, Database Schema, APIs & Uptime Formulas:** [`docs/technical.md`](./technical.md)
-- **Design System, Anti-Slop Guidelines & UI Tokens:** [`docs/design.md`](./design.md)
+- **System Architecture & Network Topology:** [`docs/architecture.md`](./architecture.md)
+- **End-to-End Operational & Redirect Workflows:** [`docs/workflows.md`](./workflows.md)
+- **Frontend Architecture & Modular Data Fetching:** [`docs/frontend/architecture.md`](./frontend/architecture.md)
+- **Frontend Design System & Aesthetics:** [`docs/frontend/design-system.md`](./frontend/design-system.md)
+- **Frontend Master Component Bible:** [`docs/frontend/components.md`](./frontend/components.md)
+- **Backend Architecture & Monolith Standards:** [`docs/backend/architecture.md`](./backend/architecture.md)
+- **REST API Specification & Data Contracts:** [`docs/backend/api.md`](./backend/api.md)
+- **Database Schema & Data Dictionary:** [`docs/backend/database.md`](./backend/database.md)
+- **Kernel Telemetry & Availability Engine:** [`docs/backend/availability.md`](./backend/availability.md) & [`docs/backend/telemetry.md`](./backend/telemetry.md)
 

@@ -1,14 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api } from '$lib/api';
+	import { usersApi } from '$lib/api';
+	import type { PublicMember } from '$lib/api/users';
 
-	let members: any[] = [];
+	let members: PublicMember[] = [];
 	let loading = true;
 
 	onMount(async () => {
 		try {
-			const res = await api.get('/users');
-			members = res.data?.members || [];
+			const res = await usersApi.getMembers();
+			members = res.members || [];
 		} catch (err) {
 			console.error('Failed to load members:', err);
 		} finally {

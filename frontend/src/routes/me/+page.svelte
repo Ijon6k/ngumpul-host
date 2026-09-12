@@ -1,31 +1,34 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { user } from '$lib/stores/auth';
-	import { api } from '$lib/api';
+	import { projectsApi, hostingRequestsApi, activityApi, notificationsApi } from '$lib/api';
+	import type { Project } from '$lib/types/project';
+	import type { HostingRequest } from '$lib/types/hosting';
+	import type { ActivityEvent } from '$lib/types/activity';
 	import StatusDot from '$lib/components/StatusDot.svelte';
 	import ProjectCover from '$lib/components/ui/ProjectCover.svelte';
 	import { Timeline, TimelineItem } from '$lib/components/ui';
 	import { Plus, ArrowRight, ArrowUpRight } from 'phosphor-svelte';
 
-	let myProjects: any[] = [];
-	let myRequests: any[] = [];
-	let myActivities: any[] = [];
+	let myProjects: Project[] = [];
+	let myRequests: HostingRequest[] = [];
+	let myActivities: ActivityEvent[] = [];
 	let unreadNotificationsCount = 0;
 	let loading = true;
 
 	onMount(async () => {
 		try {
 			const [projRes, reqRes, actRes, notifRes] = await Promise.all([
-				api.get('/me/projects'),
-				api.get('/me/hosting-requests'),
-				api.get('/me/activity'),
-				api.get('/me/notifications')
+				projectsApi.getMyProjects(),
+				hostingRequestsApi.getMyHostingRequests(),
+				activityApi.getMyActivity(),
+				notificationsApi.getNotifications()
 			]);
-			myProjects = projRes.data?.projects || [];
-			myRequests = reqRes.data?.requests || [];
-			myActivities = actRes.data?.activities || [];
-			const notifs = notifRes.data?.notifications || [];
-			unreadNotificationsCount = notifs.filter((n: any) => !n.is_read).length;
+			myProjects = projRes.projects || [];
+			myRequests = reqRes.requests || [];
+			myActivities = actRes.activities || [];
+			const notifs = notifRes.notifications || [];
+			unreadNotificationsCount = notifs.filter((n) => !n.is_read).length;
 		} catch (e) {
 			console.error('Failed to load workspace overview:', e);
 		} finally {

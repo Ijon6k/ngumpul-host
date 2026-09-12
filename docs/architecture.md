@@ -22,7 +22,7 @@ graph TB
     Client["Client / Web Browser"] -->|"HTTP / HTTPS (:1111 / :80 / :443)"| Nginx["Nginx Reverse Proxy"]
     
     subgraph "Docker Bridge Network (ngumpul_network)"
-        Nginx -->|"Proxy: /api/*, /uploads/*"| Backend["Go Backend Core (:8080)"]
+        Nginx -->|"Proxy: /api/*, /uploads/*, /go/*"| Backend["Go Backend Core (:8080)"]
         Nginx -->|"Proxy: /* (SSR Pages & Static Chunks)"| Frontend["SvelteKit Frontend (:3000)"]
         
         Backend -->|"pgxpool TCP Connection (:5432)"| Postgres[("PostgreSQL 16 Database")]

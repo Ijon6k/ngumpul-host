@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api, extractError } from '$lib/api';
+	import { adminApi, extractError } from '$lib/api';
+	import type { Comment } from '$lib/types/comment';
 	import ConfirmModal from '$lib/components/ui/ConfirmModal.svelte';
 	import {
 		ChatDots,
@@ -11,7 +12,7 @@
 		Funnel
 	} from 'phosphor-svelte';
 
-	let comments: any[] = [];
+	let comments: Comment[] = [];
 	let loading = true;
 	let error: string | null = null;
 	let searchTerm = '';
@@ -27,9 +28,9 @@
 		loading = true;
 		error = null;
 		try {
-			const query = searchTerm ? `?search=${encodeURIComponent(searchTerm)}` : '';
-			const res = await api.get(`/admin/comments${query}`);
-			comments = res.data?.comments || [];
+			const query = searchTerm ? `search=${encodeURIComponent(searchTerm)}` : '';
+			const res = await adminApi.comments.listComments(query);
+			comments = res.comments || [];
 		} catch (err) {
 			error = extractError(err);
 		} finally {
@@ -55,7 +56,7 @@
 		if (!commentToDelete) return;
 		deleting = true;
 		try {
-			await api.delete(`/admin/comments/${commentToDelete.id}`);
+			await adminApi.comments.deleteComment(commentToDelete.id);
 			deleteModalOpen = false;
 			commentToDelete = null;
 			await loadComments();
@@ -77,7 +78,7 @@
 	}
 
 	$: filteredComments = filterFlaggedOnly
-		? comments.filter((c) => c.report_count > 0)
+		? comments.filter((c) => (c.report_count ?? 0) > 0)
 		: comments;
 </script>
 
@@ -195,7 +196,7 @@
 
 							<!-- Status / Reports -->
 							<td class="py-3.5 px-3 whitespace-nowrap">
-								{#if c.report_count > 0}
+								{#if (c.report_count ?? 0) > 0}
 									<a
 										href="/admin/reports"
 										class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30"

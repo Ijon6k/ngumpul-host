@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api, extractError } from '$lib/api';
+	import { hostingRequestsApi, extractError } from '$lib/api';
+	import type { HostingRequest } from '$lib/types/hosting';
 
-	let requests: any[] = [];
+	let requests: HostingRequest[] = [];
 	let loading = true;
 	let submitting = false;
 	let error: string | null = null;
@@ -17,8 +18,8 @@
 
 	async function loadRequests() {
 		try {
-			const res = await api.get('/me/hosting-requests');
-			requests = res.data?.requests || [];
+			const res = await hostingRequestsApi.getMyHostingRequests();
+			requests = res.requests || [];
 		} catch (err) {
 			console.error('Failed to load requests:', err);
 		} finally {
@@ -39,7 +40,7 @@
 			.filter(Boolean);
 
 		try {
-			const res = await api.post('/hosting-requests', {
+			await hostingRequestsApi.submitHostingRequest({
 				project_name: projectName,
 				description,
 				repository_url: repositoryUrl,
@@ -48,7 +49,7 @@
 				technology_stack: techStack
 			});
 
-			successMsg = res.data?.message || 'Hosting request submitted successfully.';
+			successMsg = 'Hosting request submitted successfully.';
 			projectName = '';
 			description = '';
 			repositoryUrl = '';

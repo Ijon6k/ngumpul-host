@@ -1,18 +1,8 @@
 import { writable } from 'svelte/store';
-import { api } from '../api';
+import { authApi } from '../api/auth';
+import type { User } from '$lib/types/user';
 
-export interface User {
-	id: string;
-	username: string;
-	email: string;
-	display_name: string;
-	avatar_url: string;
-	bio: string;
-	role: 'USER' | 'ADMIN';
-	status: string;
-	email_verified: boolean;
-	created_at: string;
-}
+export type { User };
 
 export const user = writable<User | null>(null);
 export const authLoading = writable<boolean>(true);
@@ -20,9 +10,9 @@ export const authLoading = writable<boolean>(true);
 export async function initAuth() {
 	try {
 		authLoading.set(true);
-		const res = await api.get('/me');
-		if (res.data?.user) {
-			user.set(res.data.user);
+		const res = await authApi.getMe();
+		if (res?.user) {
+			user.set(res.user);
 		} else {
 			user.set(null);
 		}
@@ -35,7 +25,7 @@ export async function initAuth() {
 
 export async function logout() {
 	try {
-		await api.post('/auth/logout');
+		await authApi.logout();
 	} catch (_) {}
 	user.set(null);
 	window.location.href = '/';

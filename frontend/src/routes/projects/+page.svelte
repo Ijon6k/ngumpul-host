@@ -2,13 +2,14 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { api } from '$lib/api';
+	import { projectsApi } from '$lib/api';
+	import type { Project } from '$lib/types/project';
 	import ProjectCard from '$lib/components/ProjectCard.svelte';
 	import Pagination from '$lib/components/ui/Pagination.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { MagnifyingGlass, FolderSimpleDashed } from 'phosphor-svelte';
 
-	let projects: any[] = [];
+	let projects: Project[] = [];
 	let loading = true;
 	let searchQuery = '';
 	let searchTimeout: any = null;
@@ -36,11 +37,11 @@
 				params.type = 'EXTERNAL';
 			}
 
-			const res = await api.get('/projects', { params });
-			projects = res.data?.projects || [];
-			totalProjects = res.data?.total ?? projects.length;
-			currentPage = res.data?.page ?? pageNum;
-			totalPages = res.data?.total_pages ?? Math.max(1, Math.ceil(totalProjects / pageSize));
+			const res = await projectsApi.getProjects(params);
+			projects = res.projects || [];
+			totalProjects = res.total ?? projects.length;
+			currentPage = res.page ?? pageNum;
+			totalPages = res.total_pages ?? Math.max(1, Math.ceil(totalProjects / pageSize));
 		} catch (err) {
 			console.error('Failed to load projects:', err);
 			projects = [];

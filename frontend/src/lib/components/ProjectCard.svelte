@@ -38,13 +38,13 @@
 
 <article class="group relative flex flex-col bg-(--bg-surface) border border-(--border-hairline) hover:border-(--border-subtle) rounded-md overflow-hidden transition-all duration-200 hover:shadow-xs">
 	<!-- Cover area (4:3 aspect ratio with status badge overlay) -->
-	<a href="/projects/{project.slug}" class="block relative w-full overflow-hidden bg-(--bg-muted)" tabindex="-1">
+	<a href="/projects/{project.slug}" class="block relative w-full aspect-[4/3] overflow-hidden bg-(--bg-muted)" tabindex="-1">
 		<ProjectCover
 			src={project.cover_image_url}
 			alt={project.name}
 			name={project.name}
-			aspectRatio="4/3"
-			class="group-hover:scale-[1.015] transition-transform duration-500 ease-out"
+			aspectRatio="full"
+			class="w-full h-full !rounded-none group-hover:scale-[1.015] transition-transform duration-500 ease-out"
 		/>
 		<div class="absolute top-3 right-3 z-10 pointer-events-none">
 			<StatusDot status={project.status} />

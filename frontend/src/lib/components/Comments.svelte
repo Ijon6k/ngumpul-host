@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { user } from '$lib/stores/auth';
-	import { api, extractError } from '$lib/api';
+	import { commentsApi, extractError } from '$lib/api';
 	import ConfirmModal from '$lib/components/ui/ConfirmModal.svelte';
 	import ReportModal from '$lib/components/ReportModal.svelte';
 	import { DotsThree, Trash, Flag, PaperPlaneTilt } from 'phosphor-svelte';
@@ -40,8 +40,8 @@
 		loading = true;
 		error = null;
 		try {
-			const res = await api.get(`/projects/${projectSlug}/comments`);
-			comments = res.data?.comments || [];
+			const res = await commentsApi.getProjectComments(projectSlug);
+			comments = res?.comments || [];
 		} catch (err) {
 			error = extractError(err);
 		} finally {
@@ -57,11 +57,11 @@
 		submitError = null;
 
 		try {
-			const res = await api.post(`/projects/${projectSlug}/comments`, {
+			const res = await commentsApi.createComment(projectSlug, {
 				content: newCommentText.trim()
 			});
-			if (res.data?.comment) {
-				comments = [...comments, res.data.comment];
+			if (res?.comment) {
+				comments = [...comments, res.comment];
 				newCommentText = '';
 			}
 		} catch (err) {
@@ -81,7 +81,7 @@
 		if (!commentToDelete) return;
 		deleting = true;
 		try {
-			await api.delete(`/comments/${commentToDelete.id}`);
+			await commentsApi.deleteComment(commentToDelete.id);
 			comments = comments.map((c) => {
 				if (c.id === commentToDelete.id) {
 					return { ...c, is_deleted: true, content: 'This comment was removed.' };

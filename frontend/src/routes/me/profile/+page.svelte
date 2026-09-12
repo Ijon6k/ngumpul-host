@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { user } from '$lib/stores/auth';
-	import { api } from '$lib/api';
+	import { projectsApi } from '$lib/api';
+	import type { Project } from '$lib/types/project';
 	import ProjectCover from '$lib/components/ui/ProjectCover.svelte';
 	import StatusDot from '$lib/components/StatusDot.svelte';
 	import {
@@ -13,13 +14,13 @@
 		EnvelopeSimple
 	} from 'phosphor-svelte';
 
-	let myProjects: any[] = [];
+	let myProjects: Project[] = [];
 	let loading = true;
 
 	onMount(async () => {
 		try {
-			const res = await api.get('/me/projects');
-			myProjects = res.data?.projects || [];
+			const res = await projectsApi.getMyProjects();
+			myProjects = res.projects || [];
 		} catch {
 			// Silently fail
 		} finally {

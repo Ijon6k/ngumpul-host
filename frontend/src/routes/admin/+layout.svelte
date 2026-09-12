@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { user, logout } from '$lib/stores/auth';
-	import { api } from '$lib/api';
 	import {
 		SquaresFour,
 		Tray,
@@ -21,9 +20,12 @@
 		ShieldWarning,
 		ChatDots
 	} from 'phosphor-svelte';
+	import {
+		adminPendingCount,
+		adminOpenReportsCount,
+		refreshAdminStats
+	} from '$lib/stores/adminStats';
 
-	let pendingCount = 0;
-	let openReportsCount = 0;
 	let theme = 'light';
 	let mobileMenuOpen = false;
 	let sidebarCollapsed = false;
@@ -45,17 +47,7 @@
 			sidebarCollapsed = storedCollapsed === 'true';
 		}
 
-		try {
-			const res = await api.get('/admin/stats');
-			if (res.data?.pending_requests != null) {
-				pendingCount = res.data.pending_requests;
-			}
-			if (res.data?.open_reports != null) {
-				openReportsCount = res.data.open_reports;
-			}
-		} catch (e) {
-			// Silently fail if not loaded
-		}
+		await refreshAdminStats();
 	});
 
 	function toggleTheme() {
@@ -82,14 +74,14 @@
 			label: 'Hosting Requests',
 			href: '/admin/requests',
 			exact: false,
-			badge: pendingCount,
+			badge: $adminPendingCount,
 			icon: Tray
 		},
 		{
 			label: 'Reports',
 			href: '/admin/reports',
 			exact: false,
-			badge: openReportsCount,
+			badge: $adminOpenReportsCount,
 			icon: ShieldWarning
 		},
 		{

@@ -1,13 +1,16 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api } from '$lib/api';
+	import { adminApi, systemApi } from '$lib/api';
+	import type { AdminStats } from '$lib/api/admin/stats';
+	import type { Project } from '$lib/types/project';
+	import type { HostingRequest } from '$lib/types/hosting';
 	import AdminStatCard from '$lib/components/admin/AdminStatCard.svelte';
 	import AdminPanel from '$lib/components/admin/AdminPanel.svelte';
 	import ResourceBar from '$lib/components/ResourceBar.svelte';
 
-	let stats: any = null;
-	let pendingRequests: any[] = [];
-	let projectsList: any[] = [];
+	let stats: AdminStats | null = null;
+	let pendingRequests: HostingRequest[] = [];
+	let projectsList: Project[] = [];
 	let systemData: any = null;
 	let statusData: any = null;
 	let loading = true;
@@ -15,17 +18,17 @@
 	onMount(async () => {
 		try {
 			const [statsRes, reqsRes, projRes, sysRes, statRes] = await Promise.all([
-				api.get('/admin/stats'),
-				api.get('/admin/hosting-requests?status=PENDING'),
-				api.get('/admin/projects'),
-				api.get('/admin/system'),
-				api.get('/status')
+				adminApi.stats.getStats(),
+				adminApi.requests.listRequests('PENDING'),
+				adminApi.projects.listProjects(),
+				adminApi.system.getSystemHealth(),
+				systemApi.getPublicStatus()
 			]);
-			stats = statsRes.data;
-			pendingRequests = reqsRes.data?.requests || [];
-			projectsList = projRes.data?.projects || [];
-			systemData = sysRes.data;
-			statusData = statRes.data;
+			stats = statsRes;
+			pendingRequests = reqsRes.requests || [];
+			projectsList = projRes.projects || [];
+			systemData = sysRes;
+			statusData = statRes;
 		} catch (err) {
 			console.error('Failed to load admin dashboard data:', err);
 		} finally {
@@ -69,7 +72,7 @@
 				label="Open Reports"
 				value={stats?.open_reports ?? 0}
 				subtext={(stats?.open_reports ?? 0) > 0 ? 'Awaiting moderation' : 'No open reports'}
-				badge={(stats?.open_reports ?? 0) > 0 ? `${stats.open_reports} open` : 'Clean'}
+				badge={(stats?.open_reports ?? 0) > 0 ? `${stats?.open_reports} open` : 'Clean'}
 				badgeClass={(stats?.open_reports ?? 0) > 0 ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400' : 'bg-(--cf-green-pastel) text-(--cf-green-text)'}
 				href="/admin/reports"
 				actionText="Moderation"

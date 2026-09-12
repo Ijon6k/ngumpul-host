@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { api, extractError } from '$lib/api';
+	import { adminApi, commentsApi, extractError } from '$lib/api';
 	import StatusDot from '$lib/components/StatusDot.svelte';
 	import ConfirmModal from '$lib/components/ui/ConfirmModal.svelte';
 	import {
@@ -28,13 +28,13 @@
 		loading = true;
 		error = null;
 		try {
-			const projRes = await api.get('/admin/projects');
-			const allProjects = projRes.data?.projects || [];
+			const projRes = await adminApi.projects.listProjects();
+			const allProjects = projRes.projects || [];
 			project = allProjects.find((p: any) => p.id === projectId || p.slug === projectId);
 
 			if (project) {
-				const commRes = await api.get(`/projects/${project.slug}/comments`);
-				comments = commRes.data?.comments || [];
+				const commRes = await commentsApi.getComments(project.slug);
+				comments = commRes.comments || [];
 			}
 		} catch (err) {
 			error = extractError(err);
@@ -48,7 +48,7 @@
 	async function updateProjectStatus(newStatus: string) {
 		if (!project) return;
 		try {
-			await api.patch(`/admin/projects/${project.id}`, { status: newStatus });
+			await adminApi.projects.updateProject(project.id, { status: newStatus });
 			project.status = newStatus;
 			success = `Status updated to ${newStatus}.`;
 		} catch (err) {
@@ -60,7 +60,7 @@
 		if (!project) return;
 		const newVis = project.visibility === 'PUBLIC' ? 'UNPUBLISHED' : 'PUBLIC';
 		try {
-			await api.patch(`/admin/projects/${project.id}`, { visibility: newVis });
+			await adminApi.projects.updateProject(project.id, { visibility: newVis });
 			project.visibility = newVis;
 			success = `Visibility set to ${newVis}.`;
 		} catch (err) {
@@ -77,7 +77,7 @@
 		if (!commentToDelete) return;
 		deleting = true;
 		try {
-			await api.delete(`/admin/comments/${commentToDelete.id}`);
+			await adminApi.comments.deleteComment(commentToDelete.id);
 			comments = comments.map((c) =>
 				c.id === commentToDelete.id
 					? { ...c, is_deleted: true, content: 'This comment was removed.' }

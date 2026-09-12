@@ -72,6 +72,10 @@ $$\text{Radius}_{\text{inner}} = \text{Radius}_{\text{outer}} - \text{Padding}$$
   * Exclusively for IP addresses, git commit SHAs, latency numbers (`29 ms`), port numbers, memory sizes (`23.1 GB`), and terminal outputs.
 
 ### Hierarchy & Scale Standards
+* **Base Typography Scale (Tailwind v4 theme tokens):**
+  * `--text-xs: 0.875rem` (14px) — metadata, secondary timestamps, tags, badges.
+  * `--text-sm: 1rem` (16px) — body copy, table cells, form labels, card descriptions.
+  * `--text-base: 1.125rem` (18px) — prominent body, feature intro leads.
 * **Page Titles:** `text-2xl sm:text-3xl lg:text-4xl font-normal tracking-[-0.03em]`.
 * **Section Titles:** `text-lg sm:text-xl font-medium tracking-tight`.
 * **Table Headers:** `text-sm font-semibold text-(--text-secondary) uppercase tracking-wider`.

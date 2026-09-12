@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api } from '$lib/api';
+	import { adminApi } from '$lib/api';
+	import type { AuditEntry } from '$lib/api/admin/audit';
 	import { Table, TableRow, TableCell, type TableColumn } from '$lib/components/ui';
 
-	let logs: any[] = [];
+	let logs: AuditEntry[] = [];
 	let loading = true;
 	let searchQuery = '';
 	let actionFilter = 'ALL';
@@ -19,8 +20,8 @@
 	async function loadLogs() {
 		loading = true;
 		try {
-			const res = await api.get('/admin/audit');
-			logs = res.data?.audit_logs || [];
+			const res = await adminApi.audit.listAuditLogs();
+			logs = res.audit_logs || [];
 		} catch (err) {
 			console.error('Failed to load audit logs:', err);
 		} finally {

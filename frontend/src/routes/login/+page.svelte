@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { api, extractError } from '$lib/api';
+	import { authApi, extractError } from '$lib/api';
 	import { user } from '$lib/stores/auth';
 
 	let emailOrUsername = '';
@@ -11,13 +11,13 @@
 		error = null;
 		loading = true;
 		try {
-			const res = await api.post('/auth/login', {
+			const res = await authApi.login({
 				email_or_username: emailOrUsername,
 				password
 			});
-			if (res.data?.user) {
-				user.set(res.data.user);
-				window.location.href = res.data.user.role === 'ADMIN' ? '/admin' : '/me';
+			if (res?.user) {
+				user.set(res.user);
+				window.location.href = res.user.role === 'ADMIN' ? '/admin' : '/me';
 			}
 		} catch (err) {
 			error = extractError(err);

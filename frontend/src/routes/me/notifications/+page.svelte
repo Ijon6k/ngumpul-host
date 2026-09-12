@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api, extractError } from '$lib/api';
+	import { notificationsApi, extractError } from '$lib/api';
+	import type { AppNotification } from '$lib/types/notification';
+	import {
+		unreadNotificationsCount,
+		markNotificationAsRead,
+		markAllNotificationsAsRead
+	} from '$lib/stores/notifications';
 	import {
 		Bell,
 		Check,
@@ -8,7 +14,7 @@
 		Checks
 	} from 'phosphor-svelte';
 
-	let notifications: any[] = [];
+	let notifications: AppNotification[] = [];
 	let loading = true;
 	let error: string | null = null;
 	let markingAll = false;
@@ -17,8 +23,10 @@
 		loading = true;
 		error = null;
 		try {
-			const res = await api.get('/me/notifications');
-			notifications = res.data?.notifications || [];
+			const res = await notificationsApi.getNotifications();
+			notifications = res.notifications || [];
+			const unread = notifications.filter((n) => !n.is_read).length;
+			unreadNotificationsCount.set(unread);
 		} catch (err) {
 			error = extractError(err);
 		} finally {
@@ -28,24 +36,22 @@
 
 	onMount(loadNotifications);
 
-	async function markAsRead(id: string) {
-		try {
-			await api.patch(`/me/notifications/${id}/read`, {});
+	async function handleMarkAsRead(id: string) {
+		const success = await markNotificationAsRead(id);
+		if (success) {
 			notifications = notifications.map((n) =>
 				n.id === id ? { ...n, is_read: true } : n
 			);
-		} catch (err) {
-			console.error('Failed to mark notification as read:', err);
 		}
 	}
 
-	async function markAllAsRead() {
+	async function handleMarkAllAsRead() {
 		markingAll = true;
 		try {
-			await api.post('/me/notifications/read-all', {});
-			notifications = notifications.map((n) => ({ ...n, is_read: true }));
-		} catch (err) {
-			console.error('Failed to mark all as read:', err);
+			const success = await markAllNotificationsAsRead();
+			if (success) {
+				notifications = notifications.map((n) => ({ ...n, is_read: true }));
+			}
 		} finally {
 			markingAll = false;
 		}
@@ -98,7 +104,7 @@
 			<button
 				type="button"
 				class="btn btn-secondary btn-sm text-xs px-3.5 py-1.5 inline-flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
-				on:click={markAllAsRead}
+				on:click={handleMarkAllAsRead}
 				disabled={markingAll}
 			>
 				<Checks size={14} weight="bold" />
@@ -160,7 +166,7 @@
 					{#if !notif.is_read}
 						<button
 							type="button"
-							on:click={() => markAsRead(notif.id)}
+							on:click={() => handleMarkAsRead(notif.id)}
 							class="text-xs text-(--text-muted) hover:text-(--text-main) p-1.5 rounded-sm hover:bg-(--bg-muted) transition-colors cursor-pointer shrink-0"
 							title="Mark as read"
 							aria-label="Mark as read"

@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { user, authLoading, logout } from '$lib/stores/auth';
-	import { api } from '$lib/api';
+	import { unreadNotificationsCount, refreshUnreadNotifications } from '$lib/stores/notifications';
 	import {
 		SquaresFour,
 		Folder,
@@ -19,7 +19,6 @@
 		X
 	} from 'phosphor-svelte';
 
-	let unreadNotifications = 0;
 	let theme = 'light';
 	let mobileMenuOpen = false;
 
@@ -36,13 +35,7 @@
 		}
 
 		if ($user) {
-			try {
-				const res = await api.get('/me/notifications');
-				const list = res.data?.notifications || [];
-				unreadNotifications = list.filter((n: any) => !n.is_read).length;
-			} catch {
-				// Silently fail if notifications cannot be loaded
-			}
+			await refreshUnreadNotifications();
 		}
 	});
 
@@ -57,8 +50,6 @@
 	function closeMobileMenu() {
 		mobileMenuOpen = false;
 	}
-
-	$: currentPath = $page.url.pathname;
 
 	$: mainNav = [
 		{
@@ -90,7 +81,7 @@
 			href: '/me/notifications',
 			exact: false,
 			icon: Bell,
-			badge: unreadNotifications
+			badge: $unreadNotificationsCount
 		}
 	];
 
@@ -109,11 +100,13 @@
 		}
 	];
 
-	function isActive(item: { href: string; exact: boolean }): boolean {
-		if (item.exact) {
-			return currentPath === item.href;
+	function isItemActive(pathname: string, href: string, exact = false): boolean {
+		const path = (pathname || '').replace(/\/$/, '') || '/';
+		const target = (href || '').replace(/\/$/, '') || '/';
+		if (exact) {
+			return path === target;
 		}
-		return currentPath.startsWith(item.href);
+		return path === target || path.startsWith(target + '/');
 	}
 </script>
 
@@ -217,20 +210,20 @@
 					</div>
 
 					<nav class="flex flex-col gap-1">
-						<span class="px-2 py-1 text-xs font-medium text-(--text-muted)">Workspace</span>
+						<span class="px-3 py-1 text-xs font-medium text-(--text-muted)">Workspace</span>
 						{#each mainNav as item}
-							{@const active = isActive(item)}
+							{@const active = isItemActive($page.url.pathname, item.href, item.exact)}
 							<a
 								href={item.href}
 								on:click={closeMobileMenu}
-								class="flex items-center justify-between px-2.5 py-1.5 rounded-sm text-xs transition-colors {active ? 'text-(--text-main) font-semibold bg-(--bg-muted)' : 'text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted)/40'}"
+								class="flex items-center justify-between px-3 py-2 rounded-sm text-sm transition-colors {active ? 'text-(--text-main) font-medium bg-(--bg-muted)' : 'text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted)/50'}"
 							>
-								<span class="flex items-center gap-2">
-									<svelte:component this={item.icon} size={15} weight={active ? 'bold' : 'regular'} />
+								<span class="flex items-center gap-2.5">
+									<svelte:component this={item.icon} size={18} weight={active ? 'bold' : 'regular'} />
 									<span>{item.label}</span>
 								</span>
 								{#if item.badge && item.badge > 0}
-									<span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium bg-(--accent-sky) text-white">
+									<span class="px-2 py-0.5 rounded-full text-xs font-mono font-medium bg-(--accent-sky) text-white">
 										{item.badge}
 									</span>
 								{/if}
@@ -242,13 +235,13 @@
 
 					<nav class="flex flex-col gap-1">
 						{#each secondaryNav as item}
-							{@const active = isActive(item)}
+							{@const active = isItemActive($page.url.pathname, item.href, item.exact)}
 							<a
 								href={item.href}
 								on:click={closeMobileMenu}
-								class="flex items-center gap-2 px-2.5 py-1.5 rounded-sm text-xs transition-colors {active ? 'text-(--text-main) font-semibold bg-(--bg-muted)' : 'text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted)/40'}"
+								class="flex items-center gap-2.5 px-3 py-2 rounded-sm text-sm transition-colors {active ? 'text-(--text-main) font-medium bg-(--bg-muted)' : 'text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted)/50'}"
 							>
-								<svelte:component this={item.icon} size={15} weight={active ? 'bold' : 'regular'} />
+								<svelte:component this={item.icon} size={18} weight={active ? 'bold' : 'regular'} />
 								<span>{item.label}</span>
 							</a>
 						{/each}
@@ -257,9 +250,9 @@
 							<a
 								href="/admin"
 								on:click={closeMobileMenu}
-								class="flex items-center gap-2 px-2.5 py-1.5 rounded-sm text-xs font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors mt-1"
+								class="flex items-center gap-2.5 px-3 py-2 rounded-sm text-sm font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors mt-1"
 							>
-								<ShieldCheck size={15} weight="regular" />
+								<ShieldCheck size={18} weight="regular" />
 								<span>Admin Console</span>
 							</a>
 						{/if}
@@ -269,9 +262,9 @@
 						<button
 							type="button"
 							on:click={() => { closeMobileMenu(); logout(); }}
-							class="flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400 hover:opacity-80 transition-opacity cursor-pointer"
+							class="flex items-center gap-2 text-xs text-rose-600 dark:text-rose-400 hover:opacity-80 transition-opacity cursor-pointer px-1 py-1"
 						>
-							<SignOut size={14} />
+							<SignOut size={16} />
 							<span>Sign out</span>
 						</button>
 					</div>
@@ -282,7 +275,7 @@
 		<!-- Centered Desktop Workspace Canvas (lg+) -->
 		<div class="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 lg:py-12 flex-1 flex items-start gap-10">
 			<!-- Floating Navigation Rail (Desktop) -->
-			<aside class="hidden lg:flex flex-col w-52 shrink-0 self-start sticky top-10 select-none gap-6">
+			<aside class="hidden lg:flex flex-col w-56 shrink-0 self-start sticky top-10 select-none gap-6">
 				<!-- Top Brand Logo (Clicking returns to public site) -->
 				<div class="flex items-center justify-between">
 					<a
@@ -297,35 +290,35 @@
 					<button
 						type="button"
 						on:click={toggleTheme}
-						class="p-1 rounded-sm text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-muted) transition-colors cursor-pointer"
+						class="p-1.5 rounded-sm text-(--text-muted) hover:text-(--text-main) hover:bg-(--bg-muted) transition-colors cursor-pointer"
 						aria-label="Toggle theme"
 						title="Toggle Theme"
 					>
 						{#if theme === 'dark'}
-							<Sun size={14} weight="regular" />
+							<Sun size={15} weight="regular" />
 						{:else}
-							<Moon size={14} weight="regular" />
+							<Moon size={15} weight="regular" />
 						{/if}
 					</button>
 				</div>
 
 				<!-- Workspace Primary Navigation -->
-				<nav class="flex flex-col gap-0.5">
-					<span class="px-2 py-1 text-xs font-medium text-(--text-muted)">
+				<nav class="flex flex-col gap-1">
+					<span class="px-3 py-1 text-xs font-medium text-(--text-muted)">
 						Workspace
 					</span>
 					{#each mainNav as item}
-						{@const active = isActive(item)}
+						{@const active = isItemActive($page.url.pathname, item.href, item.exact)}
 						<a
 							href={item.href}
-							class="flex items-center justify-between px-2.5 py-1.5 rounded-sm text-xs transition-colors {active ? 'text-(--text-main) font-semibold bg-(--bg-muted)' : 'text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted)/40 font-normal'}"
+							class="flex items-center justify-between px-3 py-2 rounded-sm text-sm transition-colors {active ? 'text-(--text-main) font-medium bg-(--bg-muted)' : 'text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted)/50'}"
 						>
-							<span class="flex items-center gap-2">
-								<svelte:component this={item.icon} size={15} weight={active ? 'bold' : 'regular'} />
+							<span class="flex items-center gap-2.5">
+								<svelte:component this={item.icon} size={18} weight={active ? 'bold' : 'regular'} />
 								<span>{item.label}</span>
 							</span>
 							{#if item.badge && item.badge > 0}
-								<span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium bg-(--accent-sky) text-white">
+								<span class="px-2 py-0.5 rounded-full text-xs font-mono font-medium bg-(--accent-sky) text-white">
 									{item.badge}
 								</span>
 							{/if}
@@ -337,14 +330,14 @@
 				<div class="h-px bg-(--border-hairline)/60 mx-1"></div>
 
 				<!-- Secondary Profile / Account Navigation -->
-				<nav class="flex flex-col gap-0.5">
+				<nav class="flex flex-col gap-1">
 					{#each secondaryNav as item}
-						{@const active = isActive(item)}
+						{@const active = isItemActive($page.url.pathname, item.href, item.exact)}
 						<a
 							href={item.href}
-							class="flex items-center gap-2 px-2.5 py-1.5 rounded-sm text-xs transition-colors {active ? 'text-(--text-main) font-semibold bg-(--bg-muted)' : 'text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted)/40 font-normal'}"
+							class="flex items-center gap-2.5 px-3 py-2 rounded-sm text-sm transition-colors {active ? 'text-(--text-main) font-medium bg-(--bg-muted)' : 'text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted)/50'}"
 						>
-							<svelte:component this={item.icon} size={15} weight={active ? 'bold' : 'regular'} />
+							<svelte:component this={item.icon} size={18} weight={active ? 'bold' : 'regular'} />
 							<span>{item.label}</span>
 						</a>
 					{/each}
@@ -352,25 +345,25 @@
 					{#if $user.role === 'ADMIN'}
 						<a
 							href="/admin"
-							class="flex items-center gap-2 px-2.5 py-1.5 rounded-sm text-xs font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors mt-2"
+							class="flex items-center gap-2.5 px-3 py-2 rounded-sm text-sm font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors mt-2"
 						>
-							<ShieldCheck size={15} weight="regular" />
+							<ShieldCheck size={18} weight="regular" />
 							<span>Admin Console</span>
 						</a>
 					{/if}
 				</nav>
 
 				<!-- Rail Footer: User note & Sign Out -->
-				<div class="mt-4 pt-4 border-t border-(--border-hairline)/60 flex items-center justify-between text-xs text-(--text-muted) px-1">
-					<span class="truncate max-w-[110px] text-[11px]">@{$user.username}</span>
+				<div class="mt-4 pt-4 border-t border-(--border-hairline)/60 flex items-center justify-between text-xs text-(--text-muted) px-2">
+					<span class="truncate max-w-[120px] text-xs">@{$user.username}</span>
 					<button
 						type="button"
 						on:click={logout}
-						class="text-(--text-muted) hover:text-rose-500 p-1 rounded-sm transition-colors cursor-pointer"
+						class="text-(--text-muted) hover:text-rose-500 p-1.5 rounded-sm transition-colors cursor-pointer"
 						title="Sign Out"
 						aria-label="Sign Out"
 					>
-						<SignOut size={14} />
+						<SignOut size={16} />
 					</button>
 				</div>
 			</aside>

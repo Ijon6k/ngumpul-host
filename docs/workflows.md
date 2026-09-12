@@ -162,3 +162,125 @@ sequenceDiagram
 3. **GitHub-Style Dynamic Typed Phrase:** Promoting any member to administrator requires typing `give admin role to <username>`, preventing accidental privilege elevation.
 4. **Interactive Confirmation Modals:** Demoting an administrator, suspending an account, or restoring access requires confirmation with transparent consequence descriptions.
 
+---
+
+## 5. Outbound Project Redirect Engine (`/go/:slug`)
+
+This workflow documents how community visitors navigate from Ngumpul Host showcase pages to external deployed applications while securely and anonymously recording outbound visit metrics:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Visitor as Community Visitor
+    participant Nginx as Edge Ingress (Nginx)
+    participant API as Go Backend Core
+    participant DB as PostgreSQL Database
+    actor App as External Project Application
+
+    Visitor->>Nginx: Click "Visit project ↗" (GET /go/:slug)
+    Nginx->>API: Proxy pass to backend /go/:slug
+    API->>DB: Query project record by slug (SELECT id, public_url, status, visibility)
+    alt Project or Public URL Not Found
+        DB-->>API: No rows returned / public_url is empty
+        API-->>Visitor: HTTP 404 Not Found JSON error
+    else Valid Live Project
+        DB-->>API: Returns project metadata & target public_url
+        Note over API: Non-blocking asynchronous click recording
+        API-)DB: INSERT INTO project_visits (project_id, visited_at, date_bucket)
+        API-->>Visitor: HTTP 302 Found (Location: public_url)
+        Visitor->>App: Browser follows redirect to external service
+    end
+```
+
+### Architectural & Privacy Guarantees:
+1. **Asynchronous Non-Blocking Execution:** Click recording occurs in a lightweight background goroutine (`go func() { ... }()`) with a 5-second context timeout. Visitor redirection is never delayed by database write latency.
+2. **Zero Client Fingerprinting:** Outbound visit records strictly store `(project_id, visited_at, CURRENT_DATE)`. The system intentionally does **NOT** store client IP addresses, browser cookies, Canvas fingerprints, or third-party ad beacons.
+3. **Dual-Layer Ingress Reliability:**
+   - **Primary Layer (Nginx):** Route `location /go/` forwards directly to `backend_upstream` with zero Node.js overhead.
+   - **Fallback Layer (SvelteKit):** Universal endpoint in `src/routes/go/[slug]/+server.ts` handles SSR/direct edge fallback, guaranteeing redirection even if ingress routing is bypassed during local development.
+
+---
+
+## 6. Project Traffic Analytics, Impression Deduplication & 30-Day Aggregation Engine
+
+Ngumpul Host provides project owners with calm, actionable visibility into their application's reach without corporate surveillance tooling:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Visitor as Community Visitor
+    participant Svelte as SvelteKit Server / Client
+    participant Cache as In-Memory sync.Map Cache
+    participant API as Go Backend
+    participant DB as PostgreSQL Database
+
+    Note over Visitor,DB: 1. Showcase Page Impression Tracking
+    Visitor->>Svelte: View /projects/:slug
+    Svelte->>API: GET /api/projects/:slug
+    API->>Cache: Check clientKey (IP hash / session) last_seen
+    alt Seen within past 30 minutes
+        Cache-->>API: Cache hit (within 30m window)
+        Note over API: View ignored (deduplicated)
+    else First view or expired window
+        API->>Cache: Update last_seen = NOW()
+        API->>DB: UPSERT INTO project_page_views (project_id, date, views_count + 1)
+    end
+
+    Note over Visitor,DB: 2. Owner Analytics Retrieval (/api/me/projects/:id/visits)
+    actor Owner as Project Owner
+    Owner->>API: GET /api/me/projects/:id/visits (Cookie: ngumpul_session)
+    API->>API: Verify caller == project.owner_id OR caller.role == 'ADMIN'
+    API->>DB: Query 30-day views (project_page_views WHERE date >= CURRENT_DATE - 29d)
+    API->>DB: Query 30-day outbound clicks (project_visits WHERE date_bucket >= CURRENT_DATE - 29d)
+    API->>API: Generate continuous 30-day timeline map (zero-fill missing dates)
+    API-->>Owner: Return JSON { total_views_30d, total_outbound_30d, daily_breakdown }
+```
+
+### Technical Invariants:
+1. **30-Minute Impression Deduplication:** `RecordPageView` uses a thread-safe `sync.Map` in the Go backend. Repeated refreshes, rapid clicks, or bot crawls from the same IP/session within a 30-minute window increment zero database counters.
+2. **Continuous Zero-Filled 30-Day Timeline:** The `GetProjectVisits` handler initializes a 30-day date map (`dailyMap`) from `NOW() - 29 days` to `TODAY`. Missing days are preserved as `0 views` and `0 visits`, ensuring frontend line charts and bento metric widgets render smooth, gapless visualizations.
+3. **Strict Authorization Gate:** Non-owners cannot inspect other members' traffic statistics. Access is restricted strictly to the project creator or instance operators.
+
+---
+
+## 7. Smart External Link & Platform Auto-Detection (`linkDetector.ts`)
+
+Instead of forcing users into rigid, fragmented form inputs, Ngumpul Host allows creators to provide up to 5 arbitrary external links while automatically inferring the service, domain, brand iconography, and human labels:
+
+```
+User Input URL ───► URL Hostname Parser ───► Domain Matcher ───► Curated Phosphor Icon + Label
+```
+
+### Detection Matrix:
+
+| Domain Match | Platform Identified | Phosphor Icon | Default Label Rendered |
+| :--- | :--- | :--- | :--- |
+| `github.com` | GitHub Repository | `<GithubLogo weight="regular" />` | `GitHub` |
+| `gitlab.com` | GitLab Repository | `<GitlabLogo weight="regular" />` | `GitLab` |
+| `drive.google.com` | Google Drive Cloud Storage | `<GoogleDriveLogo weight="regular" />` | `Google Drive` |
+| `docs.google.com` | Google Docs Specification | `<FileText weight="regular" />` | `Google Docs` |
+| `figma.com` | Figma Design Workspace | `<FigmaLogo weight="regular" />` | `Figma` |
+| `youtube.com`, `youtu.be` | YouTube Video Demo | `<YoutubeLogo weight="regular" />` | `YouTube Demo` |
+| `vimeo.com` | Vimeo Video Demo | `<YoutubeLogo weight="regular" />` | `Video Demo` |
+| `twitter.com`, `x.com` | X / Twitter Profile | `<TwitterLogo weight="regular" />` | `X (Twitter)` |
+| `discord.gg`, `discord.com` | Discord Community Server | `<DiscordLogo weight="regular" />` | `Discord` |
+| `notion.so`, `notion.site` | Notion Documentation | `<FileText weight="regular" />` | `Notion Docs` |
+| *Any other valid URL* | Generic External Website | `<LinkSimple weight="regular" />` | Clean hostname or fallback |
+
+### Frontend Consumption:
+```svelte
+<script lang="ts">
+    import { detectLinkInfo } from '$lib/utils/linkDetector';
+    
+    // Example: Dynamically detect external link
+    const info = detectLinkInfo(project.demo_url, 'Live Demo');
+    const IconComponent = info.icon;
+</script>
+
+<a href={project.demo_url} target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300 hover:text-sky-500">
+    <IconComponent size={16} />
+    <span>{info.label}</span>
+</a>
+```
+
+

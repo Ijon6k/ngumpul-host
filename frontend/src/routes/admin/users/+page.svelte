@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api, extractError } from '$lib/api';
+	import { adminApi, extractError } from '$lib/api';
+	import type { User } from '$lib/types/user';
 	import { user } from '$lib/stores/auth';
 	import { ShieldCheck, WarningCircle, CheckCircle } from 'phosphor-svelte';
 	import { Table, TableRow, TableCell, type TableColumn, ConfirmModal } from '$lib/components/ui';
@@ -16,7 +17,7 @@
 
 	type ModalAction = 'PROMOTE' | 'DEMOTE' | 'SUSPEND' | 'RESTORE';
 
-	let users: any[] = [];
+	let users: User[] = [];
 	let loading = true;
 	let error: string | null = null;
 	let success: string | null = null;
@@ -34,8 +35,8 @@
 	async function loadUsers() {
 		loading = true;
 		try {
-			const res = await api.get('/admin/users');
-			users = res.data?.users || [];
+			const res = await adminApi.users.listUsers();
+			users = res.users || [];
 		} catch (err) {
 			console.error('Failed to load users:', err);
 		} finally {
@@ -78,16 +79,16 @@
 
 		try {
 			if (action === 'PROMOTE') {
-				await api.patch(`/admin/users/${target.id}/role`, { role: 'ADMIN' });
+				await adminApi.users.updateUserRole(target.id, 'ADMIN');
 				success = `Administrator role successfully granted to ${target.display_name} (@${target.username}).`;
 			} else if (action === 'DEMOTE') {
-				await api.patch(`/admin/users/${target.id}/role`, { role: 'USER' });
+				await adminApi.users.updateUserRole(target.id, 'USER');
 				success = `Administrator role successfully revoked from ${target.display_name} (@${target.username}).`;
 			} else if (action === 'SUSPEND') {
-				await api.patch(`/admin/users/${target.id}/status`, { status: 'SUSPENDED' });
+				await adminApi.users.updateUserStatus(target.id, 'SUSPENDED');
 				success = `Account ${target.display_name} (@${target.username}) has been suspended and active sessions terminated.`;
 			} else if (action === 'RESTORE') {
-				await api.patch(`/admin/users/${target.id}/status`, { status: 'ACTIVE' });
+				await adminApi.users.updateUserStatus(target.id, 'ACTIVE');
 				success = `Account ${target.display_name} (@${target.username}) has been restored to active status.`;
 			}
 			closeModal();

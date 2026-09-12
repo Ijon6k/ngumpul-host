@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import { api, extractError } from '$lib/api';
+	import { reportsApi, extractError } from '$lib/api';
 	import { X, ShieldWarning } from 'phosphor-svelte';
 
 	export let open: boolean = false;
@@ -40,17 +40,13 @@
 		successMessage = null;
 
 		try {
-			const endpoint =
-				targetType === 'PROJECT'
-					? `/projects/${targetId}/report`
-					: `/comments/${targetId}/report`;
+			if (targetType === 'PROJECT') {
+				await reportsApi.reportProject(targetId, { reason, details });
+			} else {
+				await reportsApi.reportComment(targetId, { reason, details });
+			}
 
-			const res = await api.post(endpoint, {
-				reason,
-				details
-			});
-
-			successMessage = res.data?.message || 'Thanks. Your report has been submitted.';
+			successMessage = 'Thanks. Your report has been submitted.';
 			setTimeout(() => {
 				close();
 				dispatch('success');

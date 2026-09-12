@@ -17,7 +17,7 @@ The frontend codebase is strictly organized into clean architectural layers:
 frontend/src/
 ├── app.css                       # Global design tokens, theme variables & resets
 ├── lib/
-│   ├── api/                      # Axios client, status & server query hooks
+│   ├── api/                      # Modular domain HTTP clients (projects, comments, reports, notifications, hostingRequests, activity, system, auth, admin/*)
 │   ├── components/
 │   │   ├── layout/               # Shell architecture (Header, Footer, ThemeToggle)
 │   │   ├── ui/                   # Reusable atomic design system primitives
@@ -25,7 +25,7 @@ frontend/src/
 │   │   ├── status/               # Availability heatmap, indicators & probes
 │   │   └── admin/                # Operator console shell & management views
 │   ├── stores/                   # Auth store & reactive session state
-│   ├── types/                    # TypeScript data contract definitions
+│   ├── types/                    # Shared TypeScript domain contracts (project, user, comment, report, hosting, notification, activity)
 │   └── utils/                    # Date & duration formatting utilities
 └── routes/
     ├── +layout.svelte            # Root layout, TanStack Query provider & auth boot
@@ -76,32 +76,40 @@ Alternatively, import the design system primitive:
 
 ---
 
-## 3. State Management & Data Fetching
+## 3. Data Fetching & State Architecture
 
-### 3.1. TanStack Query v5 Store Hooks
-Data fetching uses TanStack Query v5 store hooks with automated background polling and cache invalidation.
+### 3.1. Domain-Oriented Modular API Layer (`src/lib/api/`)
+All backend interaction is centralized into typed domain modules rather than scattered raw `fetch()` or ad-hoc HTTP calls in components:
+- **`projectsApi`** (`$lib/api/projects`): Public project catalog, slug detail, member projects, visit analytics, cover upload.
+- **`commentsApi`** (`$lib/api/comments`): Public comments, comment posting, comment moderation and deletion.
+- **`reportsApi`** (`$lib/api/reports`): Moderation reporting against projects or comments.
+- **`notificationsApi`** (`$lib/api/notifications`): In-app member notifications, individual and bulk read acknowledgments.
+- **`hostingRequestsApi`** (`$lib/api/hostingRequests`): Member application submission and personal request history.
+- **`activityApi`** (`$lib/api/activity`): Public system activity feed and member personal activity history.
+- **`systemApi`** (`$lib/api/system`): Public status availability, host specs, and service health.
+- **`authApi`** (`$lib/api/auth`): Login, registration, session checks, profile updates, avatar uploads, invite validation.
+- **`usersApi`** (`$lib/api/users`): Public member directory roster and user profile pages.
+- **`adminApi`** (`$lib/api/admin`): Operator console subsystems (`stats`, `projects`, `comments`, `reports`, `users`, `requests`, `settings`, `system`, `audit`).
 
-```typescript
-// Example: Status query in $lib/api/status.ts
-export function createStatusQuery(rangeStore: Readable<'1d' | '7d' | '30d'>) {
-    return createQuery(
-        derived(rangeStore, ($range) => ({
-            queryKey: ['system-status', $range],
-            queryFn: async () => {
-                const res = await api.get(`/status?range=${$range}`);
-                return res.data as StatusResponse;
-            },
-            refetchInterval: 60_000, // 60s background polling
-            staleTime: 30_000
-        }))
-    );
-}
-```
+### 3.2. Shared Domain Contracts (`src/lib/types/`)
+Domain models are strictly typed and centralized:
+- `project.ts`: `Project`, `ProjectAvailability`, `ProjectVisits`, `UpdateProjectInput`.
+- `user.ts`: `User`, `PublicUser`, `UpdateProfileInput`.
+- `comment.ts`: `Comment`, `CreateCommentInput`.
+- `report.ts`: `Report`, `CreateReportInput`.
+- `hosting.ts`: `HostingRequest`, `CreateHostingRequestInput`.
+- `notification.ts`: `AppNotification`.
+- `activity.ts`: `ActivityEvent`.
 
-### 3.2. Session Authentication Store (`$lib/stores/auth.ts`)
-- `initAuth()` runs in `+layout.svelte` on initial mount.
-- Calls `GET /api/me`. If a valid session exists, it populates the `$user` store.
-- If 401 Unauthorized is returned, clears `$user` to `null` without throwing errors.
+### 3.3. Universal SvelteKit Load & SSR Proxy Hook (`src/hooks.server.ts`)
+To allow SvelteKit universal page data preloading (`+page.ts`) while running behind Docker internal networks:
+- `src/hooks.server.ts` implements `handleFetch` to automatically rewrite internal server-side requests targeting `/api/...` to the Go backend container (`BACKEND_URL` / `http://backend:8080`).
+- Prevents container network isolation failures during server-side rendering while keeping public browser requests transparently routed via Nginx.
+
+### 3.4. Reactive Stores & Real-Time Counter Synchronization
+- **Session Authentication (`$lib/stores/auth.ts`)**: Initializes via `initAuth()` in `+layout.svelte`, storing `$user`.
+- **Member Notifications (`$lib/stores/notifications.ts`)**: `unreadNotificationsCount` store keeps the `/me` sidebar badge synchronized in real-time when notifications are opened or marked as read.
+- **Operator Metrics (`$lib/stores/adminStats.ts`)**: `adminPendingCount` and `adminOpenReportsCount` keep operator badges updated when requests or reports are reviewed.
 
 ---
 

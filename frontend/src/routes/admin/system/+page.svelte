@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api } from '$lib/api';
+	import { adminApi } from '$lib/api';
 
 	let systemData: any = null;
 	let loading = true;
@@ -8,8 +8,7 @@
 
 	async function loadSystemStats() {
 		try {
-			const res = await api.get('/admin/system');
-			systemData = res.data;
+			systemData = await adminApi.system.getSystemHealth();
 		} catch (err) {
 			console.error('Failed to load system diagnostics:', err);
 		} finally {

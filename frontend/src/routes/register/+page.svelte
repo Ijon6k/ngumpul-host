@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { api, extractError } from '$lib/api';
+	import { authApi, extractError } from '$lib/api';
 	import { user } from '$lib/stores/auth';
 	import { Lock, Ticket, CheckCircle, WarningCircle } from 'phosphor-svelte';
 
@@ -24,8 +24,8 @@
 		}
 
 		try {
-			const res = await api.get('/auth/mode');
-			registrationMode = res.data?.registration_mode || 'INVITE_ONLY';
+			const res = await authApi.getRegistrationMode();
+			registrationMode = (res?.registration_mode as any) || 'INVITE_ONLY';
 		} catch (err) {
 			registrationMode = 'INVITE_ONLY';
 		}
@@ -43,19 +43,19 @@
 		}
 		validatingToken = true;
 		try {
-			const res = await api.get(`/invitations/validate?token=${encodeURIComponent(clean)}`);
-			if (res.data?.valid) {
+			const res = await authApi.validateInvitation(clean);
+			if (res?.valid) {
 				tokenStatus = {
 					valid: true,
-					invitedEmail: res.data.invited_email || undefined
+					invitedEmail: res.invited_email || undefined
 				};
-				if (res.data.invited_email && !email) {
-					email = res.data.invited_email;
+				if (res.invited_email && !email) {
+					email = res.invited_email;
 				}
 			} else {
 				tokenStatus = {
 					valid: false,
-					message: res.data?.message || 'The invitation token is invalid or has expired.'
+					message: res?.message || 'The invitation token is invalid or has expired.'
 				};
 			}
 		} catch (err) {
@@ -82,15 +82,15 @@
 
 		loading = true;
 		try {
-			const res = await api.post('/auth/register', {
+			const res = await authApi.register({
 				username,
 				display_name: displayName || username,
 				email,
 				password,
 				invitation_token: invitationToken.trim() || undefined
 			});
-			if (res.data?.user) {
-				user.set(res.data.user);
+			if (res?.user) {
+				user.set(res.user);
 				window.location.href = '/me';
 			}
 		} catch (err) {

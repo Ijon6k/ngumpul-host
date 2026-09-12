@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api, extractError } from '$lib/api';
+	import { adminApi, extractError } from '$lib/api';
+	import type { HostingRequest } from '$lib/types/hosting';
 	import { Table, TableRow, TableCell, type TableColumn } from '$lib/components/ui';
 
-	let requests: any[] = [];
+	let requests: HostingRequest[] = [];
 	let loading = true;
 	let activeFilter = 'ALL';
 	let searchQuery = '';
@@ -20,8 +21,8 @@
 	async function loadRequests() {
 		loading = true;
 		try {
-			const res = await api.get('/admin/hosting-requests');
-			requests = res.data?.requests || [];
+			const res = await adminApi.requests.listRequests();
+			requests = res.requests || [];
 		} catch (err) {
 			console.error('Failed to load requests:', err);
 		} finally {
@@ -78,17 +79,17 @@
 
 		try {
 			if (actionType === 'approve') {
-				await api.post(`/admin/hosting-requests/${activeRequest.id}/approve`, {
+				await adminApi.requests.approveRequest(activeRequest.id, {
 					admin_notes: adminNotes
 				});
 				success = `Request for ${activeRequest.project_name} marked as APPROVED.`;
 			} else if (actionType === 'reject') {
-				await api.post(`/admin/hosting-requests/${activeRequest.id}/reject`, {
+				await adminApi.requests.rejectRequest(activeRequest.id, {
 					admin_notes: adminNotes
 				});
 				success = `Request for ${activeRequest.project_name} marked as REJECTED.`;
 			} else if (actionType === 'complete') {
-				await api.post(`/admin/hosting-requests/${activeRequest.id}/complete`, {
+				await adminApi.requests.completeRequest(activeRequest.id, {
 					admin_notes: adminNotes,
 					public_url: publicURL
 				});

@@ -10,24 +10,27 @@
 	import { Tabs, Timeline, TimelineItem } from '$lib/components/ui';
 	import {
 		ArrowUpRight,
-		GithubLogo,
-		BookOpen,
-		Globe,
 		User,
 		Calendar,
 		Flag,
 		ShareNetwork,
 		Check
 	} from 'phosphor-svelte';
+	import { detectLinkInfo } from '$lib/utils/linkDetector';
 
-	let project: any = null;
-	let activities: any[] = [];
-	let availability: any = null;
-	let loading = true;
-	let error: string | null = null;
+	import type { PageData } from './$types';
+
+	export let data: PageData;
+
 	let copied = false;
 	let reportModalOpen = false;
 	let activeTab = 'overview';
+
+	$: project = data.project;
+	$: availability = data.availability;
+	$: activities = data.activities || [];
+	let loading = false;
+	let error: string | null = null;
 
 	const tabsList = [
 		{ id: 'overview', label: 'Overview' },
@@ -42,20 +45,6 @@
 			copied = false;
 		}, 2000);
 	}
-
-	onMount(async () => {
-		const slug = $page.params.slug;
-		try {
-			const res = await api.get(`/projects/${slug}`);
-			project = res.data?.project;
-			activities = res.data?.activities || [];
-			availability = res.data?.availability;
-		} catch (err) {
-			error = extractError(err);
-		} finally {
-			loading = false;
-		}
-	});
 
 	function formatDate(dateStr?: string): string {
 		if (!dateStr) return '—';
@@ -190,14 +179,15 @@
 				{/if}
 
 				{#if project.repository_url}
+					{@const sourceInfo = detectLinkInfo(project.repository_url, 'Source')}
 					<a
 						href={project.repository_url}
 						target="_blank"
 						rel="noopener noreferrer"
 						class="btn btn-secondary btn-sm text-xs px-3 py-2 inline-flex items-center gap-1.5"
 					>
-						<GithubLogo size={14} />
-						<span>Source</span>
+						<svelte:component this={sourceInfo.icon} size={14} />
+						<span>{sourceInfo.label === 'GitHub' || sourceInfo.label === 'GitLab' ? sourceInfo.label : 'Source'}</span>
 						<ArrowUpRight size={11} />
 					</a>
 				{/if}
@@ -230,12 +220,13 @@
 		</header>
 
 		<!-- Large Visual Cover Area -->
-		<div class="w-full aspect-video sm:aspect-[21/9] max-h-[400px] rounded-md overflow-hidden border border-(--border-hairline) bg-(--bg-muted) shadow-xs my-8">
+		<div class="w-full aspect-video sm:aspect-[21/9] max-h-[400px] rounded-md overflow-hidden border border-(--border-hairline) bg-(--bg-muted) shadow-xs my-8 flex">
 			<ProjectCover
 				src={project.cover_image_url}
 				alt={project.name}
 				name={project.name}
-				aspectRatio="16/9"
+				aspectRatio="full"
+				class="w-full h-full !rounded-none !border-none"
 			/>
 		</div>
 
@@ -285,18 +276,23 @@
 						<h3 class="font-medium text-xs text-(--text-main)">Links</h3>
 						<div class="flex flex-col gap-2">
 							{#if project.public_url}
+								{@const pubInfo = detectLinkInfo(project.public_url, 'Website')}
 								<a
 									href="/go/{project.slug}"
 									target="_blank"
 									rel="noopener noreferrer"
 									class="text-(--accent-sky) hover:underline inline-flex items-center justify-between py-1"
 								>
-									<span class="truncate font-mono">{project.public_url}</span>
-									<ArrowUpRight size={12} />
+									<span class="flex items-center gap-2 truncate">
+										<svelte:component this={pubInfo.icon} size={13} />
+										<span class="truncate font-mono">{project.public_url}</span>
+									</span>
+									<ArrowUpRight size={12} class="shrink-0 ml-1" />
 								</a>
 							{/if}
 
 							{#if project.repository_url}
+								{@const repoInfo = detectLinkInfo(project.repository_url, 'Source code')}
 								<a
 									href={project.repository_url}
 									target="_blank"
@@ -304,14 +300,15 @@
 									class="text-(--text-secondary) hover:text-(--text-main) inline-flex items-center justify-between py-1 transition-colors"
 								>
 									<span class="flex items-center gap-2">
-										<GithubLogo size={13} />
-										<span>Source code</span>
+										<svelte:component this={repoInfo.icon} size={13} />
+										<span>{repoInfo.label}</span>
 									</span>
 									<ArrowUpRight size={12} />
 								</a>
 							{/if}
 
 							{#if project.documentation_url}
+								{@const docInfo = detectLinkInfo(project.documentation_url, 'Documentation')}
 								<a
 									href={project.documentation_url}
 									target="_blank"
@@ -319,14 +316,15 @@
 									class="text-(--text-secondary) hover:text-(--text-main) inline-flex items-center justify-between py-1 transition-colors"
 								>
 									<span class="flex items-center gap-2">
-										<BookOpen size={13} />
-										<span>Documentation</span>
+										<svelte:component this={docInfo.icon} size={13} />
+										<span>{docInfo.label}</span>
 									</span>
 									<ArrowUpRight size={12} />
 								</a>
 							{/if}
 
 							{#if project.demo_url && project.demo_url !== project.public_url}
+								{@const demoInfo = detectLinkInfo(project.demo_url, 'Live demo')}
 								<a
 									href={project.demo_url}
 									target="_blank"
@@ -334,8 +332,8 @@
 									class="text-(--text-secondary) hover:text-(--text-main) inline-flex items-center justify-between py-1 transition-colors"
 								>
 									<span class="flex items-center gap-2">
-										<Globe size={13} />
-										<span>Live demo</span>
+										<svelte:component this={demoInfo.icon} size={13} />
+										<span>{demoInfo.label}</span>
 									</span>
 									<ArrowUpRight size={12} />
 								</a>

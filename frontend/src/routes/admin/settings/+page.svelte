@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api, extractError } from '$lib/api';
+	import { adminApi, extractError } from '$lib/api';
 	import {
 		Gear,
 		Ticket,
@@ -67,8 +67,8 @@
 	async function loadSettings() {
 		loadingSettings = true;
 		try {
-			const res = await api.get('/admin/settings');
-			registrationMode = res.data?.registration_mode || 'INVITE_ONLY';
+			const res = await adminApi.settings.getSettings();
+			registrationMode = res.registration_mode || 'INVITE_ONLY';
 			savedRegistrationMode = registrationMode;
 		} catch (err) {
 			settingsError = extractError(err);
@@ -91,7 +91,7 @@
 		settingsError = null;
 		settingsSuccess = null;
 		try {
-			await api.patch('/admin/settings', {
+			await adminApi.settings.updateSettings({
 				registration_mode: registrationMode
 			});
 			savedRegistrationMode = registrationMode;
@@ -106,8 +106,8 @@
 	async function loadInvitations() {
 		loadingInvitations = true;
 		try {
-			const res = await api.get('/admin/invitations');
-			invitations = res.data?.invitations || [];
+			const res = await adminApi.settings.listInvitations();
+			invitations = res.invitations || [];
 		} catch (err) {
 			invitationsError = extractError(err);
 		} finally {
@@ -128,11 +128,11 @@
 				payload.invited_email = invitedEmail.trim();
 			}
 
-			const res = await api.post('/admin/invitations', payload);
-			if (res.data?.raw_token) {
+			const res = await adminApi.settings.createInvitation(payload);
+			if (res.raw_token) {
 				inviteSuccessToken = {
-					raw_token: res.data.raw_token,
-					invite_url: res.data.invite_url || `${window.location.origin}/invite/${res.data.raw_token}`
+					raw_token: res.raw_token,
+					invite_url: res.invite_url || `${window.location.origin}/invite/${res.raw_token}`
 				};
 				invitedEmail = '';
 				maxUses = 1;
@@ -155,7 +155,7 @@
 		revokeLoading = true;
 		revokeError = '';
 		try {
-			await api.post(`/admin/invitations/${revokeTargetId}/revoke`);
+			await adminApi.settings.revokeInvitation(revokeTargetId);
 			revokeTargetId = null;
 			await loadInvitations();
 		} catch (err) {

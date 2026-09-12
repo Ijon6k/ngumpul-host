@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api, extractError } from '$lib/api';
+	import { adminApi, extractError } from '$lib/api';
+	import type { Report } from '$lib/types/report';
+	import { refreshAdminStats } from '$lib/stores/adminStats';
 	import ConfirmModal from '$lib/components/ui/ConfirmModal.svelte';
 	import {
 		ShieldWarning,
@@ -13,7 +15,7 @@
 		Folder
 	} from 'phosphor-svelte';
 
-	let reports: any[] = [];
+	let reports: Report[] = [];
 	let loading = true;
 	let error: string | null = null;
 	let statusFilter = 'ALL';
@@ -33,9 +35,9 @@
 		loading = true;
 		error = null;
 		try {
-			const query = statusFilter === 'ALL' ? '' : `?status=${statusFilter}`;
-			const res = await api.get(`/admin/reports${query}`);
-			reports = res.data?.reports || [];
+			const res = await adminApi.reports.listReports(statusFilter);
+			reports = res.reports || [];
+			await refreshAdminStats();
 		} catch (err) {
 			error = extractError(err);
 		} finally {
@@ -60,12 +62,13 @@
 		if (!resolvingReport) return;
 		updating = true;
 		try {
-			await api.patch(`/admin/reports/${resolvingReport.id}`, {
+			await adminApi.reports.patchReport(resolvingReport.id, {
 				status: resolutionStatus,
 				resolution_notes: resolutionNotes
 			});
 			resolvingReport = null;
 			await loadReports();
+			await refreshAdminStats();
 		} catch (err) {
 			alert('Failed to update report: ' + extractError(err));
 		} finally {
@@ -82,7 +85,7 @@
 		if (!commentIdToDelete) return;
 		deletingComment = true;
 		try {
-			await api.delete(`/admin/comments/${commentIdToDelete}`);
+			await adminApi.comments.deleteComment(commentIdToDelete);
 			deleteCommentModal = false;
 			commentIdToDelete = null;
 			await loadReports();

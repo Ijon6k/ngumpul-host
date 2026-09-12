@@ -1,20 +1,22 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
-	import { api, extractError } from '$lib/api';
+	import { usersApi, extractError } from '$lib/api';
+	import type { PublicMember } from '$lib/api/users';
+	import type { Project } from '$lib/types/project';
 	import ProjectCard from '$lib/components/ProjectCard.svelte';
 
-	let member: any = null;
-	let projects: any[] = [];
+	let member: PublicMember | null = null;
+	let projects: Project[] = [];
 	let loading = true;
 	let error: string | null = null;
 
 	onMount(async () => {
-		const username = $page.params.username;
+		const username = $page.params.username || '';
 		try {
-			const res = await api.get(`/users/${username}`);
-			member = res.data?.user;
-			projects = res.data?.projects || [];
+			const res = await usersApi.getMember(username);
+			member = res.user;
+			projects = res.projects || [];
 		} catch (err) {
 			error = extractError(err);
 		} finally {

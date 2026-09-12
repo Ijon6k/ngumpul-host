@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api, extractError } from '$lib/api';
+	import { adminApi, extractError } from '$lib/api';
+	import type { Project } from '$lib/types/project';
 	import StatusDot from '$lib/components/StatusDot.svelte';
 	import { Table, TableRow, TableCell, type TableColumn } from '$lib/components/ui';
 
-	let projects: any[] = [];
+	let projects: Project[] = [];
 	let loading = true;
 	let error: string | null = null;
 	let success: string | null = null;
@@ -23,8 +24,8 @@
 	async function loadProjects() {
 		loading = true;
 		try {
-			const res = await api.get('/admin/projects');
-			projects = res.data?.projects || [];
+			const res = await adminApi.projects.listProjects();
+			projects = res.projects || [];
 		} catch (err) {
 			console.error('Failed to load admin projects:', err);
 		} finally {
@@ -38,7 +39,7 @@
 		error = null;
 		success = null;
 		try {
-			await api.patch(`/admin/projects/${projId}`, {
+			await adminApi.projects.updateProject(projId, {
 				status: newStatus
 			});
 			success = 'Project status successfully updated.';
@@ -53,7 +54,7 @@
 		success = null;
 		const newVis = currentVis === 'PUBLIC' ? 'UNPUBLISHED' : 'PUBLIC';
 		try {
-			await api.patch(`/admin/projects/${projId}`, {
+			await adminApi.projects.updateProject(projId, {
 				visibility: newVis
 			});
 			success = `Visibility changed to ${newVis}.`;

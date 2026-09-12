@@ -78,6 +78,10 @@ Sebelum membuat atau memodifikasi komponen, pahami 4 aturan absolut berikut:
 > DILARANG mengacak radius (misal membuat tombol `rounded-full` atau card `rounded-none`).
 
 ### Standar Skala Tipografi (Wajib)
+- **Token Skala Dasar (Tailwind v4 theme tokens):**
+  - `--text-xs: 0.875rem` (14px) — metadata, label sekunder, status badge, timestamps.
+  - `--text-sm: 1rem` (16px) — body teks, sel tabel, input form, navigasi sidebar, deskripsi kartu.
+  - `--text-base: 1.125rem` (18px) — lead paragraph, ringkasan fitur.
 - **Judul Halaman:** `text-2xl sm:text-3xl lg:text-4xl font-normal tracking-[-0.03em]`.
 - **Judul Sub-bagian:** `text-lg sm:text-xl font-medium tracking-tight`.
 - **Header Kolom Tabel:** `text-sm font-semibold text-(--text-secondary) uppercase tracking-wider`.
@@ -189,11 +193,13 @@ export interface TableColumn {
 ### `Button`
 
 Komponen aksi interaktif dengan kepatuhan token `radius-sm` (`rounded-[4px]`).
+- **`variant="primary"`**: Menggunakan warna aksen brand sky-blue (`#0284C7`, hover `#0369A1`) dengan teks putih solid untuk keterbacaan tinggi (WCAG AA 4.54:1) yang konsisten di mode terang maupun gelap (menggantikan tombol hitam polos).
+- **`variant="secondary"`**: Menggunakan permukaan netral terstandar (`bg-(--bg-muted)` dengan border `--border-hairline`).
 
 #### Props
 | Prop | Tipe | Default | Deskripsi |
 | :--- | :--- | :--- | :--- |
-| `variant` | `'primary' \| 'secondary' \| 'ghost' \| 'danger'` | `'secondary'` | Visual style |
+| `variant` | `'primary' \| 'secondary' \| 'ghost' \| 'danger'` | `'secondary'` | Visual style (`primary` = brand sky-blue, `secondary` = neutral border) |
 | `size` | `'sm' \| 'md' \| 'lg'` | `'sm'` | Ukuran tombol (tinggi: 32px, 36px, 40px) |
 | `href` | `string \| undefined` | `undefined` | Jika diisi, otomatis merender tag `<a>` |
 | `disabled` | `boolean` | `false` | Mematikan interaksi |
@@ -312,14 +318,18 @@ Standarisasi tata letak halaman sub-views untuk mencegah layout jumping dan marg
 
 ### `ProjectCover`
 
-Render visual artwork cover proyek dengan rasio 4:3 (`aspect-[4/3]`) atau 16:9, lazy loading, dan **deterministic palette generator**. Jika proyek belum memiliki gambar cover, komponen otomatis menghasilkan palet warna editorial yang konsisten berdasarkan nama proyek (tanpa placeholder generik yang berantakan).
+Render visual artwork cover proyek secara **full-bleed** dengan rasio 4:3, 16:9, atau kontainer fleksibel (`aspectRatio="full"`).
+- **Full-Bleed Fallback:** Bila proyek belum memiliki cover yang diunggah, komponen merender kotak solid warna biru pastel yang tenang (`bg-sky-100/80 dark:bg-sky-950/40` dengan aksen `border-sky-300/60 dark:border-sky-800/60`) dengan ukuran yang persis sama memenuhi kontainer kartu tanpa menciut / letterbox.
+- **Monogram Inisial:** Menampilkan 1–2 huruf inisial proyek di tengah secara proporsional.
+- **Aspect Ratio Normalization:** Mendukung string `'4/3'`, `'16/9'`, `'aspect-[4/3]'`, maupun `'full'` (`w-full h-full min-h-full`).
 
 #### Props
 | Prop | Tipe | Default | Deskripsi |
 | :--- | :--- | :--- | :--- |
-| `src` | `string \| null` | `undefined` | URL gambar |
-| `name` | `string` | `'Project'` | Nama proyek untuk generator inisial & palet |
-| `aspectRatio` | `string` | `'aspect-[4/3]'` | Rasio aspek gambar |
+| `src` | `string \| null` | `undefined` | URL gambar cover |
+| `name` | `string` | `'Project'` | Nama proyek untuk generator monogram inisial |
+| `aspectRatio` | `string` | `'full'` | Rasio aspek gambar (`'full'`, `'4/3'`, `'16/9'`, atau class Tailwind) |
+| `class` | `string` | `''` | Class tambahan untuk kontainer luar |
 
 ---
 
@@ -440,21 +450,36 @@ Didedikasikan untuk showcase spesifikasi hardware fisik pada landing page (`+pag
 
 - **`ProjectCard.svelte`**:
   - Kartu katalog publik untuk `/projects`.
-  - Menggabungkan `ProjectCover`, judul, deskripsi 2 baris, pemilik, stack teknologi (dipisahkan dengan tanda `·`), dan link visit.
+  - Menggunakan kontainer gambar berasio 4:3 (`aspect-[4/3]`) dengan `ProjectCover` full-bleed (`aspectRatio="full"`).
+  - Menampilkan judul, deskripsi ringkas, pembuat/pemilik, dan stack teknologi (dipisahkan tanda `·`).
+  - Mendukung tombol visit eksternal langsung yang terhubung ke endpoint pelacakan `/go/{slug}`.
   - Bebas dari pill chip spam.
+- **`linkDetector` (`$lib/utils/linkDetector.ts`)**:
+  - Utilitas pendeteksi domain URL otomatis untuk tautan proyek:
+    - `github.com` $\rightarrow$ Ikon `GithubLogo`, label "GitHub"
+    - `gitlab.com` $\rightarrow$ Ikon `GitlabLogo`, label "GitLab"
+    - `drive.google.com` $\rightarrow$ Ikon `GoogleDriveLogo`, label "Google Drive"
+    - `docs.google.com` $\rightarrow$ Ikon `FileText`, label "Google Docs"
+    - `figma.com` $\rightarrow$ Ikon `FigmaLogo`, label "Figma"
+    - `youtube.com` / `youtu.be` / `vimeo.com` $\rightarrow$ Ikon `YoutubeLogo`, label "Video Demo"
+    - `twitter.com` / `x.com` $\rightarrow$ Ikon `TwitterLogo`, label "X (Twitter)"
+    - `discord.gg` / `discord.com` $\rightarrow$ Ikon `DiscordLogo`, label "Discord"
+    - Domain umum lainnya $\rightarrow$ Ikon `LinkSimple` dengan fallback label cerdas.
 - **`Comments.svelte`**:
   - Thread diskusi kronologis pada showcase proyek publik (`/projects/[slug]`).
+  - Terintegrasi dengan modul domain `commentsApi` (`getProjectComments`, `createComment`, `deleteComment`).
   - Composer komentar dengan rate-limiting 5/10 menit, sanitasi teks, author avatar & display name.
   - Penanganan soft-delete (*"This comment was removed"*).
   - Menu aksi kontekstual: Report modal trigger dan Delete dengan konfirmasi `ConfirmModal` (khusus author, project owner, atau admin).
 - **`ReportModal.svelte`**:
   - Modal dialog pelaporan konten pelanggaran/spam untuk target Project dan Comment.
+  - Terintegrasi dengan `reportsApi.submitReport`.
   - Dropdown alasan terstandarisasi, rincian opsional, backdrop blur tenang.
 - **`ProjectAvailability.svelte`**:
   - Widget telemetri kesehatan proyek berbasis probe HTTP 5-menit.
   - Menampilkan uptime 30 hari dalam %, latensi respons rata-rata, dan status operasional real-time.
 - **`ActivityTimeline.svelte`**:
-  - Feed kronologis aktivitas publik (publikasi proyek, update, verifikasi).
+  - Feed kronologis aktivitas publik (publikasi proyek, update, verifikasi) berbasis `activityApi`.
 
 ---
 

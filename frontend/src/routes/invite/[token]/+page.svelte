@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { api, extractError } from '$lib/api';
+	import { authApi, extractError } from '$lib/api';
 	import { Ticket, CheckCircle, WarningCircle, ArrowRight } from 'phosphor-svelte';
 
 	let token = '';
@@ -21,14 +21,14 @@
 		}
 
 		try {
-			const res = await api.get(`/invitations/validate?token=${encodeURIComponent(token)}`);
-			if (res.data?.valid) {
+			const res = await authApi.validateInvitation(token);
+			if (res?.valid) {
 				valid = true;
-				invitedEmail = res.data.invited_email || null;
-				expiresAt = res.data.expires_at || null;
+				invitedEmail = res.invited_email || null;
+				expiresAt = res.expires_at || null;
 			} else {
 				valid = false;
-				message = res.data?.message || 'The invitation token is invalid or has expired.';
+				message = res?.message || 'The invitation token is invalid or has expired.';
 			}
 		} catch (err) {
 			valid = false;

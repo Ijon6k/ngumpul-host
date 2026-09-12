@@ -1,4 +1,4 @@
-import type { AvailabilityBlock } from './status';
+import type { AvailabilityBlock } from '$lib/types/status';
 
 export interface ServerHardware {
 	cpu: string;

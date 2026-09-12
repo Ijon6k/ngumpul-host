@@ -23,19 +23,23 @@ backend/
 │   ├── admin/               # Metrics, operator audit trail & user management
 │   ├── auth/                # Session manager, bcrypt hashing, login/register & RBAC
 │   ├── availability/        # Kernel uptime calculation, gap detection & incidents
+│   ├── comment/             # Project discussion comments & author/operator deletion
 │   ├── config/              # Environment variable loading & validation
 │   ├── database/            # pgxpool lifecycle & automated schema migration
 │   ├── hosting/             # Hosting request workflow (submit, review, approve, deploy)
 │   ├── notification/        # In-app user notifications & alerts
 │   ├── project/             # Project catalog, filtering, slugs & lifecycle
+│   ├── report/              # Community moderation reports against projects/comments
 │   ├── response/            # Standardized JSON response envelopes
 │   ├── storage/             # File upload validation & local disk serving
 │   ├── system/              # Linux kernel telemetry probes (/proc, /sys)
-│   └── user/                # Member directory & profile management
+│   ├── user/                # Member directory & profile management
+│   └── visits/              # Outbound click tracking (/go/:slug) & daily page views
 ├── migrations/
 │   ├── 001_initial_schema.sql
 │   ├── 002_media_objects.sql
-│   └── 003_access_and_invitations.sql
+│   ├── 003_access_and_invitations.sql
+│   └── 004_comments_reports_and_visits.sql
 ├── go.mod
 └── go.sum
 ```

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api } from '$lib/api';
+	import { projectsApi, activityApi, systemApi } from '$lib/api';
 	import HeroSection from '$lib/components/HeroSection.svelte';
 	import BentoGrid from '$lib/components/BentoGrid.svelte';
 	import ProjectCard from '$lib/components/ProjectCard.svelte';
@@ -16,15 +16,15 @@
 	onMount(async () => {
 		try {
 			const [projRes, actRes, statRes, serverRes] = await Promise.all([
-				api.get('/projects'),
-				api.get('/activity'),
-				api.get('/status'),
-				api.get('/public/server').catch(() => null)
+				projectsApi.getProjects(),
+				activityApi.getPublicActivity(),
+				systemApi.getPublicStatus(),
+				systemApi.getPublicServer().catch(() => null)
 			]);
-			projects = projRes.data?.projects || [];
-			activities = actRes.data?.activities || [];
-			statusData = statRes.data || null;
-			publicServer = serverRes?.data || null;
+			projects = projRes?.projects || [];
+			activities = actRes?.activities || [];
+			statusData = statRes || null;
+			publicServer = serverRes || null;
 		} catch (e) {
 			console.error('Failed to load portal data:', e);
 		} finally {
@@ -42,39 +42,40 @@
 	<!-- 2. Bento Grid Section: Real host device telemetry & Pinterest 3D server visual -->
 	<BentoGrid {hostSpecs} />
 
-	<!-- 3. Projects Section: Casual showcase of hosted things -->
+	<!-- 3. Projects Section: Casual showcase of hosted things (3 recent items) -->
 	<section class="py-16 sm:py-20 border-b border-(--border-hairline) bg-(--bg-canvas)">
 		<div class="container mx-auto px-6 max-w-6xl flex flex-col gap-8">
-			<div class="flex items-end justify-between flex-wrap gap-4">
-				<div>
-					<h2 class="font-sans font-normal text-2xl sm:text-3xl text-(--text-main) tracking-[-0.02em]">
-						Things we're hosting
-					</h2>
-					<p class="text-base text-(--text-secondary) mt-1 leading-relaxed font-normal">
-						Side projects, hobby tools, and open-source experiments kept alive on this node.
-					</p>
-				</div>
-				<a href="/projects" class="text-sm font-medium text-(--cf-blue) hover:underline inline-flex items-center gap-1">
-					<span>View all ({projects.length})</span>
-					<ArrowRight size={13} weight="bold" />
-				</a>
+			<div>
+				<h2 class="font-sans font-normal text-2xl sm:text-3xl text-(--text-main) tracking-[-0.02em]">
+					Things we're hosting
+				</h2>
+				<p class="text-base text-(--text-secondary) mt-1 leading-relaxed font-normal">
+					Side projects, hobby tools, and open-source experiments kept alive on this node.
+				</p>
 			</div>
 
 			{#if projects.length === 0 && !loading}
-				<div class="text-center py-16 px-4 text-(--text-secondary) border border-dashed border-(--border-hairline) rounded-2xl">
+				<div class="text-center py-16 px-4 text-(--text-secondary) border border-dashed border-(--border-hairline) rounded-md">
 					<p class="text-sm">No projects registered yet.</p>
 				</div>
 			{:else}
 				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-					{#each projects.slice(0, 6) as project}
+					{#each projects.slice(0, 3) as project (project.id)}
 						<ProjectCard {project} />
 					{/each}
+				</div>
+
+				<div class="pt-2">
+					<a href="/projects" class="text-sm font-medium text-(--cf-blue) hover:underline inline-flex items-center gap-1.5">
+						<span>View more projects</span>
+						<ArrowRight size={14} weight="bold" />
+					</a>
 				</div>
 			{/if}
 		</div>
 	</section>
 
-	<!-- 4. Recent Activity Stream -->
+	<!-- 4. Recent Activity Stream (3 recent items) -->
 	<section class="py-16 sm:py-20 bg-(--bg-canvas)">
 		<div class="container mx-auto px-6 max-w-6xl flex flex-col gap-8">
 			<div>
@@ -86,12 +87,12 @@
 				</p>
 			</div>
 
-			<ActivityTimeline {activities} />
+			<ActivityTimeline activities={activities.slice(0, 3)} />
 
 			<div class="pt-2">
-				<a href="/activity" class="text-sm font-medium text-(--cf-blue) hover:underline inline-flex items-center gap-1">
-					<span>View complete activity timeline</span>
-					<ArrowRight size={13} weight="bold" />
+				<a href="/activity" class="text-sm font-medium text-(--cf-blue) hover:underline inline-flex items-center gap-1.5">
+					<span>View more activity</span>
+					<ArrowRight size={14} weight="bold" />
 				</a>
 			</div>
 		</div>

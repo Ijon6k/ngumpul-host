@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api, extractError } from '$lib/api';
+	import { projectsApi, extractError } from '$lib/api';
+	import type { Project } from '$lib/types/project';
 	import StatusDot from '$lib/components/StatusDot.svelte';
 	import ProjectCover from '$lib/components/ui/ProjectCover.svelte';
 	import { Plus, Folder, ArrowUpRight } from 'phosphor-svelte';
 
-	let projects: any[] = [];
+	let projects: Project[] = [];
 	let loading = true;
 	let error: string | null = null;
 
@@ -13,8 +14,8 @@
 		loading = true;
 		error = null;
 		try {
-			const res = await api.get('/me/projects');
-			projects = res.data?.projects || [];
+			const res = await projectsApi.getMyProjects();
+			projects = res.projects || [];
 		} catch (err) {
 			error = extractError(err);
 		} finally {
