@@ -149,9 +149,11 @@
 						<List size={18} weight="bold" />
 					{/if}
 				</button>
-				<a href="/" class="font-sans font-semibold text-sm tracking-tight text-(--text-main) flex items-center gap-1.5">
-					<span class="w-2 h-2 rounded-full bg-(--accent-sky)"></span>
-					<span>ngumpul<span class="text-(--text-muted)">host</span><span class="text-(--accent-sky)">.</span></span>
+				<a href="/" class="flex items-center gap-2 hover:opacity-85 transition-opacity" title="Ngumpul Host">
+					<img src="/logo.webp" alt="" class="h-5 w-5 object-contain" />
+					<span class="font-sans font-semibold text-sm tracking-tight text-(--text-main)">
+						ngumpul<span class="text-(--text-muted)">host</span><span class="text-(--accent-orange)">.</span>
+					</span>
 				</a>
 			</div>
 
@@ -195,9 +197,11 @@
 			>
 				<div class="w-72 bg-(--bg-surface) border-r border-(--border-hairline) h-full flex flex-col p-5 gap-6 shadow-2xl overflow-y-auto">
 					<div class="flex items-center justify-between pb-3 border-b border-(--border-hairline)">
-						<a href="/" class="font-sans font-semibold text-sm tracking-tight text-(--text-main) flex items-center gap-1.5" on:click={closeMobileMenu}>
-							<span class="w-2 h-2 rounded-full bg-(--accent-sky)"></span>
-							<span>ngumpul<span class="text-(--text-muted)">host</span><span class="text-(--accent-sky)">.</span></span>
+						<a href="/" class="flex items-center gap-2 hover:opacity-85 transition-opacity" on:click={closeMobileMenu} title="Ngumpul Host">
+							<img src="/logo.webp" alt="" class="h-5 w-5 object-contain" />
+							<span class="font-sans font-semibold text-sm tracking-tight text-(--text-main)">
+								ngumpul<span class="text-(--text-muted)">host</span><span class="text-(--accent-orange)">.</span>
+							</span>
 						</a>
 						<button
 							type="button"
@@ -216,14 +220,14 @@
 							<a
 								href={item.href}
 								on:click={closeMobileMenu}
-								class="flex items-center justify-between px-3 py-2 rounded-sm text-sm transition-colors {active ? 'text-(--text-main) font-medium bg-(--bg-muted)' : 'text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted)/50'}"
+								class="flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors {active ? 'bg-(--cf-pastel-bg) text-(--cf-pastel-text) font-semibold border border-(--cf-pastel-border)/50' : 'text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted)/50'}"
 							>
 								<span class="flex items-center gap-2.5">
 									<svelte:component this={item.icon} size={18} weight={active ? 'bold' : 'regular'} />
 									<span>{item.label}</span>
 								</span>
 								{#if item.badge && item.badge > 0}
-									<span class="px-2 py-0.5 rounded-full text-xs font-mono font-medium bg-(--accent-sky) text-white">
+									<span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-(--accent-orange) text-white">
 										{item.badge}
 									</span>
 								{/if}
@@ -280,11 +284,13 @@
 				<div class="flex items-center justify-between">
 					<a
 						href="/"
-						class="font-sans font-semibold text-base tracking-tight text-(--text-main) flex items-center gap-2 group py-1"
+						class="flex items-center gap-2 hover:opacity-85 transition-opacity py-1"
 						title="Return to Ngumpul Host Public Site"
 					>
-						<span class="w-2.5 h-2.5 rounded-full bg-(--accent-sky) group-hover:scale-110 transition-transform"></span>
-						<span>ngumpul<span class="text-(--text-muted)">host</span><span class="text-(--accent-sky)">.</span></span>
+						<img src="/logo.webp" alt="" class="h-5 w-5 object-contain" />
+						<span class="font-sans font-semibold text-sm tracking-tight text-(--text-main)">
+							ngumpul<span class="text-(--text-muted)">host</span><span class="text-(--accent-orange)">.</span>
+						</span>
 					</a>
 
 					<button
@@ -311,14 +317,14 @@
 						{@const active = isItemActive($page.url.pathname, item.href, item.exact)}
 						<a
 							href={item.href}
-							class="flex items-center justify-between px-3 py-2 rounded-sm text-sm transition-colors {active ? 'text-(--text-main) font-medium bg-(--bg-muted)' : 'text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted)/50'}"
+							class="flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors {active ? 'bg-(--cf-pastel-bg) text-(--cf-pastel-text) font-semibold border border-(--cf-pastel-border)/50' : 'text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted)/50'}"
 						>
 							<span class="flex items-center gap-2.5">
 								<svelte:component this={item.icon} size={18} weight={active ? 'bold' : 'regular'} />
 								<span>{item.label}</span>
 							</span>
 							{#if item.badge && item.badge > 0}
-								<span class="px-2 py-0.5 rounded-full text-xs font-mono font-medium bg-(--accent-sky) text-white">
+								<span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-(--accent-orange) text-white">
 									{item.badge}
 								</span>
 							{/if}
@@ -335,7 +341,7 @@
 						{@const active = isItemActive($page.url.pathname, item.href, item.exact)}
 						<a
 							href={item.href}
-							class="flex items-center gap-2.5 px-3 py-2 rounded-sm text-sm transition-colors {active ? 'text-(--text-main) font-medium bg-(--bg-muted)' : 'text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted)/50'}"
+							class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors {active ? 'bg-(--cf-pastel-bg) text-(--cf-pastel-text) font-semibold border border-(--cf-pastel-border)/50' : 'text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted)/50'}"
 						>
 							<svelte:component this={item.icon} size={18} weight={active ? 'bold' : 'regular'} />
 							<span>{item.label}</span>

@@ -98,7 +98,7 @@
 							{$user.display_name}
 						</h2>
 						{#if $user.role === 'ADMIN'}
-							<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+							<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">
 								Operator
 							</span>
 						{/if}
@@ -176,7 +176,7 @@
 									<span class="font-medium text-xs text-(--text-main) group-hover:text-(--accent-sky) transition-colors truncate">
 										{proj.name}
 									</span>
-									<span class="text-[11px] text-(--text-muted) font-mono">/{proj.slug}</span>
+									<span class="text-xs text-(--text-muted) font-mono">/{proj.slug}</span>
 								</div>
 							</div>
 							<StatusDot status={proj.status} />

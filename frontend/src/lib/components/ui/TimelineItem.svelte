@@ -48,7 +48,7 @@
 
 			<slot name="timestamp">
 				{#if timestamp}
-					<span class="text-[11px] text-(--text-muted) font-mono shrink-0">
+					<span class="text-xs text-(--text-muted) font-mono shrink-0">
 						{timestamp}
 					</span>
 				{/if}

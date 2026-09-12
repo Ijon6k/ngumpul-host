@@ -1,8 +1,12 @@
 export interface HostingRequest {
 	id: string;
 	user_id: string;
+	project_id?: string;
+	request_type?: 'NEW_PROJECT' | 'SUBDOMAIN_CHANGE';
 	project_name: string;
+	subdomain?: string;
 	description: string;
+	readme?: string;
 	repository_url?: string;
 	documentation_url?: string;
 	demo_url?: string;
@@ -27,7 +31,9 @@ export interface HostingRequest {
 
 export interface CreateHostingRequestInput {
 	project_name: string;
+	subdomain?: string;
 	description: string;
+	readme?: string;
 	repository_url?: string;
 	documentation_url?: string;
 	demo_url?: string;

@@ -25,6 +25,7 @@
 		adminOpenReportsCount,
 		refreshAdminStats
 	} from '$lib/stores/adminStats';
+	import { Breadcrumb } from '$lib/components/ui';
 
 	let theme = 'light';
 	let mobileMenuOpen = false;
@@ -173,12 +174,8 @@
 			{#if !sidebarCollapsed}
 				<div class="h-16 px-4 border-b border-(--border-hairline) flex items-center justify-between shrink-0">
 					<!-- Brand Logo on Left -->
-					<a href="/admin" class="flex items-center gap-2.5 hover:opacity-85 transition-opacity min-w-0" title="ngumpul-host console">
-						<span class="flex items-end gap-[3px] h-[15px] shrink-0">
-							<span class="w-[3.5px] h-[13px] rounded-full bg-(--accent-sky)"></span>
-							<span class="w-[3.5px] h-[15px] rounded-full bg-(--accent-sky)"></span>
-							<span class="w-[3.5px] h-[9px] rounded-full bg-(--accent-sky)"></span>
-						</span>
+					<a href="/admin" class="flex items-center gap-2 hover:opacity-85 transition-opacity min-w-0" title="ngumpul-host console">
+						<img src="/logo.webp" alt="" class="h-5 w-5 object-contain shrink-0" />
 						<span class="font-display font-medium text-sm tracking-tight text-(--text-main) truncate">
 							ngumpul<span class="font-normal text-(--text-secondary)">host</span><span class="text-(--accent-orange)">.</span>
 						</span>
@@ -205,11 +202,9 @@
 						aria-label="Expand sidebar"
 						on:click={toggleSidebar}
 					>
-						<!-- Brand 3-bar logo mark (Default) -->
-						<span class="flex items-end gap-[3px] h-[15px] transition-all duration-200 group-hover:opacity-0 group-hover:scale-75">
-							<span class="w-[3.5px] h-[13px] rounded-full bg-(--accent-sky)"></span>
-							<span class="w-[3.5px] h-[15px] rounded-full bg-(--accent-sky)"></span>
-							<span class="w-[3.5px] h-[9px] rounded-full bg-(--accent-sky)"></span>
+						<!-- Brand logo mark (Default) -->
+						<span class="flex items-center justify-center transition-all duration-200 group-hover:opacity-0 group-hover:scale-75">
+							<img src="/logo.webp" alt="Ngumpul Host" class="w-6 h-6 object-contain" />
 						</span>
 						<!-- Sidebar icon (Hover) -->
 						<span class="absolute inset-0 flex items-center justify-center text-(--text-main) opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200">
@@ -401,12 +396,13 @@
 						<List size={20} weight="regular" />
 					</button>
 
-					<!-- Breadcrumb Navigation: Clean, no logo -->
-					<nav class="flex items-center gap-2 text-sm" aria-label="Breadcrumb">
-						<a href="/admin" class="text-(--text-muted) hover:text-(--text-main) transition-colors">Console</a>
-						<span class="text-(--text-muted)">/</span>
-						<span class="text-(--text-main) font-medium">{getPageTitle($page.url.pathname)}</span>
-					</nav>
+					<!-- Breadcrumb Navigation -->
+					<Breadcrumb
+						items={[
+							{ label: 'Console', href: '/admin' },
+							{ label: getPageTitle($page.url.pathname) }
+						]}
+					/>
 				</div>
 
 				<div class="flex items-center gap-4 text-xs sm:text-sm">

@@ -8,6 +8,7 @@
 
 	export let projectSlug: string;
 	export let projectOwnerId: string;
+	export let commentCount: number = 0;
 
 	let comments: any[] = [];
 	let loading = true;
@@ -15,6 +16,8 @@
 	let submitError: string | null = null;
 	let newCommentText = '';
 	let submitting = false;
+
+	$: commentCount = comments.length;
 
 	// Delete confirmation modal state
 	let deleteModalOpen = false;
@@ -164,7 +167,7 @@
 							class="w-7 h-7 rounded-full object-cover shrink-0 border border-(--border-hairline) mt-0.5"
 						/>
 					{:else}
-						<div class="w-7 h-7 rounded-full bg-(--bg-muted) border border-(--border-hairline) flex items-center justify-center text-[11px] font-medium text-(--text-main) shrink-0 mt-0.5">
+						<div class="w-7 h-7 rounded-full bg-(--bg-muted) border border-(--border-hairline) flex items-center justify-center text-xs font-medium text-(--text-main) shrink-0 mt-0.5">
 							{c.author?.display_name?.charAt(0) || 'U'}
 						</div>
 					{/if}
@@ -177,7 +180,7 @@
 									{c.author?.display_name || 'Anonymous'}
 								</span>
 								{#if c.author_id === projectOwnerId}
-									<span class="text-[10px] text-(--text-muted) font-mono">
+									<span class="text-xs text-(--text-muted) font-mono">
 										(author)
 									</span>
 								{/if}
@@ -238,7 +241,7 @@
 							</p>
 						{/if}
 
-						<span class="text-[11px] text-(--text-muted) pt-0.5">
+						<span class="text-xs text-(--text-muted) pt-0.5">
 							{formatRelativeTime(c.created_at)}
 						</span>
 					</div>
@@ -271,7 +274,7 @@
 				></textarea>
 
 				<div class="flex items-center justify-between">
-					<span class="text-[11px] text-(--text-muted)">
+					<span class="text-xs text-(--text-muted)">
 						Posting as {$user.display_name}
 					</span>
 

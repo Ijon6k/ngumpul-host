@@ -140,6 +140,7 @@ func main() {
 	apiRouter.Get("/activity", activityHandler.ListPublic)
 	apiRouter.Get("/status", systemHandler.GetPublicStatus)
 	apiRouter.Get("/public/server", systemHandler.GetPublicServer)
+	apiRouter.Get("/hosting-requests/check-subdomain", hostingHandler.CheckSubdomain)
 
 	// Authenticated User Routes
 	apiRouter.Group(func(userRouter chi.Router) {
@@ -158,9 +159,10 @@ func main() {
 		userRouter.Post("/comments/{id}/report", reportHandler.ReportComment)
 		userRouter.Post("/projects/{slug}/report", reportHandler.ReportProject)
 
-		// Hosting requests
+		// Hosting requests & Subdomain changes
 		userRouter.Post("/hosting-requests", hostingHandler.Submit)
 		userRouter.Get("/me/hosting-requests", hostingHandler.ListMyRequests)
+		userRouter.Post("/projects/{id}/request-subdomain-change", hostingHandler.RequestSubdomainChange)
 
 		// Notifications
 		userRouter.Get("/me/notifications", notificationHandler.ListMyNotifications)

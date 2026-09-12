@@ -1,4 +1,4 @@
-# Kitab Komponen Ngumpul Host — Master Component Bible
+# Ngumpul Host Component Directory — Master Component Bible
 
 > **Audience:** AI Coding Agents (Antigravity, Claude Code, Cursor, Copilot) & Human Engineers  
 > **Authority:** Canonical Reference. Supersedes all speculative UI generation.  
@@ -7,67 +7,64 @@
 
 ---
 
-## Daftar Isi (Table of Contents)
+## Table of Contents
 
-1. [Aturan Inti & Design Invariants](#1-aturan-inti--design-invariants)
-   - [Hierarki Border Radius](#hierarki-border-radius-wajib)
-   - [Standar Skala Tipografi](#standar-skala-tipografi-wajib)
-   - [Standar Ikon (Phosphor Svelte)](#standar-ikon-phosphor-svelte-eksklusif)
-   - [Aturan Anti-AI-Slop untuk Komponen](#aturan-anti-ai-slop-untuk-komponen)
+1. [Core Rules & Design Invariants](#1-core-rules--design-invariants)
+   - [Border Radius Hierarchy](#border-radius-hierarchy-mandatory)
+   - [Typography Scale Standards](#typography-scale-standards-mandatory)
+   - [Icon Standards (Phosphor Svelte Exclusive)](#icon-standards-phosphor-svelte-exclusive)
+   - [Anti-AI-Slop Rules for Components](#anti-ai-slop-rules-for-components)
 2. [UI Primitives (`$lib/components/ui/`)](#2-ui-primitives-libcomponentsui)
-   - [Table, TableRow, TableCell](#table-tablerow-tablecell-tabel-reusable-arsitektur-terpusat)
+   - [Table, TableRow, TableCell](#table-tablerow-tablecell-centralized-reusable-table-architecture)
    - [Button](#button)
    - [Badge](#badge)
    - [Card](#card)
    - [Input](#input)
-   - [PageContainer](#pagecontainer)
-   - [PageHeader](#pageheader)
+   - [PageContainer & PageHeader](#pagecontainer--pageheader)
    - [ProjectCover](#projectcover)
    - [Pagination](#pagination)
    - [EmptyState](#emptystate)
    - [Timeline & TimelineItem](#timeline--timelineitem)
    - [Tabs](#tabs)
+   - [Breadcrumb, BreadcrumbItem, & BreadcrumbDropdown](#breadcrumb-breadcrumbitem--breadcrumbdropdown)
+   - [MarkdownView](#markdownview)
 3. [Status & Telemetry Components (`$lib/components/status/`)](#3-status--telemetry-components-libcomponentsstatus)
    - [StatusDot](#statusdot)
-   - [StatusIndicator](#statusindicator)
-   - [StatusOverviewCard](#statusoverviewcard)
    - [AvailabilityGrid](#availabilitygrid)
+   - [StatusOverviewCard](#statusoverviewcard)
    - [ServiceHealthCard & ServiceStatusRow](#servicehealthcard--servicestatusrow)
-   - [MetricItem](#metricitem)
    - [IncidentHistoryCard](#incidenthistorycard)
-   - [StatusHeader](#statusheader)
 4. [Bento & Hardware Components (`$lib/components/bento/`)](#4-bento--hardware-components-libcomponentsbento)
    - [HardwareCard](#hardwarecard)
    - [MemoryCard](#memorycard)
    - [StorageCard](#storagecard)
    - [NetworkCard](#networkcard)
-   - [AvailabilityCard](#availabilitycard)
    - [ServerPhotoCard](#serverphotocard)
    - [CpuPackageVisual](#cpupackagevisual)
-   - [IdeasCard](#ideascard)
 5. [Layout & Shell Components (`$lib/components/layout/`)](#5-layout--shell-components-libcomponentslayout)
    - [Header](#header)
    - [Footer](#footer)
    - [ThemeToggle](#themetoggle)
 6. [Showcase & Public Feed Components (`$lib/components/`)](#6-showcase--public-feed-components-libcomponents)
    - [ProjectCard](#projectcard)
-   - [HeroSection](#herosection)
-   - [BentoGrid](#bentogrid)
-   - [MetricPillar & ResourceBar](#metricpillar--resourcebar)
+   - [linkDetector](#linkdetector-libutilslinkdetectorts)
+   - [Comments](#comments)
+   - [ReportModal](#reportmodal)
+   - [ProjectAvailability](#projectavailability)
    - [ActivityTimeline](#activitytimeline)
 7. [Admin Console Components (`$lib/components/admin/`)](#7-admin-console-components-libcomponentsadmin)
    - [AdminPanel](#adminpanel)
    - [AdminStatCard](#adminstatcard)
-8. [Panduan Keputusan AI (Decision Matrix & Anti-Slop Rules)](#8-panduan-keputusan-ai-decision-matrix)
+8. [AI Decision Matrix (Anti-Slop Rules)](#8-ai-decision-matrix)
 
 ---
 
-## 1. Aturan Inti & Design Invariants
+## 1. Core Rules & Design Invariants
 
-Sebelum membuat atau memodifikasi komponen, pahami 4 aturan absolut berikut:
+Before creating or modifying components, adhere strictly to these 4 absolute rules:
 
-### Hierarki Border Radius (Wajib)
-| Kategori Elemen | Token | Class Tailwind | Contoh Komponen |
+### Border Radius Hierarchy (Mandatory)
+| Element Category | Token | Tailwind Class | Example Components |
 | :--- | :--- | :--- | :--- |
 | **Interactive Controls** | `radius-sm` | `rounded-[4px]` / `rounded-sm` | `Button`, `Input`, `Select`, Pagination Buttons |
 | **Structural Containers** | `radius-md` | `rounded-[8px]` / `rounded-md` | `Card`, `Table`, `ProjectCover`, `EmptyState` |
@@ -75,85 +72,104 @@ Sebelum membuat atau memodifikasi komponen, pahami 4 aturan absolut berikut:
 | **Semantic Badges** | `radius-full` | `rounded-full` | `Badge`, `StatusDot`, Avatars |
 
 > [!CAUTION]
-> DILARANG mengacak radius (misal membuat tombol `rounded-full` atau card `rounded-none`).
+> NEVER mix or randomize radii (e.g., creating `rounded-full` action buttons or `rounded-none` cards).
 
-### Standar Skala Tipografi (Wajib)
-- **Token Skala Dasar (Tailwind v4 theme tokens):**
-  - `--text-xs: 0.875rem` (14px) — metadata, label sekunder, status badge, timestamps.
-  - `--text-sm: 1rem` (16px) — body teks, sel tabel, input form, navigasi sidebar, deskripsi kartu.
-  - `--text-base: 1.125rem` (18px) — lead paragraph, ringkasan fitur.
-- **Judul Halaman:** `text-2xl sm:text-3xl lg:text-4xl font-normal tracking-[-0.03em]`.
-- **Judul Sub-bagian:** `text-lg sm:text-xl font-medium tracking-tight`.
-- **Header Kolom Tabel:** `text-sm font-semibold text-(--text-secondary) uppercase tracking-wider`.
-- **Isi Sel Tabel:** `text-sm text-(--text-main)`.
-- **Metadata Teknis / Identifiers:** `text-xs font-mono` (Ports, IP, Token Hashes, Timestamps).
+### Typography Scale Standards (Mandatory)
+- **Base Typography Tokens (Tailwind v4 theme tokens):**
+  - `--text-xs: 0.875rem` (14px) — metadata, secondary labels, status badges, timestamps.
+  - `--text-sm: 1rem` (16px) — body copy, table cells, form inputs, sidebar navigation, card descriptions, breadcrumbs.
+  - `--text-base: 1.125rem` (18px) — lead paragraphs, feature summaries.
+- **Page Titles:** `text-2xl sm:text-3xl lg:text-4xl font-normal tracking-[-0.03em]`.
+- **Section Titles:** `text-lg sm:text-xl font-medium tracking-tight`.
+- **Table Column Headers:** `text-sm font-semibold text-(--text-secondary) uppercase tracking-wider`.
+- **Table Body Cells:** `text-sm text-(--text-main)`.
+- **Technical Metadata / Identifiers:** `text-xs font-mono` (Ports, IPs, Token Hashes, Timestamps).
 - **Badges:** `text-xs font-medium px-2.5 py-0.5`.
 
-### Standar Ikon (Phosphor Svelte Eksklusif)
-- **Sumber:** Strictly `phosphor-svelte`.
-- **Weight:** Default `weight="regular"`. Gunakan `weight="bold"` HANYA untuk directional arrows (`ArrowRight`, `CaretLeft`) dan konfirmasi (`Check`).
-- **Dilarang:** Jangan pernah menyematkan raw `<svg>` atau library lain (Lucide, Heroicons, FontAwesome).
+### Icon Standards (Phosphor Svelte Exclusive)
+- **Source:** Strictly `phosphor-svelte`.
+- **Weight:** Default `weight="regular"`. Use `weight="bold"` ONLY for directional indicators (`ArrowRight`, `CaretLeft`, `CaretDown`) and confirmation checks (`Check`).
+- **Forbidden:** Never embed raw `<svg>` markup or other icon libraries (Lucide, Heroicons, FontAwesome).
 
-### Aturan Anti-AI-Slop untuk Komponen
-1. **Tidak Ada Pill/Chip Spam:** Jangan menambahkan chip badge di atas judul section atau di sembarang label. Pill hanya untuk status semantik (`StatusDot`, `Badge`).
-2. **Tidak Ada All-Caps Monospace pada Header:** Jangan pernah membuat judul seperti `SYSTEM_ADMIN_USERS`. Gunakan natural sentence/title case sans-serif.
-3. **Warna Semantic Token Saja:** Gunakan variabel CSS (`--bg-surface`, `--text-main`, `--border-hairline`, `--accent-sky`). Jangan gunakan arbitrary hex di dalam template komponen.
+### Anti-AI-Slop Rules for Components
+1. **No Pill/Chip Spam:** Do not insert floating pill badges above section titles or random text labels. Pills are strictly reserved for semantic statuses (`StatusDot`, `Badge`).
+2. **No All-Caps Monospace on Headers:** Never format titles like `SYSTEM_ADMIN_USERS`. Use clean, proportional sans-serif in standard Title Case or sentence case.
+3. **Semantic CSS Tokens Only:** Always reference CSS custom properties (`--bg-surface`, `--text-main`, `--border-hairline`, `--accent-sky`). Never insert arbitrary hex values inside component markup.
 
 ---
 
 ## 2. UI Primitives (`$lib/components/ui/`)
 
-Impor seluruh primitif langsung dari index:
+Import all primitives directly from the barrel index:
 ```svelte
-import { Table, TableRow, TableCell, Button, Badge, Card, Input, PageContainer, PageHeader, ProjectCover, Pagination, EmptyState } from '$lib/components/ui';
+import {
+  Table,
+  TableRow,
+  TableCell,
+  Button,
+  Badge,
+  Card,
+  Input,
+  PageContainer,
+  PageHeader,
+  ProjectCover,
+  Pagination,
+  EmptyState,
+  Timeline,
+  TimelineItem,
+  Tabs,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbDropdown
+} from '$lib/components/ui';
 ```
 
 ---
 
-### `Table`, `TableRow`, `TableCell` (Tabel Reusable Arsitektur Terpusat)
+### `Table`, `TableRow`, `TableCell` (Centralized Reusable Table Architecture)
 
-Sistem tabel reusable ini adalah pondasi tampilan tabular aplikasi. Seluruh margin, padding, borders, responsive wrapping, loading skeleton, dan empty states diatur terpusat di sini.
+This reusable table architecture serves as the foundation for tabular presentations across the application. All margins, padding, borders, responsive wrapping, loading skeletons, and empty states are centralized here.
 
-#### Schema Kolom (`TableColumn`)
+#### Column Schema (`TableColumn`)
 ```typescript
 export interface TableColumn {
-    key: string;               // Key unik kolom / field data
-    label: string;             // Label judul kolom di <thead>
-    align?: 'left' | 'center' | 'right'; // Alignment (default: 'left')
-    width?: string;            // Contoh: '120px', '25%'
-    class?: string;            // Class tambahan untuk header & cell
-    headerClass?: string;      // Class tambahan khusus <th>
-    cellClass?: string;        // Class tambahan khusus <td>
+    key: string;                         // Unique column key / data field
+    label: string;                       // Column header title rendered in <thead>
+    align?: 'left' | 'center' | 'right'; // Horizontal alignment (default: 'left')
+    width?: string;                      // Optional width (e.g., '120px', '25%')
+    class?: string;                      // Additional class for both header & cell
+    headerClass?: string;                // Additional class specifically for <th>
+    cellClass?: string;                  // Additional class specifically for <td>
 }
 ```
 
 #### Props `Table.svelte`
-| Prop | Tipe | Default | Deskripsi |
+| Prop | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `columns` | `TableColumn[]` | `[]` | Array definisi kolom |
-| `items` | `T[]` | `undefined` | Data baris yang dirender |
-| `loading` | `boolean` | `false` | Menampilkan spinner loading state |
-| `loadingMessage`| `string` | `'Loading records...'` | Pesan loading |
-| `emptyMessage` | `string` | `'No records found.'` | Pesan jika data kosong |
-| `keyField` | `string` | `'id'` | Field identitas unik untuk `{#each (key)}` |
-| `alignTop` | `boolean` | `false` | Menyelaraskan seluruh sel ke atas (`align-top`) |
-| `class` | `string` | `''` | Class tambahan untuk kontainer luar |
+| `columns` | `TableColumn[]` | `[]` | Column definitions array |
+| `items` | `T[]` | `undefined` | Data rows rendered in table |
+| `loading` | `boolean` | `false` | Shows loading spinner state |
+| `loadingMessage` | `string` | `'Loading records...'` | Message displayed while loading |
+| `emptyMessage` | `string` | `'No records found.'` | Message displayed when items array is empty |
+| `keyField` | `string` | `'id'` | Unique identity field for `{#each (key)}` |
+| `alignTop` | `boolean` | `false` | Aligns all cells to the top (`align-top`) |
+| `class` | `string` | `''` | Additional class for outer wrapper |
 
 #### Props `TableRow.svelte`
-| Prop | Tipe | Default | Deskripsi |
+| Prop | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `class` | `string` | `''` | Class tambahan untuk `<tr>` (hover state sudah bawaan) |
+| `class` | `string` | `''` | Additional class for `<tr>` (hover state is built-in) |
 
 #### Props `TableCell.svelte`
-| Prop | Tipe | Default | Deskripsi |
+| Prop | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `align` | `'left' \| 'center' \| 'right'` | `'left'` | Perataan horizontal teks |
-| `alignTop` | `boolean` | `false` | Menyelaraskan vertikal ke atas (`align-top`) |
-| `mono` | `boolean` | `false` | Mengubah font menjadi `font-mono text-xs sm:text-sm` |
-| `colSpan` | `number` | `undefined` | Mengisi atribut HTML `colspan` |
-| `class` | `string` | `''` | Class override tambahan |
+| `align` | `'left' \| 'center' \| 'right'` | `'left'` | Horizontal text alignment |
+| `alignTop` | `boolean` | `false` | Vertically aligns content to the top (`align-top`) |
+| `mono` | `boolean` | `false` | Sets typography to `font-mono text-xs sm:text-sm` |
+| `colSpan` | `number` | `undefined` | Populates HTML `colspan` attribute |
+| `class` | `string` | `''` | Additional class overrides |
 
-#### Contoh Penggunaan (Custom Row Slot)
+#### Usage Example (Custom Row Slot)
 ```svelte
 <script lang="ts">
   import { Table, TableRow, TableCell, type TableColumn, Button } from '$lib/components/ui';
@@ -168,7 +184,7 @@ export interface TableColumn {
 
   let projects = [
     { id: '1', name: 'Atlas Bot', port: 8081, status: 'ONLINE' },
-    { id: '2', name: 'Cerita Web', port: 3000, status: 'SETUP' }
+    { id: '2', name: 'Story Web', port: 3000, status: 'SETUP' }
   ];
 </script>
 
@@ -192,21 +208,21 @@ export interface TableColumn {
 
 ### `Button`
 
-Komponen aksi interaktif dengan kepatuhan token `radius-sm` (`rounded-[4px]`).
-- **`variant="primary"`**: Menggunakan warna aksen brand sky-blue (`#0284C7`, hover `#0369A1`) dengan teks putih solid untuk keterbacaan tinggi (WCAG AA 4.54:1) yang konsisten di mode terang maupun gelap (menggantikan tombol hitam polos).
-- **`variant="secondary"`**: Menggunakan permukaan netral terstandar (`bg-(--bg-muted)` dengan border `--border-hairline`).
+Interactive action element conforming strictly to the `radius-sm` (`rounded-[4px]`) token.
+- **`variant="primary"`**: Uses calm sky-blue accent (`#0284C7`, hover `#0369A1`) with solid white text for high contrast (WCAG AA 4.54:1) that remains legible across both light and dark themes.
+- **`variant="secondary"`**: Uses standardized neutral surfaces (`bg-(--bg-muted)` with border `--border-hairline`).
 
 #### Props
-| Prop | Tipe | Default | Deskripsi |
+| Prop | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `variant` | `'primary' \| 'secondary' \| 'ghost' \| 'danger'` | `'secondary'` | Visual style (`primary` = brand sky-blue, `secondary` = neutral border) |
-| `size` | `'sm' \| 'md' \| 'lg'` | `'sm'` | Ukuran tombol (tinggi: 32px, 36px, 40px) |
-| `href` | `string \| undefined` | `undefined` | Jika diisi, otomatis merender tag `<a>` |
-| `disabled` | `boolean` | `false` | Mematikan interaksi |
-| `loading` | `boolean` | `false` | Menampilkan spinner di dalam tombol |
-| `type` | `'button' \| 'submit' \| 'reset'` | `'button'` | Atribut tipe HTML |
+| `variant` | `'primary' \| 'secondary' \| 'ghost' \| 'danger'` | `'secondary'` | Visual style (`primary` = sky-blue, `secondary` = neutral border) |
+| `size` | `'sm' \| 'md' \| 'lg'` | `'sm'` | Button sizing (height: 32px, 36px, 40px) |
+| `href` | `string \| undefined` | `undefined` | When provided, automatically renders an `<a>` tag |
+| `disabled` | `boolean` | `false` | Disables interaction and dims opacity |
+| `loading` | `boolean` | `false` | Displays an inline loading spinner |
+| `type` | `'button' \| 'submit' \| 'reset'` | `'button'` | HTML button type |
 
-#### Contoh Penggunaan
+#### Usage Example
 ```svelte
 <Button variant="primary" on:click={handleSave}>Save changes</Button>
 <Button variant="secondary" href="/projects">Browse catalog</Button>
@@ -217,16 +233,16 @@ Komponen aksi interaktif dengan kepatuhan token `radius-sm` (`rounded-[4px]`).
 
 ### `Badge`
 
-Indikator semantik metadata dengan token `radius-full`. Digunakan untuk status, tag tipe, atau kategori.
+Semantic metadata indicator with `radius-full` token. Used for status, type tags, or categories.
 
 #### Props
-| Prop | Tipe | Default | Deskripsi |
+| Prop | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `variant` | `'success' \| 'warning' \| 'danger' \| 'sky' \| 'neutral'` | `'neutral'` | Palet semantik |
-| `size` | `'sm' \| 'md'` | `'sm'` | Ukuran teks & padding |
-| `dot` | `boolean` | `false` | Menampilkan titik lingkaran warna di sisi kiri |
+| `variant` | `'success' \| 'warning' \| 'danger' \| 'sky' \| 'neutral'` | `'neutral'` | Semantic color palette |
+| `size` | `'sm' \| 'md'` | `'sm'` | Text and padding size |
+| `dot` | `boolean` | `false` | Renders a small circular dot on the left side |
 
-#### Contoh Penggunaan
+#### Usage Example
 ```svelte
 <Badge variant="success" dot>Operational</Badge>
 <Badge variant="sky">Docker</Badge>
@@ -236,16 +252,16 @@ Indikator semantik metadata dengan token `radius-full`. Digunakan untuk status, 
 
 ### `Card`
 
-Kontainer struktural dengan token `radius-md` (`rounded-[8px]`).
+Structural content container with `radius-md` (`rounded-[8px]`) token.
 
 #### Props
-| Prop | Tipe | Default | Deskripsi |
+| Prop | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `variant` | `'surface' \| 'muted' \| 'interactive'` | `'surface'` | Background & hover state |
-| `padding` | `'none' \| 'sm' \| 'md' \| 'lg'` | `'md'` | Pilihan padding terstandar |
-| `href` | `string \| undefined` | `undefined` | Jika diisi, otomatis menjadi link card (`<a>`) |
+| `variant` | `'surface' \| 'muted' \| 'interactive'` | `'surface'` | Background surface & hover behavior |
+| `padding` | `'none' \| 'sm' \| 'md' \| 'lg'` | `'md'` | Standardized padding scale |
+| `href` | `string \| undefined` | `undefined` | When provided, renders as an interactive link card (`<a>`) |
 
-#### Contoh Penggunaan
+#### Usage Example
 ```svelte
 <Card variant="surface" padding="md">
   <h3 class="text-base font-medium">Server Specification</h3>
@@ -257,21 +273,21 @@ Kontainer struktural dengan token `radius-md` (`rounded-[8px]`).
 
 ### `Input`
 
-Elemen form input dengan token `radius-sm` (`rounded-[4px]`), penanganan label otomatis, helper text, dan error state.
+Form input element with `radius-sm` (`rounded-[4px]`) token, automated label handling, helper text, and error states.
 
 #### Props
-| Prop | Tipe | Default | Deskripsi |
+| Prop | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `value` | `string \| number` | `''` | Nilai input (bindable) |
-| `type` | `string` | `'text'` | Tipe input HTML |
-| `label` | `string` | `''` | Label di atas input |
-| `placeholder`| `string` | `''` | Teks placeholder |
-| `helperText` | `string` | `''` | Penjelasan bantuan di bawah input |
-| `error` | `string` | `''` | Pesan error validasi (warna merah) |
-| `disabled` | `boolean` | `false` | Menonaktifkan input |
-| `readonly` | `boolean` | `false` | Mode hanya baca |
+| `value` | `string \| number` | `''` | Input value (bindable) |
+| `type` | `string` | `'text'` | HTML input type |
+| `label` | `string` | `''` | Header label above input |
+| `placeholder` | `string` | `''` | Placeholder text |
+| `helperText` | `string` | `''` | Descriptive guidance below input |
+| `error` | `string` | `''` | Validation error message (rendered in danger color) |
+| `disabled` | `boolean` | `false` | Disables interaction |
+| `readonly` | `boolean` | `false` | Read-only mode |
 
-#### Contoh Penggunaan
+#### Usage Example
 ```svelte
 <Input
   label="Repository URL"
@@ -286,22 +302,22 @@ Elemen form input dengan token `radius-sm` (`rounded-[4px]`), penanganan label o
 
 ### `PageContainer` & `PageHeader`
 
-Standarisasi tata letak halaman sub-views untuk mencegah layout jumping dan margin yang tidak konsisten.
+Standardized layout containers for sub-views to eliminate layout shifts and inconsistent padding.
 
 #### Props `PageContainer`
-| Prop | Tipe | Default | Deskripsi |
+| Prop | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `maxWidth` | `'4xl' \| '5xl' \| '6xl' \| 'full'` | `'6xl'` | Batas lebar maksimum kontainer |
-| `paddingY` | `string` | `'py-8 sm:py-12 pb-24'` | Spasi vertikal |
+| `maxWidth` | `'4xl' \| '5xl' \| '6xl' \| 'full'` | `'6xl'` | Maximum content container width |
+| `paddingY` | `string` | `'py-8 sm:py-12 pb-24'` | Vertical pacing classes |
 
 #### Props `PageHeader`
-| Prop | Tipe | Default | Deskripsi |
+| Prop | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `title` | `string` | *(wajib)* | Judul halaman utama |
-| `description` | `string` | `''` | Subtitle / deskripsi ringkas |
-| *Slots* | `breadcrumb`, `actions` | | Tempat navigasi breadcrumb dan tombol aksi |
+| `title` | `string` | *(required)* | Main page title |
+| `description` | `string` | `''` | Subtitle / brief editorial overview |
+| *Slots* | `breadcrumb`, `actions` | | Slots for navigation breadcrumbs and action buttons |
 
-#### Contoh Penggunaan
+#### Usage Example
 ```svelte
 <PageContainer maxWidth="5xl">
   <PageHeader title="Members" description="The independent developers hosting here.">
@@ -318,188 +334,282 @@ Standarisasi tata letak halaman sub-views untuk mencegah layout jumping dan marg
 
 ### `ProjectCover`
 
-Render visual artwork cover proyek secara **full-bleed** dengan rasio 4:3, 16:9, atau kontainer fleksibel (`aspectRatio="full"`).
-- **Full-Bleed Fallback:** Bila proyek belum memiliki cover yang diunggah, komponen merender kotak solid warna biru pastel yang tenang (`bg-sky-100/80 dark:bg-sky-950/40` dengan aksen `border-sky-300/60 dark:border-sky-800/60`) dengan ukuran yang persis sama memenuhi kontainer kartu tanpa menciut / letterbox.
-- **Monogram Inisial:** Menampilkan 1–2 huruf inisial proyek di tengah secara proporsional.
-- **Aspect Ratio Normalization:** Mendukung string `'4/3'`, `'16/9'`, `'aspect-[4/3]'`, maupun `'full'` (`w-full h-full min-h-full`).
+Renders visual project artwork **full-bleed** with 4:3, 16:9, or flexible container ratios (`aspectRatio="full"`).
+- **Full-Bleed Fallback:** When a project does not have an uploaded cover image, this component renders a solid, calm pastel blue surface (`bg-sky-100/80 dark:bg-sky-950/40` with `border-sky-300/60 dark:border-sky-800/60`) filling the entire card area without letterboxing or shrinking.
+- **Initial Monogram:** Displays 1–2 initial letters of the project title centered proportionally.
+- **Aspect Ratio Normalization:** Supports `'4/3'`, `'16/9'`, `'aspect-[4/3]'`, or `'full'` (`w-full h-full min-h-full`).
 
 #### Props
-| Prop | Tipe | Default | Deskripsi |
+| Prop | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `src` | `string \| null` | `undefined` | URL gambar cover |
-| `name` | `string` | `'Project'` | Nama proyek untuk generator monogram inisial |
-| `aspectRatio` | `string` | `'full'` | Rasio aspek gambar (`'full'`, `'4/3'`, `'16/9'`, atau class Tailwind) |
-| `class` | `string` | `''` | Class tambahan untuk kontainer luar |
+| `src` | `string \| null` | `undefined` | Cover image URL |
+| `name` | `string` | `'Project'` | Project name for monogram generation |
+| `aspectRatio` | `string` | `'full'` | Aspect ratio string (`'full'`, `'4/3'`, `'16/9'`, or Tailwind class) |
+| `class` | `string` | `''` | Additional classes for outer wrapper |
 
 ---
 
 ### `Pagination`
 
-Kontrol navigasi halaman tabular dengan perhitungan window otomatis dan tombol ber-ikon Phosphor.
+Tabular page navigation control with automated page window calculation and Phosphor icon buttons.
 
 #### Props
-| Prop | Tipe | Default | Deskripsi |
+| Prop | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `currentPage` | `number` | `1` | Halaman aktif |
-| `totalItems` | `number` | `0` | Total record |
-| `pageSize` | `number` | `12` | Jumlah per halaman |
-| `onPageChange`| `(page: number) => void`| *(wajib)* | Callback ketika halaman berpindah |
+| `currentPage` | `number` | `1` | Currently active page index (1-based) |
+| `totalItems` | `number` | `0` | Total record count |
+| `pageSize` | `number` | `12` | Number of records per page |
+| `onPageChange` | `(page: number) => void` | *(required)* | Callback triggered upon page change |
 
 ---
 
 ### `EmptyState`
 
-Tampilan standar saat tabel, list, atau feed tidak memiliki data.
+Standardized presentation when tables, lists, or feeds contain zero records.
 
 #### Props & Slots
-| Prop / Slot | Tipe | Default | Deskripsi |
+| Prop / Slot | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `title` | `string` | `'Nothing here yet'` | Judul empty state |
-| `description` | `string` | `''` | Penjelasan mengapa kosong |
-| `slot="icon"` | Slot | Default dot | Icon kustom di atas judul |
-| `slot="action"`| Slot | | Tombol call-to-action untuk membuat data baru |
+| `title` | `string` | `'Nothing here yet'` | Main empty state heading |
+| `description` | `string` | `''` | Clarifying guidance explaining the empty state |
+| `slot="icon"` | Slot | Default dot | Custom icon above title |
+| `slot="action"` | Slot | | Call-to-action button to initiate new records |
 
 ---
 
 ### `Timeline` & `TimelineItem`
 
-Primitif timeline vertikal dot terstandarisasi untuk histori proyek, aktivitas workspace, audit log, dan feed publik. Menggantikan pola tabel atau card-in-card berulang dengan garis konektor tipis dan dot semantik.
+Standardized vertical timeline primitive for project history, workspace activity, audit logs, and public feeds. Replaces repetitive table structures or nested card patterns with crisp connector lines and semantic status dots.
 
 #### Props `Timeline.svelte`
-| Prop | Tipe | Default | Deskripsi |
+| Prop | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `density` | `'comfortable' \| 'compact'` | `'comfortable'` | Kerapatan jarak vertikal antar elemen |
+| `density` | `'comfortable' \| 'compact'` | `'comfortable'` | Vertical spacing density between items |
 
 #### Props `TimelineItem.svelte`
-| Prop | Tipe | Default | Deskripsi |
+| Prop | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `title` | `string` | `''` | Judul event aktivitas (atau via slot `title`) |
-| `timestamp` | `string` | `''` | Waktu relatif / format tanggal (atau via slot `timestamp`) |
-| `description` | `string` | `''` | Ringkasan teks detail event |
-| `dotColor` | `string` | `''` | Class Tailwind warna dot (contoh: `bg-emerald-500`) |
-| `status` | `string` | `''` | Resolusi warna dot otomatis via status (`ONLINE`, `OFFLINE`) |
-| `density` | `'comfortable' \| 'compact'` | `'comfortable'` | Jarak padding vertikal |
-| `href` | `string` | `''` | Link opsional ke halaman target (contoh: `/projects/slug`) |
-| `linkText` | `string` | `''` | Label teks link yang dapat diklik |
+| `title` | `string` | `''` | Event title (or via slot `title`) |
+| `timestamp` | `string` | `''` | Relative timestamp / formatted date (or via slot `timestamp`) |
+| `description` | `string` | `''` | Summary detail text |
+| `dotColor` | `string` | `''` | Tailwind dot color class (e.g., `bg-emerald-500`) |
+| `status` | `string` | `''` | Automated dot color resolution via status (`ONLINE`, `OFFLINE`) |
+| `density` | `'comfortable' \| 'compact'` | `'comfortable'` | Vertical padding density |
+| `href` | `string` | `''` | Optional target URL (e.g., `/projects/slug`) |
+| `linkText` | `string` | `''` | Clickable anchor label |
 
 ---
 
 ### `Tabs`
 
-Primitif tab minimalis berbasis tipografi dan garis bawah halus (bukan pill atau kotak tebal). Digunakan di Owner Project Workspace (`Overview | Visits | Activity | Settings`) dan Public Project Detail (`Overview | Activity`).
+Minimalist tab primitive based on clean typography and subtle underlines (never thick capsules or pill tabs). Used in the Project Workspace (`Overview | Visits | Activity | Settings`) and Public Project Detail (`Overview | Activity`).
 
 #### Props
-| Prop | Tipe | Default | Deskripsi |
+| Prop | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `tabs` | `Array<{ id: string; label: string; icon?: any; badge?: number }>` | `[]` | Daftar tab navigasi |
-| `active` | `string` | *(tab pertama)* | Tab aktif (bindable `bind:active={...}`) |
-| `size` | `'sm' \| 'default'` | `'default'` | Ukuran teks dan padding |
+| `tabs` | `Array<{ id: string; label: string; icon?: any; badge?: number }>` | `[]` | List of navigation tab objects |
+| `active` | `string` | *(first tab)* | Active tab key (bindable: `bind:active={...}`) |
+| `size` | `'sm' \| 'default'` | `'default'` | Typography and padding size scale |
 
 ---
 
+### `Breadcrumb`, `BreadcrumbItem`, & `BreadcrumbDropdown`
+
+Standardized hierarchical navigation primitive calibrated to **`text-sm` (16px / `1rem`)** across the application. Replaces ad-hoc `<nav>` tags to preserve typography consistency, spacing, contrast, and ARIA accessibility in the admin console, user workspace, and public showcase.
+
+#### Usage Patterns:
+1. **Quick Declarative (`Breadcrumb` with `items` prop):** Ideal for standard 1–3 level navigation paths.
+2. **Slot Composition (`Breadcrumb` + `BreadcrumbItem`):** Ideal for dynamic layouts or embedding interactive switchers such as `BreadcrumbDropdown`.
+
+#### Props `Breadcrumb.svelte`
+| Prop | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `items` | `BreadcrumbItemData[]` | `[]` | Array of breadcrumb items `{ label, href?, icon?, current? }` |
+| `ariaLabel` | `string` | `'Breadcrumb'` | Accessible ARIA label for `<nav>` |
+| `class` | `string` | `''` | Additional Tailwind classes for container (e.g., `mb-4`, `mb-6`) |
+
+#### Props `BreadcrumbItem.svelte`
+| Prop | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `href` | `string \| undefined` | `undefined` | Target link URL. If omitted or `current={true}`, renders as active `<span>` |
+| `current` | `boolean` | `false` | Marks item as active page (`aria-current="page"`, `font-medium`) |
+| `icon` | `any` | `undefined` | Optional Phosphor icon component (e.g., `CaretLeft`) |
+| `separator` | `boolean` | `true` | Renders preceding slash `/` separator. Set to `false` for first child |
+| `label` | `string` | `''` | Alternative text label if not using default slot |
+
+#### Props `BreadcrumbDropdown.svelte`
+Switcher component embedded inside breadcrumb as an active terminal item.
+| Prop | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `label` | `string` | *(required)* | Label text displayed on the trigger button |
+| `activeId` | `string` | `''` | ID of currently active item (marked with `Check` icon) |
+| `options` | `Array<{ id: string; label: string }>` | `[]` | List of selectable options |
+| `listboxLabel` | `string` | `'Switch item'` | Accessible label for flyout listbox |
+| `dropdownHeader` | `string` | same as `listboxLabel` | Small header text at top of listbox |
+| *Events* | `select` | `{ id: string }` | Emitted when an option is selected |
+
+#### Usage Example
+
+```svelte
+<script>
+  import { CaretLeft } from 'phosphor-svelte';
+  import { Breadcrumb, BreadcrumbItem, BreadcrumbDropdown } from '$lib/components/ui';
+</script>
+
+<!-- Pattern 1: Quick Declarative -->
+<Breadcrumb
+  items={[
+    { label: 'Projects', href: '/projects' },
+    { label: project.name }
+  ]}
+  class="mb-6"
+/>
+
+<!-- Pattern 2: With Back Icon & BreadcrumbDropdown Switcher -->
+<Breadcrumb class="mb-4">
+  <BreadcrumbItem href="/me/projects" icon={CaretLeft} separator={false}>
+    Projects
+  </BreadcrumbItem>
+  <BreadcrumbItem current>
+    <BreadcrumbDropdown
+      label={project.name}
+      activeId={project.id}
+      options={allProjects}
+      on:select={(e) => goto(`/me/projects/${e.detail.id}`)}
+    />
+  </BreadcrumbItem>
+</Breadcrumb>
+```
+
+---
+
+### `MarkdownView`
+
+A GitHub-flavored markdown renderer component powered by `marked`. Supports an optional outer marker container with a top header strip (`title="README.md"`) and thin outer border to clearly differentiate user-authored markdown content from platform UI chrome.
+
+#### Props
+| Prop | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `content` | `string` | `''` | Raw markdown string to parse and render |
+| `title` | `string` | `''` | Optional header title (e.g. `'README.md'`). Triggers top header strip with `FileText` icon |
+| `bordered` | `boolean` | `false` | When true (or when `title` is set), wraps rendered content in a thin marker border container (`radius-md`) |
+| `class` | `string` | `''` | Additional classes applied to inner markdown container |
+
+#### Usage Example
+```svelte
+<MarkdownView
+  content={project.readme}
+  title="README.md"
+  bordered={true}
+/>
+```
+
+---
 
 ## 3. Status & Telemetry Components (`$lib/components/status/`)
 
-Didedikasikan untuk halaman status dan visualisasi ketersediaan sistem:
+Dedicated components for system availability and telemetry visualizations:
 
 - **`StatusDot.svelte`**:
-  - Indikator status tenang (`ONLINE`, `SETUP`, `PENDING`, `OFFLINE`, `ARCHIVED`).
-  - Mendukung `variant="inline"` (default: dot + text tanpa pill wrapper), `variant="dot"` (dot lingkaran saja), dan `variant="badge"` (semantic pill).
-  - Mendukung `showLabel={true | false}`.
+  - Calm operational indicator (`ONLINE`, `SETUP`, `PENDING`, `OFFLINE`, `ARCHIVED`).
+  - Supports `variant="inline"` (default: dot + text without pill wrapper), `variant="dot"` (circle dot only), and `variant="badge"` (semantic pill).
+  - Supports `showLabel={true | false}`.
 - **`AvailabilityGrid.svelte`**:
-  - Heatmap 90-hari ketersediaan Linux host.
-  - Setiap balok merepresentasikan bucket waktu matematis (`operational`, `partial`, `incident`, `no_data`).
-  - Menampilkan tooltip detail persentase dan tanggal saat di-hover.
+  - 90-day Linux host availability heatmap.
+  - Each block represents a mathematical time bucket (`operational`, `partial`, `incident`, `no_data`).
+  - Displays detailed percentage and timestamp tooltip upon hover.
 - **`StatusOverviewCard.svelte`**:
-  - Banner status global dengan persentase availability jendela berjalan dan uptime terformat.
+  - Global status banner showing trailing availability window percentage and formatted host uptime.
 - **`ServiceHealthCard.svelte` & `ServiceStatusRow.svelte`**:
-  - Menampilkan daftar layanan internal (Web Ingress, PostgreSQL, Telemetry Probes) dan latensi edge.
+  - Renders list of internal infrastructure components (Web Ingress, PostgreSQL, Telemetry Probes) and edge latency.
 - **`IncidentHistoryCard.svelte`**:
-  - Rekapitulasi histori insiden downtime nyata ($\ge 120$ detik) dengan penyebab (`SYSTEM_REBOOT` atau `SERVICE_SUSPENDED`).
+  - Recapitulation of real downtime incident records ($\ge 120$ seconds) with root causes (`SYSTEM_REBOOT` or `SERVICE_SUSPENDED`).
 
 ---
 
 ## 4. Bento & Hardware Components (`$lib/components/bento/`)
 
-Didedikasikan untuk showcase spesifikasi hardware fisik pada landing page (`+page.svelte`):
+Dedicated to physical host hardware specification showcase on landing page (`+page.svelte`):
 
-- **`HardwareCard.svelte`**: Menampilkan prosesor Intel/AMD, jumlah physical cores, logical threads, dan arsitektur x86_64.
-- **`MemoryCard.svelte`**: Menampilkan RAM fisik (`MemTotal` vs `MemAvailable`) dan bar utilisasi.
-- **`StorageCard.svelte`**: Menampilkan model drive NVMe fisik (`/sys/block/nvme*`) dan kapasitas partisi Linux `/`.
-- **`NetworkCard.svelte`**: Menampilkan link bandwidth dan latensi edge ke Cloudflare 1.1.1.1.
-- **`ServerPhotoCard.svelte`**: Kartu visual foto tactile server homelab fisik di Jakarta.
-- **`CpuPackageVisual.svelte`**: Diagram visual die package silikon prosesor.
+- **`HardwareCard.svelte`**: Displays Intel/AMD processor details, physical core count, logical threads, and x86_64 architecture.
+- **`MemoryCard.svelte`**: Displays physical RAM (`MemTotal` vs `MemAvailable`) and utilization bar.
+- **`StorageCard.svelte`**: Displays physical NVMe drive models (`/sys/block/nvme*`) and Linux `/` partition capacity.
+- **`NetworkCard.svelte`**: Displays uplink bandwidth and edge round-trip latency to Cloudflare 1.1.1.1.
+- **`ServerPhotoCard.svelte`**: Tactile editorial visual card showcasing the real homelab server node in Jakarta.
+- **`CpuPackageVisual.svelte`**: Visual die package diagram representing the processor silicon.
 
 ---
 
 ## 5. Layout & Shell Components (`$lib/components/layout/`)
 
 - **`Header.svelte`**:
-  - Fixed header dengan tinggi terstandarisasi `60px`.
-  - Navigasi link: `/projects`, `/people`, `/activity`, `/status`.
-  - Status sesi user (Login button atau User menu).
-  - Mobile drawer responsif.
+  - Sticky top header with standardized `60px` height.
+  - Navigation links: `/projects`, `/people`, `/activity`, `/status`.
+  - User session state (Login action or User profile dropdown).
+  - Responsive mobile drawer.
 - **`Footer.svelte`**:
-  - Footer editorial dengan identitas homelab node, lokasi server, dan tautan dokumentasi.
+  - Editorial footer with homelab node identity, physical server location, and documentation links.
 - **`ThemeToggle.svelte`**:
-  - Tombol toggle light/dark mode tanpa border berlebihan, menggunakan ikon Phosphor `Sun` dan `Moon`.
+  - Clean light/dark mode switch without excessive borders, using Phosphor `Sun` and `Moon` icons.
 
 ---
 
 ## 6. Showcase & Public Feed Components (`$lib/components/`)
 
 - **`ProjectCard.svelte`**:
-  - Kartu katalog publik untuk `/projects`.
-  - Menggunakan kontainer gambar berasio 4:3 (`aspect-[4/3]`) dengan `ProjectCover` full-bleed (`aspectRatio="full"`).
-  - Menampilkan judul, deskripsi ringkas, pembuat/pemilik, dan stack teknologi (dipisahkan tanda `·`).
-  - Mendukung tombol visit eksternal langsung yang terhubung ke endpoint pelacakan `/go/{slug}`.
-  - Bebas dari pill chip spam.
+  - Public catalog card for `/projects`.
+  - Uses an **16:9** aspect container (`aspect-[16/9]`) with full-bleed `ProjectCover` (`aspectRatio="full"`).
+  - No hover zoom/scale effects on cover images (removed per calm editorial design rules).
+  - Displays title, concise summary, creator/owner, and technology stack (separated by `·`).
+  - Supports direct external visit link connected to `/go/{slug}` tracking route.
+  - Clean typographic hierarchy without pill chip spam.
 - **`linkDetector` (`$lib/utils/linkDetector.ts`)**:
-  - Utilitas pendeteksi domain URL otomatis untuk tautan proyek:
-    - `github.com` $\rightarrow$ Ikon `GithubLogo`, label "GitHub"
-    - `gitlab.com` $\rightarrow$ Ikon `GitlabLogo`, label "GitLab"
-    - `drive.google.com` $\rightarrow$ Ikon `GoogleDriveLogo`, label "Google Drive"
-    - `docs.google.com` $\rightarrow$ Ikon `FileText`, label "Google Docs"
-    - `figma.com` $\rightarrow$ Ikon `FigmaLogo`, label "Figma"
-    - `youtube.com` / `youtu.be` / `vimeo.com` $\rightarrow$ Ikon `YoutubeLogo`, label "Video Demo"
-    - `twitter.com` / `x.com` $\rightarrow$ Ikon `TwitterLogo`, label "X (Twitter)"
-    - `discord.gg` / `discord.com` $\rightarrow$ Ikon `DiscordLogo`, label "Discord"
-    - Domain umum lainnya $\rightarrow$ Ikon `LinkSimple` dengan fallback label cerdas.
+  - Automated URL domain detector for project resource links:
+    - `github.com` $\rightarrow$ `GithubLogo` icon, label "GitHub"
+    - `gitlab.com` $\rightarrow$ `GitlabLogo` icon, label "GitLab"
+    - `drive.google.com` $\rightarrow$ `GoogleDriveLogo` icon, label "Google Drive"
+    - `docs.google.com` $\rightarrow$ `FileText` icon, label "Google Docs"
+    - `figma.com` $\rightarrow$ `FigmaLogo` icon, label "Figma"
+    - `youtube.com` / `youtu.be` / `vimeo.com` $\rightarrow$ `YoutubeLogo` icon, label "Video Demo"
+    - `twitter.com` / `x.com` $\rightarrow$ `TwitterLogo` icon, label "X (Twitter)"
+    - `discord.gg` / `discord.com` $\rightarrow$ `DiscordLogo` icon, label "Discord"
+    - Other arbitrary domains $\rightarrow$ `LinkSimple` icon with intelligent fallback label.
 - **`Comments.svelte`**:
-  - Thread diskusi kronologis pada showcase proyek publik (`/projects/[slug]`).
-  - Terintegrasi dengan modul domain `commentsApi` (`getProjectComments`, `createComment`, `deleteComment`).
-  - Composer komentar dengan rate-limiting 5/10 menit, sanitasi teks, author avatar & display name.
-  - Penanganan soft-delete (*"This comment was removed"*).
-  - Menu aksi kontekstual: Report modal trigger dan Delete dengan konfirmasi `ConfirmModal` (khusus author, project owner, atau admin).
+  - Chronological discussion thread on public project showcase (`/projects/[slug]`).
+  - Integrated with `commentsApi` domain module (`getProjectComments`, `createComment`, `deleteComment`).
+  - Comment composer with 5/10 min rate limiting, input sanitization, author avatar, and display name.
+  - Soft-delete handling (*"This comment was removed"*).
+  - Contextual action menus: Report modal trigger and Delete with `ConfirmModal` confirmation (restricted to author, project owner, or admin).
 - **`ReportModal.svelte`**:
-  - Modal dialog pelaporan konten pelanggaran/spam untuk target Project dan Comment.
-  - Terintegrasi dengan `reportsApi.submitReport`.
-  - Dropdown alasan terstandarisasi, rincian opsional, backdrop blur tenang.
+  - Content moderation and violation reporting dialog for Projects and Comments.
+  - Integrated with `reportsApi.submitReport`.
+  - Standardized reason dropdown, optional detail text, and calm blurred backdrop.
 - **`ProjectAvailability.svelte`**:
-  - Widget telemetri kesehatan proyek berbasis probe HTTP 5-menit.
-  - Menampilkan uptime 30 hari dalam %, latensi respons rata-rata, dan status operasional real-time.
+  - Project health telemetry widget driven by 5-minute HTTP probes.
+  - Displays 30-day uptime in %, average round-trip latency, and real-time operational status.
 - **`ActivityTimeline.svelte`**:
-  - Feed kronologis aktivitas publik (publikasi proyek, update, verifikasi) berbasis `activityApi`.
+  - Chronological public activity feed (project publications, updates, verifications) backed by `activityApi`.
 
 ---
 
 ## 7. Admin Console Components (`$lib/components/admin/`)
 
-- **`AdminPanel.svelte`**: Sub-navigasi konsol operator (`Overview`, `Projects`, `Requests`, `Users`, `Audit`, `System`, `Settings`).
-- **`AdminStatCard.svelte`**: Kartu ringkasan metrik statistik operasional.
+- **`AdminPanel.svelte`**: Operator sub-navigation bar (`Overview`, `Projects`, `Requests`, `Users`, `Audit`, `System`, `Settings`).
+- **`AdminStatCard.svelte`**: Metric card summarizing key operational statistics.
 
 ---
 
-## 8. Panduan Keputusan AI (Decision Matrix)
+## 8. AI Decision Matrix
 
-Ketika AI Coding Agent membuat atau memodifikasi tampilan, ikuti matriks keputusan ini:
+When AI Coding Agents create or modify user interfaces, follow this decision matrix:
 
-| Skenario | Komponen yang WAJIB Digunakan | Pola yang DILARANG |
+| Scenario | MANDATORY Component | FORBIDDEN Pattern |
 | :--- | :--- | :--- |
-| **Menampilkan Data Tabular** | `<Table>`, `<TableRow>`, `<TableCell>` dari `$lib/components/ui` | ❌ Menulis tag `<table>`, `<th>`, `<td>` mentah dengan style ad-hoc |
-| **Membuat Tombol** | `<Button variant="..." size="...">` | ❌ `<button class="rounded-full bg-gradient-to-r ...">` |
-| **Status Operasional Proyek/Node** | `<StatusDot status={...} />` | ❌ Membuat chip badge buatan sendiri dengan warna acak |
-| **Formulir Input** | `<Input label="..." bind:value={...} />` | ❌ `<input class="border p-2 ...">` tanpa token desain |
-| **Kontainer Konten / Bento** | `<Card variant="surface" padding="md">` | ❌ Menulis `div` dengan `rounded-2xl` atau background arbitrary |
-| **Menampilkan Gambar Proyek** | `<ProjectCover src={...} name={...} />` | ❌ Tag `<img>` telanjang tanpa error handling dan placeholder |
-| **Ikon Antarmuka** | Impor dari `phosphor-svelte` | ❌ Raw `<svg>` atau library lain (Lucide, Heroicons) |
+| **Displaying Tabular Data** | `<Table>`, `<TableRow>`, `<TableCell>` from `$lib/components/ui` | ❌ Raw `<table>`, `<th>`, `<td>` tags with ad-hoc styles |
+| **Rendering Buttons** | `<Button variant="..." size="...">` | ❌ `<button class="rounded-full bg-gradient-to-r ...">` |
+| **Project/Node Operational Status** | `<StatusDot status={...} />` | ❌ Handcrafted chip badges with random colors |
+| **Form Inputs** | `<Input label="..." bind:value={...} />` | ❌ `<input class="border p-2 ...">` without design tokens |
+| **Content Container / Bento Panel** | `<Card variant="surface" padding="md">` | ❌ `div` wrappers with `rounded-2xl` or arbitrary colors |
+| **Project Imagery** | `<ProjectCover src={...} name={...} />` | ❌ Bare `<img>` tags without fallbacks or monogram handling |
+| **Interface Icons** | Imported from `phosphor-svelte` | ❌ Raw `<svg>` markup or other libraries (Lucide, Heroicons) |
+| **Breadcrumbs** | `<Breadcrumb>` / `<BreadcrumbItem>` | ❌ Inline ad-hoc `<nav aria-label="Breadcrumb">` tags |

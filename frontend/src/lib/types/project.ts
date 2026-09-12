@@ -6,6 +6,7 @@ export interface Project {
 	name: string;
 	slug: string;
 	description: string;
+	readme?: string;
 	cover_image_url?: string;
 	repository_url?: string;
 	documentation_url?: string;
@@ -44,6 +45,7 @@ export interface ProjectVisits {
 export interface UpdateProjectInput {
 	name?: string;
 	description?: string;
+	readme?: string;
 	cover_image_url?: string;
 	repository_url?: string;
 	documentation_url?: string;

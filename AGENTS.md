@@ -81,6 +81,7 @@ You must actively prevent and eliminate AI Slop across all five engineering vect
 | **Cyberpunk / Neon Fantasy** | Random purple/cyan laser gradients, neon glow drop-shadows, radial background lights, and techno buzzwords. | **Calm Hardware Editorial**: Natural photography of real homelab nodes, deep neutral zinc/charcoal surfaces, and brand sky blue highlights (`#79AFC4`). |
 | **Incoherent Border Radii** | Arbitrarily scattering `rounded-2xl`, `rounded-full`, and `rounded-none` haphazardly across controls and cards. | **Strict Token Hierarchy:**<br>• `radius-sm` (2px - 4px) for interactive controls (`Button`, `Input`).<br>• `radius-md` (6px - 8px) for structural containers (`Card`, `Table`).<br>• `radius-full` (9999px) for status dots & badges only. |
 | **Manufactured Telemetry** | Fake pulsating dots, arbitrary animated progress meters, and decorative SVGs that represent zero real data. | Every telemetry widget must bind to real Linux kernel metrics (`/proc/cpuinfo`, `/proc/meminfo`, `statvfs`, `/proc/uptime`). If no data exists, render a clean `no_data` state. |
+| **Arbitrary Cover Ratios** | Using arbitrary, inconsistent aspect ratios for project artwork. | **16:9 Standard Artwork Ratio**: All project covers (cards, overview pages, and dashboard previews) must use `aspect-[16/9]` (`ProjectCover aspectRatio="16/9"`). |
 | **Low-Contrast Micro-Text** | Tiny gray-on-dark text (`text-neutral-600` on dark canvas) that sacrifices legibility for "mood". | High contrast readability adhering to WCAG AA standards. Interactive elements must be instantly readable without zooming. |
 | **Icon Inconsistency** | Mixing heroicons, lucide, font-awesome, and raw inline `<svg>` blobs. | Use **Phosphor Icons** (`phosphor-svelte`) exclusively with `weight="regular"` (or `"bold"` for directional arrows and checks). |
 
@@ -192,6 +193,7 @@ Before declaring any task complete or presenting diffs to the user, run through 
    - Status badges only: `radius-full` (9999px).
 4. [ ] **Is there any AI slop present?**
    - [ ] No pill/chip spam.
+   - [ ] Strict 14px typography floor maintained (no text-[11px], text-[10px], or sub-14px microtext).
    - [ ] No uppercase monospace headers.
    - [ ] No cyberpunk/neon laser glows.
    - [ ] No narrative syntax echo comments.

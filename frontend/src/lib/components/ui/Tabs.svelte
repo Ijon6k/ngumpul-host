@@ -38,7 +38,7 @@
 			{/if}
 			<span>{tab.label}</span>
 			{#if tab.badge !== undefined && tab.badge > 0}
-				<span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-medium bg-(--accent-sky)/10 text-(--accent-sky)">
+				<span class="px-1.5 py-0.2 rounded-full text-xs font-mono font-medium bg-(--accent-sky)/10 text-(--accent-sky)">
 					{tab.badge}
 				</span>
 			{/if}

@@ -3,7 +3,7 @@
 	import { page } from '$app/stores';
 	import { adminApi, commentsApi, extractError } from '$lib/api';
 	import StatusDot from '$lib/components/StatusDot.svelte';
-	import ConfirmModal from '$lib/components/ui/ConfirmModal.svelte';
+	import { ConfirmModal, Breadcrumb } from '$lib/components/ui';
 	import {
 		CaretLeft,
 		Trash,
@@ -110,14 +110,12 @@
 
 <div class="flex flex-col gap-6">
 	<!-- Breadcrumb -->
-	<nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-(--text-muted)">
-		<a href="/admin/projects" class="hover:text-(--text-main) transition-colors flex items-center gap-1">
-			<CaretLeft size={12} weight="bold" />
-			<span>Project Management</span>
-		</a>
-		<span class="opacity-40">/</span>
-		<span class="text-(--text-main) font-medium">{project?.name || 'Details'}</span>
-	</nav>
+	<Breadcrumb
+		items={[
+			{ label: 'Project Management', href: '/admin/projects', icon: CaretLeft },
+			{ label: project?.name || 'Details' }
+		]}
+	/>
 
 	{#if loading}
 		<div class="py-20 text-center text-xs text-(--text-muted) flex flex-col items-center justify-center gap-3">
@@ -215,7 +213,7 @@
 									<!-- Comment text -->
 									<td class="py-3 px-4 max-w-sm">
 										{#if c.is_deleted}
-											<span class="text-neutral-400 italic text-[11px]">[Comment removed]</span>
+											<span class="text-neutral-400 italic text-xs">[Comment removed]</span>
 										{:else}
 											<p class="line-clamp-2 text-(--text-main) leading-relaxed">
 												{c.content}
@@ -227,24 +225,24 @@
 									<td class="py-3 px-3 whitespace-nowrap">
 										<span class="font-medium text-(--text-main)">{c.author?.display_name || 'Member'}</span>
 										{#if c.author?.username}
-											<span class="block text-[10px] text-(--text-muted) font-mono">@{c.author.username}</span>
+											<span class="block text-xs text-(--text-muted) font-mono">@{c.author.username}</span>
 										{/if}
 									</td>
 
 									<!-- Created -->
-									<td class="py-3 px-3 font-mono text-[11px] text-(--text-muted) whitespace-nowrap">
+									<td class="py-3 px-3 font-mono text-xs text-(--text-muted) whitespace-nowrap">
 										{formatDate(c.created_at)}
 									</td>
 
 									<!-- Reports -->
 									<td class="py-3 px-3 whitespace-nowrap">
 										{#if c.report_count > 0}
-											<span class="inline-flex items-center gap-1 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+											<span class="inline-flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400">
 												<ShieldWarning size={12} weight="bold" />
 												<span>{c.report_count}</span>
 											</span>
 										{:else}
-											<span class="text-neutral-400 text-[11px]">0</span>
+											<span class="text-neutral-400 text-xs">0</span>
 										{/if}
 									</td>
 
@@ -260,7 +258,7 @@
 												<Trash size={13} />
 											</button>
 										{:else}
-											<span class="text-neutral-400 text-[11px]">—</span>
+											<span class="text-neutral-400 text-xs">—</span>
 										{/if}
 									</td>
 								</tr>

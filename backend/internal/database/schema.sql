@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS projects (
     repository_url TEXT NOT NULL DEFAULT '',
     documentation_url TEXT NOT NULL DEFAULT '',
     demo_url TEXT NOT NULL DEFAULT '',
+    readme TEXT NOT NULL DEFAULT '',
     technology_stack TEXT[] NOT NULL DEFAULT '{}',
     hosting_type VARCHAR(32) NOT NULL DEFAULT 'HOSTED_HERE' CHECK (hosting_type IN ('HOSTED_HERE', 'EXTERNAL')),
     public_url TEXT NOT NULL DEFAULT '',
@@ -62,7 +63,9 @@ CREATE TABLE IF NOT EXISTS hosting_requests (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     requester_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     project_name VARCHAR(128) NOT NULL,
+    subdomain VARCHAR(64) NOT NULL DEFAULT '',
     description TEXT NOT NULL DEFAULT '',
+    readme TEXT NOT NULL DEFAULT '',
     repository_url TEXT NOT NULL DEFAULT '',
     documentation_url TEXT NOT NULL DEFAULT '',
     deployment_notes TEXT NOT NULL DEFAULT '',
@@ -286,5 +289,18 @@ CREATE TABLE IF NOT EXISTS project_availability_checks (
 );
 
 CREATE INDEX IF NOT EXISTS idx_proj_avail_project_checked ON project_availability_checks(project_id, checked_at DESC);
+
+-- Progressive migrations
+ALTER TABLE hosting_requests ADD COLUMN IF NOT EXISTS subdomain VARCHAR(64) NOT NULL DEFAULT '';
+ALTER TABLE hosting_requests ADD COLUMN IF NOT EXISTS readme TEXT NOT NULL DEFAULT '';
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS readme TEXT NOT NULL DEFAULT '';
+
+CREATE INDEX IF NOT EXISTS idx_hosting_requests_subdomain ON hosting_requests(subdomain);
+
+ALTER TABLE hosting_requests ADD COLUMN IF NOT EXISTS project_id UUID REFERENCES projects(id) ON DELETE SET NULL;
+ALTER TABLE hosting_requests ADD COLUMN IF NOT EXISTS request_type VARCHAR(32) NOT NULL DEFAULT 'NEW_PROJECT';
+
+CREATE INDEX IF NOT EXISTS idx_hosting_requests_project_id ON hosting_requests(project_id);
+CREATE INDEX IF NOT EXISTS idx_hosting_requests_request_type ON hosting_requests(request_type);
 
 

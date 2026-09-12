@@ -159,13 +159,13 @@
 									{#if c.author?.avatar_url}
 										<img src={c.author.avatar_url} alt={c.author.display_name} class="w-7 h-7 rounded-full object-cover border border-(--border-hairline)" />
 									{:else}
-										<div class="w-7 h-7 rounded-full bg-(--bg-muted) text-(--text-secondary) flex items-center justify-center text-[10px] font-semibold border border-(--border-hairline)">
+										<div class="w-7 h-7 rounded-full bg-(--bg-muted) text-(--text-secondary) flex items-center justify-center text-xs font-semibold border border-(--border-hairline)">
 											{(c.author?.display_name || 'U').charAt(0)}
 										</div>
 									{/if}
 									<div class="flex flex-col min-w-0">
 										<span class="font-medium text-(--text-main) truncate">{c.author?.display_name || 'Member'}</span>
-										<span class="text-[10px] text-(--text-muted) font-mono">@{c.author?.username}</span>
+										<span class="text-xs text-(--text-muted) font-mono">@{c.author?.username}</span>
 									</div>
 								</div>
 							</td>
@@ -186,7 +186,7 @@
 							<!-- Content -->
 							<td class="py-3.5 px-4 max-w-sm">
 								{#if c.deleted_at}
-									<span class="text-neutral-400 italic text-[11px]">[Comment deleted]</span>
+									<span class="text-neutral-400 italic text-xs">[Comment deleted]</span>
 								{:else}
 									<p class="line-clamp-2 text-(--text-secondary) leading-relaxed">
 										{c.content}
@@ -199,24 +199,24 @@
 								{#if (c.report_count ?? 0) > 0}
 									<a
 										href="/admin/reports"
-										class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+										class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30"
 									>
 										<ShieldWarning size={12} weight="bold" />
 										<span>{c.report_count} reported</span>
 									</a>
 								{:else if c.deleted_at}
-									<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-200 dark:bg-neutral-800 text-neutral-500">
+									<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-neutral-200 dark:bg-neutral-800 text-neutral-500">
 										Deleted
 									</span>
 								{:else}
-									<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+									<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
 										Active
 									</span>
 								{/if}
 							</td>
 
 							<!-- Posted Date -->
-							<td class="py-3.5 px-4 font-mono text-[11px] text-(--text-muted) whitespace-nowrap">
+							<td class="py-3.5 px-4 font-mono text-xs text-(--text-muted) whitespace-nowrap">
 								{formatDate(c.created_at)}
 							</td>
 
@@ -232,7 +232,7 @@
 										<Trash size={14} />
 									</button>
 								{:else}
-									<span class="text-neutral-400 text-[11px]">—</span>
+									<span class="text-neutral-400 text-xs">—</span>
 								{/if}
 							</td>
 						</tr>

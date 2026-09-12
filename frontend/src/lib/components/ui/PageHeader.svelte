@@ -9,7 +9,7 @@
 <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-(--border-hairline) {className}">
 	<div class="max-w-2xl flex flex-col gap-1.5">
 		{#if $$slots.breadcrumb}
-			<div class="mb-1 text-xs text-(--text-muted)">
+			<div class="mb-1 text-sm text-(--text-muted)">
 				<slot name="breadcrumb" />
 			</div>
 		{/if}

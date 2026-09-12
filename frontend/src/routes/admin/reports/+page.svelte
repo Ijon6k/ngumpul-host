@@ -159,7 +159,7 @@
 					<div class="flex items-start justify-between flex-wrap gap-3">
 						<div class="flex items-center gap-2.5 flex-wrap">
 							<!-- Target Badge -->
-							<span class="inline-flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded-sm bg-(--bg-muted) text-(--text-secondary) border border-(--border-hairline)">
+							<span class="inline-flex items-center gap-1 text-xs font-mono px-2 py-0.5 rounded-sm bg-(--bg-muted) text-(--text-secondary) border border-(--border-hairline)">
 								{#if r.target_type === 'PROJECT'}
 									<Folder size={12} />
 									<span>PROJECT</span>
@@ -170,17 +170,17 @@
 							</span>
 
 							<!-- Reason Badge -->
-							<span class="text-[11px] font-mono px-2 py-0.5 rounded-sm bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-medium">
+							<span class="text-xs font-mono px-2 py-0.5 rounded-sm bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-medium">
 								{r.reason}
 							</span>
 
 							<!-- Status Badge -->
-							<span class="text-[11px] font-mono px-2 py-0.5 rounded-sm border {r.status === 'OPEN' ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30 font-semibold' : r.status === 'RESOLVED' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : r.status === 'REVIEWED' ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30' : 'bg-(--bg-muted) text-(--text-muted) border-(--border-hairline)'}">
+							<span class="text-xs font-mono px-2 py-0.5 rounded-sm border {r.status === 'OPEN' ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30 font-semibold' : r.status === 'RESOLVED' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : r.status === 'REVIEWED' ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30' : 'bg-(--bg-muted) text-(--text-muted) border-(--border-hairline)'}">
 								{r.status}
 							</span>
 						</div>
 
-						<span class="text-[11px] text-(--text-muted) font-mono">
+						<span class="text-xs text-(--text-muted) font-mono">
 							{formatDate(r.created_at)}
 						</span>
 					</div>
@@ -199,7 +199,7 @@
 							</div>
 						{:else}
 							<div class="flex flex-col gap-1">
-								<span class="text-[11px] text-(--text-muted)">Comment Content:</span>
+								<span class="text-xs text-(--text-muted)">Comment Content:</span>
 								<p class="text-(--text-main) italic leading-relaxed">"{r.comment_content || 'Content not available or soft-deleted'}"</p>
 							</div>
 						{/if}
@@ -213,7 +213,7 @@
 					{/if}
 
 					<!-- Reporter info & Resolution info -->
-					<div class="flex items-center justify-between flex-wrap gap-3 pt-2 border-t border-(--border-hairline) text-[11px] text-(--text-muted)">
+					<div class="flex items-center justify-between flex-wrap gap-3 pt-2 border-t border-(--border-hairline) text-xs text-(--text-muted)">
 						<span>Reported by: <span class="text-(--text-secondary)">{r.reporter_name || 'Anonymous'}</span></span>
 
 						{#if r.resolved_by_name}
@@ -225,7 +225,7 @@
 							{#if r.target_type === 'COMMENT' && r.comment_content}
 								<button
 									type="button"
-									class="btn btn-secondary btn-sm text-[11px] px-2 py-1 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 inline-flex items-center gap-1"
+									class="btn btn-secondary btn-sm text-xs px-2 py-1 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 inline-flex items-center gap-1"
 									on:click={() => confirmDeleteComment(r.target_id)}
 								>
 									<Trash size={12} />
@@ -236,21 +236,21 @@
 							{#if r.status === 'OPEN'}
 								<button
 									type="button"
-									class="btn btn-secondary btn-sm text-[11px] px-2 py-1"
+									class="btn btn-secondary btn-sm text-xs px-2 py-1"
 									on:click={() => openResolutionDialog(r, 'REVIEWED')}
 								>
 									Mark Reviewed
 								</button>
 								<button
 									type="button"
-									class="btn btn-secondary btn-sm text-[11px] px-2 py-1"
+									class="btn btn-secondary btn-sm text-xs px-2 py-1"
 									on:click={() => openResolutionDialog(r, 'DISMISSED')}
 								>
 									Dismiss
 								</button>
 								<button
 									type="button"
-									class="btn btn-primary btn-sm text-[11px] px-2.5 py-1 inline-flex items-center gap-1"
+									class="btn btn-primary btn-sm text-xs px-2.5 py-1 inline-flex items-center gap-1"
 									on:click={() => openResolutionDialog(r, 'RESOLVED')}
 								>
 									<Check size={12} weight="bold" />
@@ -259,14 +259,14 @@
 							{:else if r.status === 'REVIEWED'}
 								<button
 									type="button"
-									class="btn btn-secondary btn-sm text-[11px] px-2 py-1"
+									class="btn btn-secondary btn-sm text-xs px-2 py-1"
 									on:click={() => openResolutionDialog(r, 'DISMISSED')}
 								>
 									Dismiss
 								</button>
 								<button
 									type="button"
-									class="btn btn-primary btn-sm text-[11px] px-2.5 py-1 inline-flex items-center gap-1"
+									class="btn btn-primary btn-sm text-xs px-2.5 py-1 inline-flex items-center gap-1"
 									on:click={() => openResolutionDialog(r, 'RESOLVED')}
 								>
 									<Check size={12} weight="bold" />

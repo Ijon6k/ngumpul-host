@@ -53,6 +53,7 @@ erDiagram
         varchar name
         varchar slug UK
         text description
+        text readme
         varchar hosting_type "HOSTED_HERE | EXTERNAL"
         varchar status "PENDING | SETUP | ONLINE | OFFLINE | ARCHIVED"
         varchar visibility "PUBLIC | UNPUBLISHED | ARCHIVED"
@@ -67,7 +68,9 @@ erDiagram
         uuid id PK
         uuid requester_id FK
         varchar project_name
+        varchar subdomain
         text description
+        text readme
         text repository_url
         text deployment_notes
         text[] technology_stack
@@ -267,6 +270,7 @@ The central catalog of self-hosted community software and showcase applications.
 | `name` | `VARCHAR(128)` | `NOT NULL` | — | Human-readable title of the project. |
 | `slug` | `VARCHAR(128)` | `UNIQUE, NOT NULL` | — | URL slug used in routes (`/projects/:slug` and `/go/:slug`). |
 | `description` | `TEXT` | `NOT NULL` | `''` | Editorial description of the project and its capabilities. |
+| `readme` | `TEXT` | `NOT NULL` | `''` | GitHub-style Markdown documentation rendered in project overview. |
 | `cover_image_url` | `TEXT` | `NOT NULL` | `''` | Public path to uploaded cover image or empty. |
 | `cover_image_key` | `TEXT` | `NOT NULL` | `''` | Internal storage key in `/data/uploads` / SeaweedFS. |
 | `repository_url` | `TEXT` | `NOT NULL` | `''` | Source code repository URL (GitHub, GitLab, etc.). |
@@ -293,8 +297,12 @@ Tracks member submissions requesting homelab server provisioning for their proje
 | :--- | :--- | :--- | :--- | :--- |
 | `id` | `UUID` | `PRIMARY KEY` | `gen_random_uuid()` | Unique identifier for the intake ticket. |
 | `requester_id` | `UUID` | `NOT NULL, REFERENCES users(id) ON DELETE CASCADE` | — | Foreign key pointing to applicant member. |
+| `project_id` | `UUID` | `REFERENCES projects(id) ON DELETE SET NULL` | `NULL` | Optional reference to existing project (for subdomain change requests). |
+| `request_type` | `VARCHAR(32)` | `NOT NULL` | `'NEW_PROJECT'` | Request category: `'NEW_PROJECT'` or `'SUBDOMAIN_CHANGE'`. |
 | `project_name` | `VARCHAR(128)` | `NOT NULL` | — | Proposed application name. |
-| `description` | `TEXT` | `NOT NULL` | `''` | What the application does and why it should be hosted. |
+| `subdomain` | `VARCHAR(64)` | `NOT NULL` | `''` | Requested or assigned unique subdomain prefix (`.ngumpul.local`). |
+| `description` | `TEXT` | `NOT NULL` | `''` | Short description (max 280 characters) or change reason. |
+| `readme` | `TEXT` | `NOT NULL` | `''` | Submitted Markdown documentation or uploaded `.md` README. |
 | `repository_url` | `TEXT` | `NOT NULL` | `''` | Public Git repository URL containing code/Dockerfile. |
 | `documentation_url`| `TEXT` | `NOT NULL` | `''` | Supplementary docs or architectural notes. |
 | `deployment_notes` | `TEXT` | `NOT NULL` | `''` | Resource requirements (RAM, ports, volumes, env keys). |
@@ -306,8 +314,9 @@ Tracks member submissions requesting homelab server provisioning for their proje
 | `created_at` | `TIMESTAMPTZ` | `NOT NULL` | `NOW()` | Submission timestamp. |
 | `updated_at` | `TIMESTAMPTZ` | `NOT NULL` | `NOW()` | Ticket modification timestamp. |
 
-* **Indexes:** `idx_hosting_requests_requester_id` on `(requester_id)`, `idx_hosting_requests_status` on `(status)`.
+* **Indexes:** `idx_hosting_requests_requester_id` on `(requester_id)`, `idx_hosting_requests_status` on `(status)`, `idx_hosting_requests_subdomain` on `(subdomain)`, `idx_hosting_requests_project_id` on `(project_id)`, `idx_hosting_requests_request_type` on `(request_type)`.
 * **Lifecycle:** `PENDING` $\rightarrow$ `REVIEWING` $\rightarrow$ `APPROVED` $\rightarrow$ `SETUP` $\rightarrow$ `COMPLETED` (or `REJECTED`/`CANCELLED`).
+
 
 ---
 

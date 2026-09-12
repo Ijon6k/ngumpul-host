@@ -12,7 +12,7 @@
 	</span>
 	<span class="text-xs font-normal text-neutral-400">{label}</span>
 	{#if subtext}
-		<span class="text-[11px] font-normal text-neutral-500 truncate">
+		<span class="text-xs font-normal text-neutral-500 truncate">
 			{subtext}
 		</span>
 	{/if}

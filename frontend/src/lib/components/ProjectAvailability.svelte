@@ -35,14 +35,14 @@
 
 	<div class="grid grid-cols-2 gap-3 pt-1 border-t border-(--border-hairline)">
 		<div class="flex flex-col gap-0.5">
-			<span class="text-[11px] text-(--text-muted)">30-day Uptime</span>
+			<span class="text-xs text-(--text-muted)">30-day Uptime</span>
 			<span class="font-mono text-sm font-semibold text-(--text-main)">
 				{formatUptime(availability?.uptime_percent)}
 			</span>
 		</div>
 
 		<div class="flex flex-col gap-0.5">
-			<span class="text-[11px] text-(--text-muted)">Latest Latency</span>
+			<span class="text-xs text-(--text-muted)">Latest Latency</span>
 			<span class="font-mono text-sm font-semibold text-(--text-main)">
 				{availability?.latest_response_time_ms ? `${availability.latest_response_time_ms} ms` : '—'}
 			</span>
@@ -50,7 +50,7 @@
 	</div>
 
 	{#if availability?.last_checked_at}
-		<div class="flex items-center gap-1.5 text-[11px] text-(--text-muted) pt-1 border-t border-(--border-hairline)">
+		<div class="flex items-center gap-1.5 text-xs text-(--text-muted) pt-1 border-t border-(--border-hairline)">
 			<Clock size={12} />
 			<span>Checked at {formatTime(availability.last_checked_at)} (periodic 5m probe)</span>
 		</div>

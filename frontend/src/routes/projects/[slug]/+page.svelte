@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { api, extractError } from '$lib/api';
+	import { api, commentsApi, extractError } from '$lib/api';
 	import StatusDot from '$lib/components/StatusDot.svelte';
 	import ProjectCover from '$lib/components/ui/ProjectCover.svelte';
 	import Comments from '$lib/components/Comments.svelte';
 	import ReportModal from '$lib/components/ReportModal.svelte';
 	import ProjectAvailability from '$lib/components/ProjectAvailability.svelte';
-	import { Tabs, Timeline, TimelineItem } from '$lib/components/ui';
+	import { Tabs, Timeline, TimelineItem, Breadcrumb, MarkdownView } from '$lib/components/ui';
 	import {
 		ArrowUpRight,
 		User,
@@ -24,7 +24,8 @@
 
 	let copied = false;
 	let reportModalOpen = false;
-	let activeTab = 'overview';
+	let activeTab = 'comments';
+	let commentCount = 0;
 
 	$: project = data.project;
 	$: availability = data.availability;
@@ -32,10 +33,21 @@
 	let loading = false;
 	let error: string | null = null;
 
-	const tabsList = [
-		{ id: 'overview', label: 'Overview' },
+	$: tabsList = [
+		{ id: 'comments', label: commentCount > 0 ? `Comments (${commentCount})` : 'Comments' },
 		{ id: 'activity', label: 'Activity' }
 	];
+
+	onMount(async () => {
+		if (project?.slug) {
+			try {
+				const res = await commentsApi.getProjectComments(project.slug);
+				commentCount = res?.comments?.length || 0;
+			} catch {
+				// non-critical
+			}
+		}
+	});
 
 	function copyUrl() {
 		if (!navigator?.clipboard) return;
@@ -115,11 +127,13 @@
 		</div>
 	{:else}
 		<!-- Breadcrumb -->
-		<nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-(--text-muted) mb-6">
-			<a href="/projects" class="hover:text-(--text-main) transition-colors">Projects</a>
-			<span class="opacity-40">/</span>
-			<span class="text-(--text-main) font-medium">{project.name}</span>
-		</nav>
+		<Breadcrumb
+			class="mb-6"
+			items={[
+				{ label: 'Projects', href: '/projects' },
+				{ label: project.name }
+			]}
+		/>
 
 		<!-- Public Project Header (Editorial Showcase) -->
 		<header class="flex flex-col gap-3">
@@ -192,6 +206,20 @@
 					</a>
 				{/if}
 
+				{#if project.documentation_url}
+					{@const docInfo = detectLinkInfo(project.documentation_url, 'Documentation')}
+					<a
+						href={project.documentation_url}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="btn btn-secondary btn-sm text-xs px-3 py-2 inline-flex items-center gap-1.5"
+					>
+						<svelte:component this={docInfo.icon} size={14} />
+						<span>Docs</span>
+						<ArrowUpRight size={11} />
+					</a>
+				{/if}
+
 				<button
 					type="button"
 					on:click={copyUrl}
@@ -219,181 +247,156 @@
 			</div>
 		</header>
 
-		<!-- Large Visual Cover Area -->
-		<div class="w-full aspect-video sm:aspect-[21/9] max-h-[400px] rounded-md overflow-hidden border border-(--border-hairline) bg-(--bg-muted) shadow-xs my-8 flex">
+		<!-- Large Visual Cover Area (16:9 Ratio) -->
+		<div class="w-full aspect-[16/9] max-h-[480px] rounded-md overflow-hidden border border-(--border-hairline) bg-(--bg-muted) shadow-xs my-8 flex">
 			<ProjectCover
 				src={project.cover_image_url}
 				alt={project.name}
 				name={project.name}
-				aspectRatio="full"
+				aspectRatio="16/9"
 				class="w-full h-full !rounded-none !border-none"
 			/>
 		</div>
 
-		<!-- Minimal Typographic Tabs: Overview | Activity -->
-		<div class="mb-8">
-			<Tabs tabs={tabsList} bind:active={activeTab} />
-		</div>
+		<!-- Main Content Grid (Directly below cover photo) -->
+		<div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+			<!-- Main Column (Left, 8 cols) -->
+			<div class="lg:col-span-8 flex flex-col gap-8">
+				<!-- Community Discussion & Activity (Tabs) -->
+				<section class="flex flex-col gap-6">
+					<Tabs tabs={tabsList} bind:active={activeTab} />
 
-		<!-- TAB 1: OVERVIEW (About, Built with, Availability, Links, Comments) -->
-		{#if activeTab === 'overview'}
-			<div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-				<!-- Main Column (Left, 8 cols) -->
-				<div class="lg:col-span-8 flex flex-col gap-10">
-					<!-- Project Description -->
-					<section class="flex flex-col gap-3">
-						<h2 class="font-sans font-medium text-base text-(--text-main)">
-							About
+					{#if activeTab === 'comments'}
+						<div class="flex flex-col gap-6">
+							<Comments projectSlug={project.slug} projectOwnerId={project.owner_id} bind:commentCount />
+						</div>
+					{:else if activeTab === 'activity'}
+						<div class="flex flex-col gap-6 max-w-2xl">
+							{#if activities.length === 0}
+								<p class="text-xs text-(--text-muted) py-6">No recorded activity for this project yet.</p>
+							{:else}
+								<Timeline density="comfortable">
+									{#each activities as act (act.id)}
+										<TimelineItem
+											title={getActivityDescription(act)}
+											timestamp={formatRelativeTime(act.created_at)}
+											description={act.metadata?.message || ''}
+											density="comfortable"
+										/>
+									{/each}
+								</Timeline>
+							{/if}
+						</div>
+					{/if}
+				</section>
+
+				<!-- Built With -->
+				{#if project.technology_stack && project.technology_stack.length > 0}
+					<section class="flex flex-col gap-2.5 pt-6 border-t border-(--border-hairline)">
+						<h2 class="font-sans font-medium text-sm text-(--text-main)">
+							Built with
 						</h2>
-						<p class="text-xs sm:text-sm text-(--text-secondary) leading-relaxed">
-							{project.description || 'No detailed description provided for this project.'}
+						<p class="text-xs text-(--text-secondary) font-mono leading-relaxed">
+							{project.technology_stack.join(' · ')}
 						</p>
 					</section>
+				{/if}
 
-					<!-- Built With -->
-					{#if project.technology_stack && project.technology_stack.length > 0}
-						<section class="flex flex-col gap-3">
-							<h2 class="font-sans font-medium text-base text-(--text-main)">
-								Built with
-							</h2>
-							<p class="text-xs text-(--text-secondary) font-mono leading-relaxed">
-								{project.technology_stack.join(' · ')}
-							</p>
-						</section>
-					{/if}
-
-					<!-- Community Comments (Stay on Overview) -->
-					<Comments projectSlug={project.slug} projectOwnerId={project.owner_id} />
-				</div>
-
-				<!-- Sidebar Column (Right, 4 cols) -->
-				<aside class="lg:col-span-4 flex flex-col gap-8">
-					<!-- Availability Probe -->
-					<ProjectAvailability {availability} status={project.status} />
-
-					<!-- Connected Links -->
-					<div class="flex flex-col gap-3 text-xs">
-						<h3 class="font-medium text-xs text-(--text-main)">Links</h3>
-						<div class="flex flex-col gap-2">
-							{#if project.public_url}
-								{@const pubInfo = detectLinkInfo(project.public_url, 'Website')}
-								<a
-									href="/go/{project.slug}"
-									target="_blank"
-									rel="noopener noreferrer"
-									class="text-(--accent-sky) hover:underline inline-flex items-center justify-between py-1"
-								>
-									<span class="flex items-center gap-2 truncate">
-										<svelte:component this={pubInfo.icon} size={13} />
-										<span class="truncate font-mono">{project.public_url}</span>
-									</span>
-									<ArrowUpRight size={12} class="shrink-0 ml-1" />
-								</a>
-							{/if}
-
-							{#if project.repository_url}
-								{@const repoInfo = detectLinkInfo(project.repository_url, 'Source code')}
-								<a
-									href={project.repository_url}
-									target="_blank"
-									rel="noopener noreferrer"
-									class="text-(--text-secondary) hover:text-(--text-main) inline-flex items-center justify-between py-1 transition-colors"
-								>
-									<span class="flex items-center gap-2">
-										<svelte:component this={repoInfo.icon} size={13} />
-										<span>{repoInfo.label}</span>
-									</span>
-									<ArrowUpRight size={12} />
-								</a>
-							{/if}
-
-							{#if project.documentation_url}
-								{@const docInfo = detectLinkInfo(project.documentation_url, 'Documentation')}
-								<a
-									href={project.documentation_url}
-									target="_blank"
-									rel="noopener noreferrer"
-									class="text-(--text-secondary) hover:text-(--text-main) inline-flex items-center justify-between py-1 transition-colors"
-								>
-									<span class="flex items-center gap-2">
-										<svelte:component this={docInfo.icon} size={13} />
-										<span>{docInfo.label}</span>
-									</span>
-									<ArrowUpRight size={12} />
-								</a>
-							{/if}
-
-							{#if project.demo_url && project.demo_url !== project.public_url}
-								{@const demoInfo = detectLinkInfo(project.demo_url, 'Live demo')}
-								<a
-									href={project.demo_url}
-									target="_blank"
-									rel="noopener noreferrer"
-									class="text-(--text-secondary) hover:text-(--text-main) inline-flex items-center justify-between py-1 transition-colors"
-								>
-									<span class="flex items-center gap-2">
-										<svelte:component this={demoInfo.icon} size={13} />
-										<span>{demoInfo.label}</span>
-									</span>
-									<ArrowUpRight size={12} />
-								</a>
-							{/if}
-						</div>
-					</div>
-
-					<!-- Creator Snippet -->
-					{#if project.owner}
-						<div class="flex flex-col gap-3 pt-6 border-t border-(--border-hairline) text-xs">
-							<h3 class="font-medium text-xs text-(--text-main)">Creator</h3>
-							<div class="flex items-center gap-3">
-								{#if project.owner.avatar_url}
-									<img src={project.owner.avatar_url} alt={project.owner.display_name} class="w-9 h-9 rounded-full object-cover border border-(--border-hairline)" />
-								{:else}
-									<div class="w-9 h-9 rounded-full bg-(--bg-muted) border border-(--border-hairline) flex items-center justify-center font-medium text-xs text-(--text-main)">
-										{project.owner.display_name?.charAt(0) || 'U'}
-									</div>
-								{/if}
-								<div class="flex flex-col">
-									<a href="/people/{project.owner.username}" class="font-medium text-(--text-main) hover:underline">
-										{project.owner.display_name}
-									</a>
-									<span class="text-[11px] text-(--text-muted)">@{project.owner.username}</span>
-								</div>
-							</div>
-							{#if project.owner.bio}
-								<p class="text-xs text-(--text-secondary) leading-relaxed">
-									{project.owner.bio}
-								</p>
-							{/if}
-						</div>
-					{/if}
-				</aside>
-			</div>
-
-		<!-- TAB 2: ACTIVITY (Timeline, Not Table) -->
-		{:else if activeTab === 'activity'}
-			<div class="flex flex-col gap-6 max-w-2xl">
-				<div class="flex flex-col gap-1 pb-2">
-					<h2 class="font-sans font-medium text-base text-(--text-main)">Project activity</h2>
-					<p class="text-xs text-(--text-secondary)">Recorded change log and operational events.</p>
-				</div>
-
-				{#if activities.length === 0}
-					<p class="text-xs text-(--text-muted) py-8">No recorded activity for this project yet.</p>
-				{:else}
-					<Timeline density="comfortable">
-						{#each activities as act (act.id)}
-							<TimelineItem
-								title={getActivityDescription(act)}
-								timestamp={formatRelativeTime(act.created_at)}
-								description={act.metadata?.message || ''}
-								density="comfortable"
-							/>
-						{/each}
-					</Timeline>
+				<!-- Project README / Documentation (Framed with marker border & README.md header) -->
+				{#if project.readme}
+					<section class={project.technology_stack && project.technology_stack.length > 0 ? '' : 'pt-6 border-t border-(--border-hairline)'}>
+						<MarkdownView content={project.readme} title="README.md" bordered={true} />
+					</section>
 				{/if}
 			</div>
-		{/if}
+
+			<!-- Sidebar Column (Right, 4 cols) -->
+			<aside class="lg:col-span-4 flex flex-col gap-8">
+				<!-- Availability Probe -->
+				<ProjectAvailability {availability} status={project.status} />
+
+				<!-- Connected Links -->
+				<div class="flex flex-col gap-3 text-xs">
+					<h3 class="font-medium text-xs text-(--text-main)">Links</h3>
+					<div class="flex flex-col gap-2">
+						{#if project.public_url}
+							{@const pubInfo = detectLinkInfo(project.public_url, 'Website')}
+							<a
+								href="/go/{project.slug}"
+								target="_blank"
+								rel="noopener noreferrer"
+								class="text-(--accent-sky) hover:underline inline-flex items-center justify-between py-1"
+							>
+								<span class="flex items-center gap-2 truncate">
+									<svelte:component this={pubInfo.icon} size={13} />
+									<span class="truncate font-mono">{project.public_url}</span>
+								</span>
+								<ArrowUpRight size={12} class="shrink-0 ml-1" />
+							</a>
+						{/if}
+
+						{#if project.repository_url}
+							{@const repoInfo = detectLinkInfo(project.repository_url, 'Source code')}
+							<a
+								href={project.repository_url}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="text-(--text-secondary) hover:text-(--text-main) inline-flex items-center justify-between py-1 transition-colors"
+							>
+								<span class="flex items-center gap-2">
+									<svelte:component this={repoInfo.icon} size={13} />
+									<span>{repoInfo.label}</span>
+								</span>
+								<ArrowUpRight size={12} />
+							</a>
+						{/if}
+
+						{#if project.documentation_url}
+							{@const docInfo = detectLinkInfo(project.documentation_url, 'Documentation')}
+							<a
+								href={project.documentation_url}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="text-(--text-secondary) hover:text-(--text-main) inline-flex items-center justify-between py-1 transition-colors"
+							>
+								<span class="flex items-center gap-2">
+									<svelte:component this={docInfo.icon} size={13} />
+									<span>{docInfo.label}</span>
+								</span>
+								<ArrowUpRight size={12} />
+							</a>
+						{/if}
+					</div>
+				</div>
+
+				<!-- Creator Snippet -->
+				{#if project.owner}
+					<div class="flex flex-col gap-3 pt-6 border-t border-(--border-hairline) text-xs">
+						<h3 class="font-medium text-xs text-(--text-main)">Creator</h3>
+						<div class="flex items-center gap-3">
+							{#if project.owner.avatar_url}
+								<img src={project.owner.avatar_url} alt={project.owner.display_name} class="w-9 h-9 rounded-full object-cover border border-(--border-hairline)" />
+							{:else}
+								<div class="w-9 h-9 rounded-full bg-(--bg-muted) border border-(--border-hairline) flex items-center justify-center font-medium text-xs text-(--text-main)">
+									{project.owner.display_name?.charAt(0) || 'U'}
+								</div>
+							{/if}
+							<div class="flex flex-col">
+								<a href="/people/{project.owner.username}" class="font-medium text-(--text-main) hover:underline">
+									{project.owner.display_name}
+								</a>
+								<span class="text-xs text-(--text-muted)">@{project.owner.username}</span>
+							</div>
+						</div>
+						{#if project.owner.bio}
+							<p class="text-xs text-(--text-secondary) leading-relaxed">
+								{project.owner.bio}
+							</p>
+						{/if}
+					</div>
+				{/if}
+			</aside>
+		</div>
 
 		<!-- Report Modal -->
 		<ReportModal

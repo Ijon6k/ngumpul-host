@@ -50,7 +50,8 @@ func (h *Handler) ListMyNotifications(w http.ResponseWriter, r *http.Request) {
 			&n.ID, &n.UserID, &n.Type, &n.Title, &n.Body, &dataJSON, &n.ReadAt, &n.CreatedAt,
 		); err == nil {
 			_ = json.Unmarshal(dataJSON, &n.Data)
-			if n.ReadAt == nil {
+			n.IsRead = (n.ReadAt != nil)
+			if !n.IsRead {
 				unreadCount++
 			}
 			list = append(list, n)

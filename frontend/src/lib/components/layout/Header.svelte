@@ -1,6 +1,9 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { user } from '$lib/stores/auth';
 	import { page } from '$app/stores';
+	import { unreadNotificationsCount, refreshUnreadNotifications } from '$lib/stores/notifications';
+	import { adminPendingCount, adminOpenReportsCount, refreshAdminStats } from '$lib/stores/adminStats';
 	import ThemeToggle from './ThemeToggle.svelte';
 	import { ArrowSquareOut } from 'phosphor-svelte';
 
@@ -8,6 +11,22 @@
 
 	$: isHome = $page.url.pathname === '/';
 	$: isTransparent = isHome && scrollY < 60;
+
+	onMount(() => {
+		if ($user) {
+			refreshUnreadNotifications();
+			if ($user.role === 'ADMIN') {
+				refreshAdminStats();
+			}
+		}
+	});
+
+	$: if ($user) {
+		refreshUnreadNotifications();
+		if ($user.role === 'ADMIN') {
+			refreshAdminStats();
+		}
+	}
 </script>
 
 <svelte:window bind:scrollY />
@@ -21,19 +40,14 @@
 
 		<!-- Brand -->
 		<div class="flex items-center gap-8">
-			<a href="/" class="flex items-center gap-2.5 hover:opacity-85 transition-opacity">
-				<!-- 3-bar logo mark -->
-				<span class="flex items-end gap-[3px] h-[15px]">
-					<span class="w-[4px] h-[13px] rounded-full {isTransparent ? 'bg-sky-400' : 'bg-(--accent-sky)'}"></span>
-					<span class="w-[4px] h-[15px] rounded-full {isTransparent ? 'bg-sky-400' : 'bg-(--accent-sky)'}"></span>
-					<span class="w-[4px] h-[9px] rounded-full {isTransparent ? 'bg-sky-400' : 'bg-(--accent-sky)'}"></span>
-				</span>
+			<a href="/" class="flex items-center gap-2 hover:opacity-85 transition-opacity" title="Ngumpul Host">
+				<img src="/logo.webp" alt="" class="h-6 w-6 object-contain" />
 				<span class="font-display font-bold text-sm tracking-tight {isTransparent ? 'text-white' : 'text-(--text-main)'}">
 					ngumpul<span class="font-normal {isTransparent ? 'text-neutral-300' : 'text-(--text-secondary)'}">host</span><span class="text-(--accent-orange)">.</span>
 				</span>
 			</a>
 
-			<nav class="hidden md:flex items-center gap-6 text-[13px] font-medium" aria-label="Main Navigation">
+			<nav class="hidden md:flex items-center gap-6 text-xs font-medium" aria-label="Main Navigation">
 				<a
 					href="/projects"
 					class="transition-colors {isTransparent ? 'text-neutral-300 hover:text-white' : 'text-(--text-secondary) hover:text-(--text-main)'}"
@@ -61,33 +75,39 @@
 				{#if $user.role === 'ADMIN'}
 					<a
 						href="/admin"
-						class="btn btn-sm text-[13px] inline-flex items-center gap-1.5 {isTransparent ? 'bg-white/10 text-white hover:bg-white/20 border-white/20' : 'btn-secondary'}"
+						class="btn btn-sm text-xs inline-flex items-center gap-1.5 relative {isTransparent ? 'bg-white/10 text-white hover:bg-white/20 border-white/20' : 'btn-secondary'}"
 					>
 						<span>Console</span>
-						<ArrowSquareOut size={13} weight="regular" class="opacity-70" />
+						{#if ($adminPendingCount + $adminOpenReportsCount) > 0}
+							<span class="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" title="Pending items awaiting review"></span>
+						{/if}
+						<ArrowSquareOut size={14} weight="regular" class="opacity-70" />
 					</a>
 				{/if}
 				<a
 					href="/me"
-					class="btn btn-sm flex items-center gap-2 text-[13px] {isTransparent ? 'bg-white text-neutral-900 hover:bg-neutral-100' : 'btn-secondary'}"
+					class="btn btn-sm flex items-center gap-2 text-xs relative {isTransparent ? 'bg-white text-neutral-900 hover:bg-neutral-100' : 'btn-secondary'}"
 				>
 					{#if $user.avatar_url}
 						<img src={$user.avatar_url} alt={$user.display_name} class="w-4 h-4 rounded-full object-cover" />
 					{:else}
-						<span class="w-4 h-4 rounded-full bg-(--accent-soft) text-(--accent-strong) text-[9px] flex items-center justify-center font-bold">
+						<span class="w-4 h-4 rounded-full bg-(--accent-soft) text-(--accent-strong) text-xs flex items-center justify-center font-bold">
 							{($user.display_name || 'U').slice(0, 1)}
 						</span>
 					{/if}
-					Workspace
+					<span>Workspace</span>
+					{#if $unreadNotificationsCount > 0}
+						<span class="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" title="You have unread notifications"></span>
+					{/if}
 				</a>
 			{:else}
 				<a
 					href="/login"
-					class="text-[13px] font-medium px-2 py-1 transition-colors rounded-md {isTransparent ? 'text-neutral-200 hover:text-white hover:bg-white/10' : 'text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted)'}"
+					class="text-xs font-medium px-2.5 py-1.5 transition-colors rounded-md {isTransparent ? 'text-neutral-200 hover:text-white hover:bg-white/10' : 'text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted)'}"
 				>Sign in</a>
 				<a
 					href="/register"
-					class="btn btn-sm text-[13px] {isTransparent ? 'bg-white text-neutral-950 hover:bg-neutral-100' : 'btn-primary'}"
+					class="btn btn-sm text-xs {isTransparent ? 'bg-white text-neutral-950 hover:bg-neutral-100' : 'btn-primary'}"
 				>Request hosting</a>
 			{/if}
 		</div>

@@ -43,11 +43,11 @@
 	</div>
 
 	{#if error}
-		<p class="text-[11px] text-rose-600 dark:text-rose-400 font-normal">
+		<p class="text-xs text-rose-600 dark:text-rose-400 font-normal">
 			{error}
 		</p>
 	{:else if helperText}
-		<p class="text-[11px] text-(--text-muted) font-normal">
+		<p class="text-xs text-(--text-muted) font-normal">
 			{helperText}
 		</p>
 	{/if}

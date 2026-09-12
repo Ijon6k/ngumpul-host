@@ -15,6 +15,7 @@
     "@tanstack/svelte-query": "^5.62.0",
     "axios": "^1.7.9",
     "clsx": "^2.1.1",
+    "marked": "^18.0.12",
     "phosphor-svelte": "^3.1.0"
   },
   "devDependencies": {

@@ -35,35 +35,35 @@
 	<!-- Integrated Telemetry Parameters Strip (Real Telemetry Only) -->
 	<div class="pt-5 border-t border-(--border-hairline) grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-xs">
 		<div class="flex flex-col">
-			<span class="text-(--text-muted) text-[11px]">Current Status</span>
+			<span class="text-(--text-muted) text-xs">Current Status</span>
 			<span class="font-medium text-(--text-main) mt-1 capitalize">
 				{availability?.current_status || 'Operational'}
 			</span>
 		</div>
 
 		<div class="flex flex-col">
-			<span class="text-(--text-muted) text-[11px]">Host Uptime</span>
+			<span class="text-(--text-muted) text-xs">Host Uptime</span>
 			<span class="font-medium text-(--text-main) mt-1">
 				{availability?.uptime_formatted || 'Running'}
 			</span>
 		</div>
 
 		<div class="flex flex-col">
-			<span class="text-(--text-muted) text-[11px]">Recorded History</span>
+			<span class="text-(--text-muted) text-xs">Recorded History</span>
 			<span class="font-medium text-(--text-main) mt-1">
 				{availability?.recorded_period || 'Active'}
 			</span>
 		</div>
 
 		<div class="flex flex-col">
-			<span class="text-(--text-muted) text-[11px]">Last Heartbeat</span>
+			<span class="text-(--text-muted) text-xs">Last Heartbeat</span>
 			<span class="font-medium text-(--text-main) mt-1">
 				{availability?.last_heartbeat_text || 'Just now'}
 			</span>
 		</div>
 
 		<div class="flex flex-col">
-			<span class="text-(--text-muted) text-[11px]">Total Incidents</span>
+			<span class="text-(--text-muted) text-xs">Total Incidents</span>
 			<span class="font-medium text-(--text-main) mt-1">
 				{#if availability?.total_incidents && availability.total_incidents > 0}
 					{availability.total_incidents} ({availability.total_downtime_formatted} down)
@@ -74,7 +74,7 @@
 		</div>
 
 		<div class="flex flex-col">
-			<span class="text-(--text-muted) text-[11px]">Network Probe</span>
+			<span class="text-(--text-muted) text-xs">Network Probe</span>
 			<span class="font-medium text-(--text-main) mt-1">
 				{network?.latency_ms || 29}ms latency
 			</span>

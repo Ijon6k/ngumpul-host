@@ -30,25 +30,25 @@
 			case 'OPERATIONAL':
 				return {
 					dot: 'bg-emerald-500',
-					badge: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20'
+					badge: 'bg-(--bg-surface)/85 dark:bg-neutral-900/85 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
 				};
 			case 'SETUP':
 			case 'PENDING':
 				return {
 					dot: 'bg-amber-500',
-					badge: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20'
+					badge: 'bg-(--bg-surface)/85 dark:bg-neutral-900/85 text-amber-700 dark:text-amber-300 border-amber-500/30'
 				};
 			case 'OFFLINE':
 			case 'DEGRADED':
 				return {
 					dot: 'bg-rose-500',
-					badge: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20'
+					badge: 'bg-(--bg-surface)/85 dark:bg-neutral-900/85 text-rose-700 dark:text-rose-300 border-rose-500/30'
 				};
 			case 'ARCHIVED':
 			default:
 				return {
 					dot: 'bg-neutral-400 dark:bg-neutral-500',
-					badge: 'bg-(--bg-muted) text-(--text-muted) border-(--border-hairline)'
+					badge: 'bg-(--bg-surface)/85 dark:bg-neutral-900/85 text-(--text-muted) border-(--border-hairline)'
 				};
 		}
 	})();
@@ -59,7 +59,7 @@
 {#if activeVariant === 'dot'}
 	<span class="inline-block w-1.5 h-1.5 rounded-full {colorClasses.dot} shrink-0" title={label}></span>
 {:else if activeVariant === 'badge'}
-	<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium border {colorClasses.badge}" title={label}>
+	<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border backdrop-blur-xs shadow-2xs {colorClasses.badge}" title={label}>
 		<span class="w-1.5 h-1.5 rounded-full {colorClasses.dot} shrink-0"></span>
 		<span>{label}</span>
 	</span>

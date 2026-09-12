@@ -97,7 +97,7 @@
 						class="hidden"
 						disabled={uploading}
 					/>
-					<span class="text-[11px] font-mono text-(--text-muted)">JPG, PNG, WebP up to 5MB.</span>
+					<span class="text-xs font-mono text-(--text-muted)">JPG, PNG, WebP up to 5MB.</span>
 				</div>
 			</div>
 

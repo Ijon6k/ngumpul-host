@@ -32,8 +32,8 @@
 	<div class="flex items-center gap-5 sm:gap-6 self-start sm:self-auto">
 		{#if latencyMs > 0}
 			<div class="flex items-center gap-1 text-xs text-(--text-secondary)">
-				<span class="font-mono text-[11px] text-(--text-muted)">{latencyMs}ms</span>
-				<span class="text-[10px] text-(--text-muted)/70">latency</span>
+				<span class="font-mono text-xs text-(--text-muted)">{latencyMs}ms</span>
+				<span class="text-xs text-(--text-muted)/70">latency</span>
 			</div>
 		{/if}
 

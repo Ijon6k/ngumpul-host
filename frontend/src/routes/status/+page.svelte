@@ -116,7 +116,7 @@
 			<!-- Architectural Footnote -->
 			<footer class="text-xs text-(--text-muted) leading-relaxed px-1 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
 				<p class="max-w-2xl">
-					Telemetry data is sourced directly from Linux kernel sessions (<code class="font-mono text-[11px]">/proc/uptime</code> and <code class="font-mono text-[11px]">boot_id</code>). Availability percentages reflect real recorded observation periods only.
+					Telemetry data is sourced directly from Linux kernel sessions (<code class="font-mono text-xs">/proc/uptime</code> and <code class="font-mono text-xs">boot_id</code>). Availability percentages reflect real recorded observation periods only.
 				</p>
 				<span class="shrink-0 text-right">Ngumpul Host · Bare Metal</span>
 			</footer>

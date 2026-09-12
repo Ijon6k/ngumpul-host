@@ -2,8 +2,9 @@
 	export let src: string | null | undefined = undefined;
 	export let name: string = 'Project';
 	export let alt: string | undefined = undefined;
-	export let aspectRatio: string = 'aspect-[4/3]';
+	export let aspectRatio: string = '16/9';
 	let className: string = '';
+
 	export { className as class };
 
 	let imageError = false;

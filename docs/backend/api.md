@@ -197,11 +197,13 @@ Requests must include a valid `ngumpul_session` cookie.
 - **`GET /api/me/projects`**: Lists projects owned by the authenticated member.
 - **`GET /api/me/projects/{id}`**: Detailed project view for project owner including availability probes and activity history.
 - **`GET /api/me/projects/{id}/visits`**: Returns 30-day traffic analytics (`total_page_views`, `total_visits`, and daily breakdown `[{ date, page_views, visits }]`).
-- **`PATCH /api/me/projects/{id}`**: Updates allowed fields on an owned project (description, cover image, documentation URL, repository, demo, tech stack).
-- **`POST /api/hosting-requests`**: Submits a new hosting request.
+- **`PATCH /api/me/projects/{id}`**: Updates allowed fields on an owned project (`description`, `readme`, `cover_image_url`, `documentation_url`, `repository_url`, `technology_stack`).
+- **`GET /api/hosting-requests/check-subdomain?subdomain={subdomain}`**: Real-time debounced availability check endpoint validating format, reserved keywords, and collisions against existing projects and active hosting requests. Returns `{ "available": true|false, "subdomain": "...", "message": "..." }`.
+- **`POST /api/hosting-requests`**: Submits a new hosting request with `{ "project_name": "...", "subdomain": "...", "description": "...", "readme": "...", "repository_url": "...", "documentation_url": "...", "environment_specs": { ... } }`.
+- **`POST /api/projects/{id}/request-subdomain-change`**: Submits a request to change the subdomain of an existing project with `{ "new_subdomain": "...", "reason": "..." }`. Creates a pending review request for administrators.
 - **`GET /api/me/hosting-requests`**: Returns the user's submitted requests and operator notes.
 - **`GET /api/me/activity`**: Lists recent personal audit and project events.
-- **`GET /api/me/notifications`**: Lists in-app member notifications.
+- **`GET /api/me/notifications`**: Lists in-app member notifications (includes `is_read: boolean`).
 - **`PATCH /api/me/notifications/{id}/read`**: Marks a notification as read.
 - **`POST /api/me/notifications/read-all`**: Marks all member notifications as read.
 - **`POST /api/projects/{slug}/comments`**: Posts a comment on a project showcase (rate limit: 5/10m per user).
@@ -233,7 +235,7 @@ Requests must possess `role == 'ADMIN'`.
 - **`PATCH /api/admin/users/{id}/role`**: Updates member role (`{ "role": "ADMIN" | "USER" }`). Protected against self-demotion and demoting the last active administrator on the server.
 - **`PATCH /api/admin/users/{id}/status`**: Updates member account status (`{ "status": "ACTIVE" | "SUSPENDED" }`). Protected against self-suspension and suspending the last active administrator.
 - **`GET /api/admin/hosting-requests`**: Lists incoming hosting requests.
-- **`POST /api/admin/hosting-requests/{id}/approve`**: Approves request and generates project record.
+- **`POST /api/admin/hosting-requests/{id}/approve`**: Approves request, allows editing/overriding assigned `subdomain`, setting `admin_notes`, and initializes project record.
 - **`POST /api/admin/hosting-requests/{id}/reject`**: Rejects request (`{ "reason": "Repository inaccessible" }`).
 - **`POST /api/admin/hosting-requests/{id}/complete`**: Finalizes container deployment, sets public URL, and marks project `ONLINE`.
 - **`GET /api/admin/system`**: Detailed Linux host telemetry, mounts, and probe diagnostics.

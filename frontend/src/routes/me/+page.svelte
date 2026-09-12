@@ -147,12 +147,12 @@
 				{#each myProjects as proj (proj.id)}
 					<div class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-(--bg-muted)/20 px-2 -mx-2 rounded-sm transition-colors group">
 						<div class="flex items-center gap-3.5 min-w-0">
-							<div class="w-14 h-10 rounded-xs overflow-hidden shrink-0 border border-(--border-hairline) bg-(--bg-muted)">
+							<div class="w-40 rounded-sm overflow-hidden shrink-0 border border-(--border-hairline) bg-(--bg-muted)" style="aspect-ratio: 16/9;">
 								<ProjectCover
 									src={proj.cover_image_url}
 									alt={proj.name}
 									name={proj.name}
-									aspectRatio="4/3"
+									aspectRatio="full"
 								/>
 							</div>
 

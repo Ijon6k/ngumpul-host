@@ -70,9 +70,9 @@
 
 	<!-- Time Bounds & Resolution Indicator -->
 	{#if blocks.length > 0}
-		<div class="flex items-center justify-between text-[11px] {dark ? 'text-neutral-400' : 'text-(--text-muted)'} font-normal select-none">
+		<div class="flex items-center justify-between text-xs {dark ? 'text-neutral-400' : 'text-(--text-muted)'} font-normal select-none">
 			<span>{blocks[0]?.label || ''}</span>
-			<span class="text-[10px] tracking-wider uppercase opacity-75">{timeUnitLabel}</span>
+			<span class="text-xs tracking-wider uppercase opacity-75">{timeUnitLabel}</span>
 			<span>{blocks[blocks.length - 1]?.label || ''}</span>
 		</div>
 	{/if}
@@ -83,23 +83,23 @@
 			<div class="flex items-center gap-3.5 sm:gap-5 flex-wrap">
 				<div class="flex items-center gap-1.5">
 					<span class="w-2.5 h-2.5 rounded-[2px] {dark ? 'bg-neutral-800' : 'bg-neutral-200 dark:bg-neutral-800'}"></span>
-					<span class="text-[11px]">No recorded data</span>
+					<span class="text-xs">No recorded data</span>
 				</div>
 				<div class="flex items-center gap-1.5">
 					<span class="w-2.5 h-2.5 rounded-[2px] {dark ? 'bg-emerald-500' : 'bg-[#2E8555]'}"></span>
-					<span class="text-[11px]">Fully available</span>
+					<span class="text-xs">Fully available</span>
 				</div>
 				<div class="flex items-center gap-1.5">
 					<span class="w-2.5 h-2.5 rounded-[2px] {dark ? 'bg-emerald-400/50 border border-emerald-400/30' : 'bg-emerald-200 border border-emerald-300'}"></span>
-					<span class="text-[11px]">Partial availability</span>
+					<span class="text-xs">Partial availability</span>
 				</div>
 				<div class="flex items-center gap-1.5">
 					<span class="w-2.5 h-2.5 rounded-[2px] {dark ? 'bg-rose-500' : 'bg-rose-600'}"></span>
-					<span class="text-[11px]">Downtime</span>
+					<span class="text-xs">Downtime</span>
 				</div>
 			</div>
 
-			<span class="text-[11px] {dark ? 'text-neutral-500' : 'text-(--text-muted)'}">
+			<span class="text-xs {dark ? 'text-neutral-500' : 'text-(--text-muted)'}">
 				5-min session heartbeat
 			</span>
 		</div>
@@ -112,7 +112,7 @@
 			style="left: {hoverPos.x}px; top: {hoverPos.y}px;"
 		>
 			<div class="font-medium text-neutral-100">{activeHover.label}</div>
-			<div class="text-[11px] text-neutral-300 mt-0.5">
+			<div class="text-xs text-neutral-300 mt-0.5">
 				{#if activeHover.status === 'no_data'}
 					No telemetry recorded
 				{:else}

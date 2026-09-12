@@ -5,6 +5,7 @@
 	import type { PublicMember } from '$lib/api/users';
 	import type { Project } from '$lib/types/project';
 	import ProjectCard from '$lib/components/ProjectCard.svelte';
+	import { Breadcrumb } from '$lib/components/ui';
 
 	let member: PublicMember | null = null;
 	let projects: Project[] = [];
@@ -51,11 +52,13 @@
 		</div>
 	{:else}
 		<!-- Breadcrumb -->
-		<div class="flex items-center gap-2 text-xs text-(--text-muted)">
-			<a href="/people" class="hover:text-(--text-main) transition-colors">People</a>
-			<span>/</span>
-			<span class="text-(--text-main) font-medium">@{member.username}</span>
-		</div>
+		<Breadcrumb
+			class="mb-6"
+			items={[
+				{ label: 'People', href: '/people' },
+				{ label: `@${member.username}` }
+			]}
+		/>
 
 		<!-- Profile Editorial Header -->
 		<header class="flex items-start gap-6 pb-8 border-b border-(--border-hairline) flex-wrap sm:flex-nowrap">

@@ -37,47 +37,45 @@
 </script>
 
 <article class="group relative flex flex-col bg-(--bg-surface) border border-(--border-hairline) hover:border-(--border-subtle) rounded-md overflow-hidden transition-all duration-200 hover:shadow-xs">
-	<!-- Cover area (4:3 aspect ratio with status badge overlay) -->
-	<a href="/projects/{project.slug}" class="block relative w-full aspect-[4/3] overflow-hidden bg-(--bg-muted)" tabindex="-1">
+	<!-- Cover area (16:9 aspect ratio with status badge overlay) -->
+	<a href="/projects/{project.slug}" class="block relative w-full aspect-[16/9] overflow-hidden bg-(--bg-muted)" tabindex="-1">
 		<ProjectCover
 			src={project.cover_image_url}
 			alt={project.name}
 			name={project.name}
 			aspectRatio="full"
-			class="w-full h-full !rounded-none group-hover:scale-[1.015] transition-transform duration-500 ease-out"
+			class="w-full h-full !rounded-none"
 		/>
 		<div class="absolute top-3 right-3 z-10 pointer-events-none">
-			<StatusDot status={project.status} />
+			<StatusDot status={project.status} variant="badge" />
 		</div>
 	</a>
 
 	<!-- Card Body: Editorial Hierarchy -->
-	<div class="flex flex-col grow p-5 gap-3.5">
+	<div class="flex flex-col grow p-5 gap-3">
 		<div class="flex flex-col gap-1.5">
-			<h3 class="font-sans font-semibold text-base sm:text-lg text-(--text-main) tracking-[-0.01em] leading-snug">
+			<h3 class="font-sans font-semibold text-base sm:text-lg text-(--text-main) tracking-[-0.01em] line-clamp-1 h-6 leading-snug">
 				<a href="/projects/{project.slug}" class="hover:text-(--accent-strong) transition-colors">
 					{project.name}
 				</a>
 			</h3>
 
-			{#if project.description}
-				<p class="text-xs sm:text-sm text-(--text-secondary) line-clamp-2 leading-relaxed font-normal">
-					{project.description}
-				</p>
-			{/if}
+			<p class="text-xs sm:text-sm text-(--text-secondary) line-clamp-2 h-10 leading-relaxed font-normal">
+				{project.description || ''}
+			</p>
 		</div>
 
-		<!-- Creator & Tech Stack (Clean typographic hierarchy, no chip/pill spam) -->
-		<div class="flex items-center flex-wrap gap-x-2 gap-y-1 text-xs text-(--text-muted) pt-1">
+		<!-- Creator & Tech Stack (Consistent vertical slot, clean typographic hierarchy) -->
+		<div class="flex items-center gap-x-2 text-xs text-(--text-muted) truncate h-5">
 			{#if project.owner}
-				<a href="/people/{project.owner.username}" class="font-medium text-(--text-main) hover:underline">
+				<a href="/people/{project.owner.username}" class="font-medium text-(--text-main) hover:underline shrink-0">
 					{project.owner.display_name}
 				</a>
 			{/if}
 
 			{#if visibleTechs.length > 0}
-				{#if project.owner}<span class="text-(--border-subtle)">·</span>{/if}
-				<span class="text-(--text-secondary)">
+				{#if project.owner}<span class="text-(--border-subtle) shrink-0">·</span>{/if}
+				<span class="text-(--text-secondary) truncate">
 					{visibleTechs.join(' · ')}
 				</span>
 			{/if}
@@ -85,7 +83,7 @@
 
 		<!-- Footer Metadata: Hosted Since & Direct Link -->
 		<div class="flex items-center justify-between mt-auto pt-3 border-t border-(--border-hairline) text-xs text-(--text-muted)">
-			<span class="text-[11px]">
+			<span class="text-xs">
 				{#if project.hosting_type === 'HOSTED_HERE'}
 					{hostedDate ? `Hosted since ${hostedDate}` : 'Hosted on node'}
 				{:else}

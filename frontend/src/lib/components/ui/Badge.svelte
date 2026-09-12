@@ -23,7 +23,7 @@
 	};
 
 	const sizeStyles = {
-		sm: 'px-2 py-0.5 text-[11px] gap-1.5',
+		sm: 'px-2 py-0.5 text-xs gap-1.5',
 		md: 'px-2.5 py-1 text-xs gap-1.5'
 	};
 

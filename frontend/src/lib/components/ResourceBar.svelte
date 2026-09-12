@@ -28,6 +28,6 @@
 	</div>
 
 	{#if subText}
-		<span class="text-[11px] text-(--text-muted)">{subText}</span>
+		<span class="text-xs text-(--text-muted)">{subText}</span>
 	{/if}
 </div>

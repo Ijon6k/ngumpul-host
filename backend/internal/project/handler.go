@@ -104,7 +104,7 @@ func (h *Handler) ListPublic(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dataQuery := fmt.Sprintf(`
-		SELECT p.id, p.owner_id, p.name, p.slug, p.description, p.cover_image_url,
+		SELECT p.id, p.owner_id, p.name, p.slug, p.description, p.readme, p.cover_image_url,
 		       p.repository_url, p.documentation_url, p.demo_url, p.technology_stack,
 		       p.hosting_type, p.public_url, p.status, p.visibility, p.created_at, p.updated_at, p.published_at,
 		       u.id, u.username, u.display_name, u.avatar_url, u.bio, u.role, u.created_at
@@ -143,7 +143,7 @@ func (h *Handler) ListPublic(w http.ResponseWriter, r *http.Request) {
 		var p Project
 		var u auth.PublicUser
 		if err := rows.Scan(
-			&p.ID, &p.OwnerID, &p.Name, &p.Slug, &p.Description, &p.CoverImageURL,
+			&p.ID, &p.OwnerID, &p.Name, &p.Slug, &p.Description, &p.Readme, &p.CoverImageURL,
 			&p.RepositoryURL, &p.DocumentationURL, &p.DemoURL, &p.TechnologyStack,
 			&p.HostingType, &p.PublicURL, &p.Status, &p.Visibility, &p.CreatedAt, &p.UpdatedAt, &p.PublishedAt,
 			&u.ID, &u.Username, &u.DisplayName, &u.AvatarURL, &u.Bio, &u.Role, &u.CreatedAt,
@@ -178,7 +178,7 @@ func (h *Handler) GetBySlug(w http.ResponseWriter, r *http.Request) {
 	var p Project
 	var u auth.PublicUser
 	err := h.db.QueryRow(r.Context(), `
-		SELECT p.id, p.owner_id, p.name, p.slug, p.description, p.cover_image_url,
+		SELECT p.id, p.owner_id, p.name, p.slug, p.description, p.readme, p.cover_image_url,
 		       p.repository_url, p.documentation_url, p.demo_url, p.technology_stack,
 		       p.hosting_type, p.public_url, p.status, p.visibility, p.created_at, p.updated_at, p.published_at,
 		       u.id, u.username, u.display_name, u.avatar_url, u.bio, u.role, u.created_at
@@ -186,7 +186,7 @@ func (h *Handler) GetBySlug(w http.ResponseWriter, r *http.Request) {
 		JOIN users u ON u.id = p.owner_id
 		WHERE LOWER(p.slug) = $1
 	`, slug).Scan(
-		&p.ID, &p.OwnerID, &p.Name, &p.Slug, &p.Description, &p.CoverImageURL,
+		&p.ID, &p.OwnerID, &p.Name, &p.Slug, &p.Description, &p.Readme, &p.CoverImageURL,
 		&p.RepositoryURL, &p.DocumentationURL, &p.DemoURL, &p.TechnologyStack,
 		&p.HostingType, &p.PublicURL, &p.Status, &p.Visibility, &p.CreatedAt, &p.UpdatedAt, &p.PublishedAt,
 		&u.ID, &u.Username, &u.DisplayName, &u.AvatarURL, &u.Bio, &u.Role, &u.CreatedAt,
@@ -271,7 +271,7 @@ func (h *Handler) GetMyProject(w http.ResponseWriter, r *http.Request) {
 	var p Project
 	var u auth.PublicUser
 	err := h.db.QueryRow(r.Context(), `
-		SELECT p.id, p.owner_id, p.name, p.slug, p.description, p.cover_image_url,
+		SELECT p.id, p.owner_id, p.name, p.slug, p.description, p.readme, p.cover_image_url,
 		       p.repository_url, p.documentation_url, p.demo_url, p.technology_stack,
 		       p.hosting_type, p.public_url, p.status, p.visibility, p.created_at, p.updated_at, p.published_at,
 		       u.id, u.username, u.display_name, u.avatar_url, u.bio, u.role, u.created_at
@@ -279,7 +279,7 @@ func (h *Handler) GetMyProject(w http.ResponseWriter, r *http.Request) {
 		JOIN users u ON u.id = p.owner_id
 		WHERE p.id = $1
 	`, projectID).Scan(
-		&p.ID, &p.OwnerID, &p.Name, &p.Slug, &p.Description, &p.CoverImageURL,
+		&p.ID, &p.OwnerID, &p.Name, &p.Slug, &p.Description, &p.Readme, &p.CoverImageURL,
 		&p.RepositoryURL, &p.DocumentationURL, &p.DemoURL, &p.TechnologyStack,
 		&p.HostingType, &p.PublicURL, &p.Status, &p.Visibility, &p.CreatedAt, &p.UpdatedAt, &p.PublishedAt,
 		&u.ID, &u.Username, &u.DisplayName, &u.AvatarURL, &u.Bio, &u.Role, &u.CreatedAt,
@@ -413,10 +413,11 @@ func (h *Handler) UpdateMyProject(w http.ResponseWriter, r *http.Request) {
 		    repository_url = COALESCE($3, repository_url),
 		    documentation_url = COALESCE($4, documentation_url),
 		    demo_url = COALESCE($5, demo_url),
-		    technology_stack = CASE WHEN $6::text[] IS NOT NULL THEN $6::text[] ELSE technology_stack END,
+		    readme = COALESCE($6, readme),
+		    technology_stack = CASE WHEN $7::text[] IS NOT NULL THEN $7::text[] ELSE technology_stack END,
 		    updated_at = NOW()
-		WHERE id = $7
-	`, req.Description, req.CoverImageURL, req.RepositoryURL, req.DocumentationURL, req.DemoURL, req.TechnologyStack, projectID)
+		WHERE id = $8
+	`, req.Description, req.CoverImageURL, req.RepositoryURL, req.DocumentationURL, req.DemoURL, req.Readme, req.TechnologyStack, projectID)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, "Failed to update project")
 		return
@@ -437,7 +438,7 @@ func (h *Handler) UpdateMyProject(w http.ResponseWriter, r *http.Request) {
 // AdminList handles GET /api/admin/projects
 func (h *Handler) AdminList(w http.ResponseWriter, r *http.Request) {
 	rows, err := h.db.Query(r.Context(), `
-		SELECT p.id, p.owner_id, p.name, p.slug, p.description, p.cover_image_url,
+		SELECT p.id, p.owner_id, p.name, p.slug, p.description, p.readme, p.cover_image_url,
 		       p.repository_url, p.documentation_url, p.demo_url, p.technology_stack,
 		       p.hosting_type, p.public_url, p.status, p.visibility, p.created_at, p.updated_at, p.published_at,
 		       u.id, u.username, u.display_name, u.avatar_url, u.bio, u.role, u.created_at
@@ -456,7 +457,7 @@ func (h *Handler) AdminList(w http.ResponseWriter, r *http.Request) {
 		var p Project
 		var u auth.PublicUser
 		if err := rows.Scan(
-			&p.ID, &p.OwnerID, &p.Name, &p.Slug, &p.Description, &p.CoverImageURL,
+			&p.ID, &p.OwnerID, &p.Name, &p.Slug, &p.Description, &p.Readme, &p.CoverImageURL,
 			&p.RepositoryURL, &p.DocumentationURL, &p.DemoURL, &p.TechnologyStack,
 			&p.HostingType, &p.PublicURL, &p.Status, &p.Visibility, &p.CreatedAt, &p.UpdatedAt, &p.PublishedAt,
 			&u.ID, &u.Username, &u.DisplayName, &u.AvatarURL, &u.Bio, &u.Role, &u.CreatedAt,
@@ -507,14 +508,14 @@ func (h *Handler) AdminCreate(w http.ResponseWriter, r *http.Request) {
 	var projectID string
 	err := h.db.QueryRow(r.Context(), `
 		INSERT INTO projects (
-			owner_id, name, slug, description, cover_image_url, repository_url,
+			owner_id, name, slug, description, readme, cover_image_url, repository_url,
 			documentation_url, demo_url, technology_stack, hosting_type, public_url,
 			status, visibility, published_at
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
-			CASE WHEN $13 = 'PUBLIC' THEN NOW() ELSE NULL END
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
+			CASE WHEN $14 = 'PUBLIC' THEN NOW() ELSE NULL END
 		) RETURNING id
-	`, req.OwnerID, req.Name, req.Slug, req.Description, req.CoverImageURL, req.RepositoryURL,
+	`, req.OwnerID, req.Name, req.Slug, req.Description, req.Readme, req.CoverImageURL, req.RepositoryURL,
 		req.DocumentationURL, req.DemoURL, req.TechnologyStack, req.HostingType, req.PublicURL,
 		req.Status, req.Visibility).Scan(&projectID)
 	if err != nil {
@@ -564,20 +565,21 @@ func (h *Handler) AdminUpdate(w http.ResponseWriter, r *http.Request) {
 		SET name = COALESCE($1, name),
 		    slug = COALESCE($2, slug),
 		    description = COALESCE($3, description),
-		    cover_image_url = COALESCE($4, cover_image_url),
-		    repository_url = COALESCE($5, repository_url),
-		    documentation_url = COALESCE($6, documentation_url),
-		    demo_url = COALESCE($7, demo_url),
-		    technology_stack = CASE WHEN $8::text[] IS NOT NULL THEN $8::text[] ELSE technology_stack END,
-		    hosting_type = COALESCE($9, hosting_type),
-		    public_url = COALESCE($10, public_url),
-		    status = COALESCE($11, status),
-		    visibility = COALESCE($12, visibility),
-		    owner_id = COALESCE($13, owner_id),
-		    published_at = CASE WHEN $12 = 'PUBLIC' AND published_at IS NULL THEN NOW() ELSE published_at END,
+		    readme = COALESCE($4, readme),
+		    cover_image_url = COALESCE($5, cover_image_url),
+		    repository_url = COALESCE($6, repository_url),
+		    documentation_url = COALESCE($7, documentation_url),
+		    demo_url = COALESCE($8, demo_url),
+		    technology_stack = CASE WHEN $9::text[] IS NOT NULL THEN $9::text[] ELSE technology_stack END,
+		    hosting_type = COALESCE($10, hosting_type),
+		    public_url = COALESCE($11, public_url),
+		    status = COALESCE($12, status),
+		    visibility = COALESCE($13, visibility),
+		    owner_id = COALESCE($14, owner_id),
+		    published_at = CASE WHEN $13 = 'PUBLIC' AND published_at IS NULL THEN NOW() ELSE published_at END,
 		    updated_at = NOW()
-		WHERE id = $14
-	`, req.Name, req.Slug, req.Description, req.CoverImageURL, req.RepositoryURL,
+		WHERE id = $15
+	`, req.Name, req.Slug, req.Description, req.Readme, req.CoverImageURL, req.RepositoryURL,
 		req.DocumentationURL, req.DemoURL, req.TechnologyStack, req.HostingType, req.PublicURL,
 		req.Status, req.Visibility, req.OwnerID, projectID)
 	if err != nil {

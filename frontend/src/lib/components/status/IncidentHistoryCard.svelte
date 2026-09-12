@@ -35,7 +35,7 @@
 						<span class="text-(--text-secondary) mt-1">{incident.details}</span>
 					</div>
 
-					<div class="text-right text-(--text-muted) shrink-0 font-mono text-[11px]">
+					<div class="text-right text-(--text-muted) shrink-0 font-mono text-xs">
 						{formatDate(incident.started_at)}
 					</div>
 				</div>

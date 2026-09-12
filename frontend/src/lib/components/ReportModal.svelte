@@ -148,7 +148,7 @@
 							placeholder="Provide context for our moderators..."
 							class="w-full text-xs p-2.5 rounded-md border border-(--border-hairline) bg-(--bg-canvas) text-(--text-main) placeholder:text-(--text-muted) focus:outline-hidden focus:border-(--accent-sky) resize-none"
 						></textarea>
-						<span class="text-[10px] text-(--text-muted) text-right">{details.length}/500</span>
+						<span class="text-xs text-(--text-muted) text-right">{details.length}/500</span>
 					</div>
 
 					<!-- Actions -->

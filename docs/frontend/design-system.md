@@ -73,8 +73,8 @@ $$\text{Radius}_{\text{inner}} = \text{Radius}_{\text{outer}} - \text{Padding}$$
 
 ### Hierarchy & Scale Standards
 * **Base Typography Scale (Tailwind v4 theme tokens):**
-  * `--text-xs: 0.875rem` (14px) — metadata, secondary timestamps, tags, badges.
-  * `--text-sm: 1rem` (16px) — body copy, table cells, form labels, card descriptions.
+  * `--text-xs: 0.875rem` (14px) — metadata, secondary timestamps, tags, badges. **Strict floor: no font size smaller than 14px is permitted anywhere in the UI.**
+  * `--text-sm: 1rem` (16px) — body copy, table cells, form labels, card descriptions, buttons.
   * `--text-base: 1.125rem` (18px) — prominent body, feature intro leads.
 * **Page Titles:** `text-2xl sm:text-3xl lg:text-4xl font-normal tracking-[-0.03em]`.
 * **Section Titles:** `text-lg sm:text-xl font-medium tracking-tight`.
@@ -82,6 +82,9 @@ $$\text{Radius}_{\text{inner}} = \text{Radius}_{\text{outer}} - \text{Padding}$$
 * **Table Body Cells:** `text-sm text-(--text-main)`.
 * **Technical Metadata / Code:** `text-xs font-mono`.
 * **Micro-badges (`StatusDot`):** `text-xs px-2.5 py-0.5 font-medium`.
+* **Breadcrumb Navigation:** `text-sm` (16px / `1rem`) with `text-(--text-muted)` and active item `text-(--text-main) font-medium`.
+* **Project Artwork Aspect Ratio:** Standard `16:9` aspect ratio (`aspect-[16/9]`) across catalog cards, project showcase pages, and personal workspace dashboard views via `ProjectCover.svelte`.
+
 
 ---
 
@@ -114,8 +117,11 @@ Always reference predefined CSS custom properties. Ad-hoc hex values in componen
 | Token | Light Value | Dark Value | Purpose |
 | :--- | :--- | :--- | :--- |
 | `--accent-sky` | `#4A8FA8` | `#7CB1C7` | Core brand identity: calm sky-blue for focus states and graphs. |
-| `--accent-orange` | `#FF5500` | `#FF5500` | Signature brand punch: subtle logo dot and primary notifications. |
+| `--accent-orange` | `#FF5500` | `#FF5500` | Signature brand punch: logo dot, notification badges, and primary alert indicators. |
 | `--cf-blue` | `#0284C7` | `#38BDF8` | Technical links, interactive accents, infrastructure badges. |
+| `--cf-pastel-bg` | *(sky pastel)* | *(sky pastel dark)* | Active nav item background (sidebar active state). |
+| `--cf-pastel-text` | *(sky pastel text)* | *(sky pastel text dark)* | Active nav item foreground text. |
+| `--cf-pastel-border` | *(sky pastel border)* | *(sky pastel border dark)* | Active nav item border. |
 | `--color-success` | `#2E8555` | `#45A36A` | Operational status, healthy telemetry, verified indicators. |
 | `--color-warning` | `#99732B` | `#C29E4D` | Degraded service, memory threshold warnings, pending states. |
 | `--color-danger` | `#B84747` | `#CC5454` | Service down, critical alerts, incident records. |
@@ -140,3 +146,35 @@ For administrative views, project management, and server settings:
   * Status badges: **Centered** or **Right-aligned**.
 * **Restrained Controls:** Use `radius-sm` for action buttons. Use ghost buttons with subtle borders for secondary options.
 * **Inline Feedback Over Modals:** Prefer inline validation messages, subtle toast banners, and clear empty states over blocking modals.
+
+---
+
+## 7. Brand Identity Assets
+
+### Logo
+- **Files:** `/static/logo.webp` (square mark, 675×675), `/static/logofull.webp` (horizontal full lockup, 1413×471)
+- **Usage Pattern:** All navbar and sidebar logos use `logo.webp` (the square mark) beside the text `ngumpulhost.`:
+  ```svelte
+  <a href="/" class="flex items-center gap-2 hover:opacity-85 transition-opacity">
+    <img src="/logo.webp" alt="" class="h-5 w-5 object-contain" />
+    <span class="font-sans font-semibold text-sm tracking-tight text-(--text-main)">
+      ngumpul<span class="text-(--text-muted)">host</span><span class="text-(--accent-orange)">.</span>
+    </span>
+  </a>
+  ```
+- **Public Navbar (transparent hero state):** Text adapts — white on hero image, `text-(--text-main)` on scroll. The dot always stays `text-(--accent-orange)`.
+- **Admin Sidebar Collapsed:** Shows only `logo.webp` icon (24×24), morphs to `SidebarSimple` on hover.
+
+### Favicon
+- **File:** `/static/favicon.ico` (32×32 ICO, sourced from `asset/logo.ico`)
+- **Declared in:** `src/app.html` as `<link rel="icon" href="/favicon.ico" sizes="32x32" type="image/x-icon" />`
+
+### Active Navigation State (Sidebar)
+Both admin and user `/me` sidebars use the same active tab style:
+```
+bg-(--cf-pastel-bg) text-(--cf-pastel-text) font-semibold border border-(--cf-pastel-border)/50 rounded-lg
+```
+This applies to all nav items in `routes/admin/+layout.svelte` and `routes/me/+layout.svelte`.
+
+### Notification Badge Color
+All unread notification counts use `bg-(--accent-orange) text-white` (orange), matching the admin dashboard badge style. Never use `bg-(--accent-sky)` for notification counts.

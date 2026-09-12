@@ -26,7 +26,13 @@
 			const res = await notificationsApi.getNotifications();
 			notifications = res.notifications || [];
 			const unread = notifications.filter((n) => !n.is_read).length;
-			unreadNotificationsCount.set(unread);
+
+			// Auto-mark all as read when the notifications tab is opened
+			if (unread > 0) {
+				await markAllNotificationsAsRead();
+				notifications = notifications.map((n) => ({ ...n, is_read: true }));
+			}
+			unreadNotificationsCount.set(0);
 		} catch (err) {
 			error = extractError(err);
 		} finally {
@@ -90,7 +96,7 @@
 					Notifications
 				</h1>
 				{#if unreadCount > 0}
-					<span class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-(--accent-sky)/10 text-(--accent-sky) border border-(--accent-sky)/30">
+					<span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-(--accent-sky)/10 text-(--accent-sky) border border-(--accent-sky)/30">
 						{unreadCount} unread
 					</span>
 				{/if}
@@ -157,7 +163,7 @@
 							<p class="text-xs text-(--text-secondary) leading-relaxed">
 								{notif.body}
 							</p>
-							<span class="text-[11px] text-(--text-muted) font-mono pt-1">
+							<span class="text-xs text-(--text-muted) font-mono pt-1">
 								{formatRelativeTime(notif.created_at)}
 							</span>
 						</div>

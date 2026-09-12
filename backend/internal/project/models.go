@@ -19,6 +19,7 @@ type Project struct {
 	RepositoryURL    string           `json:"repository_url"`
 	DocumentationURL string           `json:"documentation_url"`
 	DemoURL          string           `json:"demo_url"`
+	Readme           string           `json:"readme"`
 	TechnologyStack  []string         `json:"technology_stack"`
 	HostingType      string           `json:"hosting_type"`
 	PublicURL        string           `json:"public_url"`
@@ -33,6 +34,7 @@ type Project struct {
 // UpdateMetadataRequest payload for updating personal project metadata.
 type UpdateMetadataRequest struct {
 	Description      *string  `json:"description"`
+	Readme           *string  `json:"readme"`
 	CoverImageURL    *string  `json:"cover_image_url"`
 	RepositoryURL    *string  `json:"repository_url"`
 	DocumentationURL *string  `json:"documentation_url"`
@@ -46,6 +48,7 @@ type AdminCreateProjectRequest struct {
 	Name             string   `json:"name"`
 	Slug             string   `json:"slug"`
 	Description      string   `json:"description"`
+	Readme           string   `json:"readme"`
 	CoverImageURL    string   `json:"cover_image_url"`
 	RepositoryURL    string   `json:"repository_url"`
 	DocumentationURL string   `json:"documentation_url"`
@@ -62,6 +65,7 @@ type AdminUpdateProjectRequest struct {
 	Name             *string  `json:"name"`
 	Slug             *string  `json:"slug"`
 	Description      *string  `json:"description"`
+	Readme           *string  `json:"readme"`
 	CoverImageURL    *string  `json:"cover_image_url"`
 	RepositoryURL    *string  `json:"repository_url"`
 	DocumentationURL *string  `json:"documentation_url"`

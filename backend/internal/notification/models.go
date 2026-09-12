@@ -13,5 +13,6 @@ type Notification struct {
 	Body      string         `json:"body"`
 	Data      map[string]any `json:"data"`
 	ReadAt    *time.Time     `json:"read_at"`
+	IsRead    bool           `json:"is_read"`
 	CreatedAt time.Time      `json:"created_at"`
 }

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { adminApi, extractError } from '$lib/api';
+	import { adminApi, hostingRequestsApi, extractError } from '$lib/api';
 	import type { HostingRequest } from '$lib/types/hosting';
 	import { Table, TableRow, TableCell, type TableColumn } from '$lib/components/ui';
 
@@ -13,6 +13,12 @@
 	let actionType: 'approve' | 'reject' | 'complete' | null = null;
 
 	let adminNotes = '';
+	let adminSubdomain = '';
+	let subdomainChecking = false;
+	let subdomainStatus: 'idle' | 'available' | 'taken' | 'invalid' = 'idle';
+	let subdomainMessage = '';
+	let checkTimer: any = null;
+
 	let publicURL = '';
 	let processing = false;
 	let error: string | null = null;
@@ -52,17 +58,51 @@
 			!searchQuery ||
 			r.project_name?.toLowerCase().includes(q) ||
 			r.repository_url?.toLowerCase().includes(q) ||
+			r.subdomain?.toLowerCase().includes(q) ||
 			r.requester?.display_name?.toLowerCase().includes(q) ||
 			r.requester?.username?.toLowerCase().includes(q);
 
 		return matchesFilter && matchesSearch;
 	});
 
+	function handleSubdomainInput() {
+		adminSubdomain = adminSubdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
+		publicURL = `https://${adminSubdomain || 'app'}.ngumpul.local`;
+		if (!adminSubdomain) {
+			subdomainStatus = 'idle';
+			subdomainMessage = '';
+			return;
+		}
+
+		clearTimeout(checkTimer);
+		subdomainChecking = true;
+		checkTimer = setTimeout(async () => {
+			try {
+				const res = await hostingRequestsApi.checkSubdomain(adminSubdomain);
+				if (res.available) {
+					subdomainStatus = 'available';
+					subdomainMessage = res.message || 'Subdomain available';
+				} else {
+					subdomainStatus = 'taken';
+					subdomainMessage = res.message || 'Subdomain is already in use';
+				}
+			} catch (err) {
+				subdomainStatus = 'invalid';
+				subdomainMessage = extractError(err);
+			} finally {
+				subdomainChecking = false;
+			}
+		}, 300);
+	}
+
 	function openModal(req: any, type: 'approve' | 'reject' | 'complete') {
 		activeRequest = req;
 		actionType = type;
 		adminNotes = '';
-		publicURL = `https://${req.project_name.toLowerCase().replace(/[^a-z0-9]/g, '')}.ngumpul.local`;
+		adminSubdomain = req.subdomain || req.project_name.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-+|-+$/g, '');
+		publicURL = req.public_url || `https://${adminSubdomain || 'app'}.ngumpul.local`;
+		subdomainStatus = 'idle';
+		subdomainMessage = '';
 		error = null;
 		success = null;
 	}
@@ -70,6 +110,7 @@
 	function closeModal() {
 		activeRequest = null;
 		actionType = null;
+		clearTimeout(checkTimer);
 	}
 
 	async function handleAction() {
@@ -80,9 +121,14 @@
 		try {
 			if (actionType === 'approve') {
 				await adminApi.requests.approveRequest(activeRequest.id, {
-					admin_notes: adminNotes
+					admin_notes: adminNotes,
+					subdomain: adminSubdomain.trim()
 				});
-				success = `Request for ${activeRequest.project_name} marked as APPROVED.`;
+				if (activeRequest.request_type === 'SUBDOMAIN_CHANGE') {
+					success = `Subdomain change for "${activeRequest.project_name}" approved and updated to "${adminSubdomain}".`;
+				} else {
+					success = `Request for ${activeRequest.project_name} marked as APPROVED with subdomain "${adminSubdomain}".`;
+				}
 			} else if (actionType === 'reject') {
 				await adminApi.requests.rejectRequest(activeRequest.id, {
 					admin_notes: adminNotes
@@ -97,6 +143,7 @@
 			}
 			closeModal();
 			await loadRequests();
+
 		} catch (err) {
 			error = extractError(err);
 		} finally {
@@ -177,7 +224,19 @@
 	>
 		<TableRow>
 			<TableCell alignTop>
-				<div class="font-semibold text-sm sm:text-base text-(--text-main)">{req.project_name}</div>
+				<div class="flex items-center gap-2 flex-wrap">
+					<span class="font-semibold text-sm sm:text-base text-(--text-main)">{req.project_name}</span>
+					{#if req.request_type === 'SUBDOMAIN_CHANGE'}
+						<span class="text-xs px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 font-medium">
+							Subdomain Change
+						</span>
+					{/if}
+				</div>
+				{#if req.subdomain}
+					<div class="text-xs font-mono text-(--accent-strong) mt-0.5">
+						https://{req.subdomain}.ngumpul.local
+					</div>
+				{/if}
 				{#if req.description}
 					<div class="text-xs text-(--text-secondary) mt-0.5 max-w-sm line-clamp-1">{req.description}</div>
 				{/if}
@@ -258,19 +317,63 @@
 	<!-- Operational Action Modal -->
 	{#if activeRequest && actionType}
 		<div class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-			<div class="w-full max-w-md p-6 bg-(--bg-surface) border border-(--border-hairline) rounded-md flex flex-col gap-4 shadow-xl">
+			<div class="w-full max-w-lg p-6 bg-(--bg-surface) border border-(--border-hairline) rounded-md flex flex-col gap-4 shadow-xl max-h-[90vh] overflow-y-auto">
 				<div class="border-b border-(--border-hairline) pb-3">
 					<div class="text-xs text-(--accent-strong) font-medium">Operator Action</div>
 					<h2 class="font-display font-bold text-lg text-(--text-main) mt-0.5">
 						{#if actionType === 'approve'}
-							Approve Hosting: {activeRequest.project_name}
+							{#if activeRequest.request_type === 'SUBDOMAIN_CHANGE'}
+								Approve Subdomain Change: {activeRequest.project_name}
+							{:else}
+								Approve Hosting: {activeRequest.project_name}
+							{/if}
 						{:else if actionType === 'reject'}
-							Reject Hosting: {activeRequest.project_name}
+							Reject Request: {activeRequest.project_name}
 						{:else}
 							Publish Endpoint: {activeRequest.project_name}
 						{/if}
 					</h2>
 				</div>
+
+				{#if actionType === 'approve'}
+					<div class="flex flex-col gap-1.5">
+						<label for="admin-subdomain" class="text-sm font-medium text-(--text-secondary)">
+							{activeRequest.request_type === 'SUBDOMAIN_CHANGE' ? 'Review / Override New Subdomain *' : 'Assign / Edit Subdomain *'}
+						</label>
+						<div class="flex items-stretch rounded-md border {subdomainStatus === 'taken' ? 'border-amber-500/50 bg-amber-500/5' : subdomainStatus === 'available' ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-(--border-hairline) bg-(--bg-muted)'} transition-colors">
+							<input
+								id="admin-subdomain"
+								type="text"
+								class="flex-1 px-3.5 py-2 bg-transparent text-sm font-mono text-(--text-main) outline-none"
+								bind:value={adminSubdomain}
+								on:input={handleSubdomainInput}
+								placeholder="subdomain"
+							/>
+							<div class="px-3 py-2 bg-(--bg-surface) border-l border-(--border-hairline) text-sm font-mono text-(--text-muted) flex items-center select-none">
+								.ngumpul.local
+							</div>
+						</div>
+						{#if subdomainChecking}
+							<span class="text-xs text-(--text-muted) font-mono animate-pulse">Checking availability...</span>
+						{:else if subdomainStatus === 'available'}
+							<span class="text-xs text-emerald-500 font-medium">✓ Subdomain is available for assignment.</span>
+						{:else if subdomainStatus === 'taken'}
+							<span class="text-xs text-amber-500 font-medium">⚠ {subdomainMessage}</span>
+						{:else if subdomainStatus === 'invalid'}
+							<span class="text-xs text-red-500 font-medium">{subdomainMessage}</span>
+						{/if}
+						<span class="text-xs text-(--text-muted)">
+							Target domain: <span class="font-mono text-(--text-main)">https://{adminSubdomain || 'app'}.ngumpul.local</span>
+						</span>
+					</div>
+
+					{#if activeRequest.readme}
+						<details class="text-xs border border-(--border-hairline) rounded p-2 bg-(--bg-muted)">
+							<summary class="font-mono cursor-pointer text-(--accent-strong) font-medium">View Submitted README.md ({activeRequest.readme.length} chars)</summary>
+							<pre class="mt-2 p-2 bg-(--bg-surface) rounded font-mono text-xs overflow-x-auto max-h-48 whitespace-pre-wrap">{activeRequest.readme}</pre>
+						</details>
+					{/if}
+				{/if}
 
 				{#if actionType === 'complete'}
 					<div class="flex flex-col gap-1.5">
