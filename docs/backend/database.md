@@ -220,3 +220,25 @@ erDiagram
   - `expires_at`: Expiration timestamp.
   - `revoked_at`: Immediate invalidation flag.
   - Atomic consumption via `SELECT ... FOR UPDATE` row locking during registration transaction.
+
+### 2.7. Discussion, Moderation & Visits Telemetry
+- **`comments`**:
+  - Flat community discussions on project showcases.
+  - `author_id`: References `users(id)` with `ON DELETE CASCADE`.
+  - `project_id`: References `projects(id)` with `ON DELETE CASCADE`.
+  - `deleted_at`: Soft-deletion timestamp. Content preserved for audit/moderation while rendered as deleted to clients.
+- **`reports`**:
+  - Community moderation reports against projects and comments.
+  - `target_type`: `'PROJECT'` or `'COMMENT'`.
+  - `status`: `'OPEN'`, `'REVIEWED'`, `'RESOLVED'`, `'DISMISSED'`.
+  - `resolved_by`: References `users(id)` with `ON DELETE SET NULL`.
+- **`project_visits`**:
+  - Real outbound clicks through `/go/{slug}` redirect tracker.
+  - Stores `project_id`, IP hash, user agent, and timestamp.
+- **`project_page_views`**:
+  - Showcase impressions deduplicated every 30 minutes per IP/user session.
+  - Stores `project_id`, session/IP identifier, and timestamp.
+- **`project_availability_checks`**:
+  - Health records from the periodic 5-minute HTTP probe worker.
+  - Stores `project_id`, `status` (`ONLINE` | `OFFLINE`), `status_code`, `latency_ms`, and `error`.
+

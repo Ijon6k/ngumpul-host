@@ -1,6 +1,7 @@
 package project
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"ngumpul-host/backend/internal/auth"
+	"ngumpul-host/backend/internal/availability"
 	"ngumpul-host/backend/internal/response"
 )
 
@@ -26,14 +28,30 @@ type ProjectActivity struct {
 	ActorUser *string        `json:"actor_username"`
 }
 
-// Handler handles public, user, and administrative project management endpoints.
-type Handler struct {
-	db *pgxpool.Pool
+// AvailabilityProvider computes project availability statistics.
+type AvailabilityProvider interface {
+	GetProjectAvailabilityStats(ctx context.Context, projectID string) (availability.ProjectAvailabilityStats, error)
 }
 
-// NewHandler creates a new project handler.
-func NewHandler(db *pgxpool.Pool) *Handler {
-	return &Handler{db: db}
+// VisitsTracker tracks lightweight project views.
+type VisitsTracker interface {
+	RecordPageView(ctx context.Context, projectID string, clientKey string)
+}
+
+// Handler handles public, user, and administrative project management endpoints.
+type Handler struct {
+	db           *pgxpool.Pool
+	availability AvailabilityProvider
+	visits       VisitsTracker
+}
+
+// NewHandler creates a new project handler with availability and visit tracking dependencies.
+func NewHandler(db *pgxpool.Pool, avail AvailabilityProvider, visits VisitsTracker) *Handler {
+	return &Handler{
+		db:           db,
+		availability: avail,
+		visits:       visits,
+	}
 }
 
 // ListPublic handles GET /api/projects
@@ -217,9 +235,102 @@ func (h *Handler) GetBySlug(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Record page view asynchronously with deduplication
+	if h.visits != nil {
+		clientIP := r.RemoteAddr
+		if fwd := r.Header.Get("X-Forwarded-For"); fwd != "" {
+			clientIP = strings.Split(fwd, ",")[0]
+		}
+		go h.visits.RecordPageView(context.Background(), p.ID, clientIP)
+	}
+
+	// Fetch availability stats
+	var availStats any
+	if h.availability != nil {
+		if stats, err := h.availability.GetProjectAvailabilityStats(r.Context(), p.ID); err == nil {
+			availStats = stats
+		}
+	}
+
 	response.JSON(w, http.StatusOK, map[string]any{
-		"project":    p,
-		"activities": activities,
+		"project":      p,
+		"activities":   activities,
+		"availability": availStats,
+	})
+}
+
+// GetMyProject handles GET /api/me/projects/{id}
+func (h *Handler) GetMyProject(w http.ResponseWriter, r *http.Request) {
+	caller := auth.GetUser(r.Context())
+	if caller == nil {
+		response.Error(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	projectID := chi.URLParam(r, "id")
+	var p Project
+	var u auth.PublicUser
+	err := h.db.QueryRow(r.Context(), `
+		SELECT p.id, p.owner_id, p.name, p.slug, p.description, p.cover_image_url,
+		       p.repository_url, p.documentation_url, p.demo_url, p.technology_stack,
+		       p.hosting_type, p.public_url, p.status, p.visibility, p.created_at, p.updated_at, p.published_at,
+		       u.id, u.username, u.display_name, u.avatar_url, u.bio, u.role, u.created_at
+		FROM projects p
+		JOIN users u ON u.id = p.owner_id
+		WHERE p.id = $1
+	`, projectID).Scan(
+		&p.ID, &p.OwnerID, &p.Name, &p.Slug, &p.Description, &p.CoverImageURL,
+		&p.RepositoryURL, &p.DocumentationURL, &p.DemoURL, &p.TechnologyStack,
+		&p.HostingType, &p.PublicURL, &p.Status, &p.Visibility, &p.CreatedAt, &p.UpdatedAt, &p.PublishedAt,
+		&u.ID, &u.Username, &u.DisplayName, &u.AvatarURL, &u.Bio, &u.Role, &u.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			response.Error(w, http.StatusNotFound, "Project not found")
+			return
+		}
+		response.Error(w, http.StatusInternalServerError, "Database error")
+		return
+	}
+
+	if p.OwnerID != caller.ID && caller.Role != "ADMIN" {
+		response.Error(w, http.StatusForbidden, "Forbidden: You do not own this project")
+		return
+	}
+	p.Owner = &u
+
+	var availStats any
+	if h.availability != nil {
+		if stats, err := h.availability.GetProjectAvailabilityStats(r.Context(), p.ID); err == nil {
+			availStats = stats
+		}
+	}
+
+	activities := make([]ProjectActivity, 0)
+	actRows, err := h.db.Query(r.Context(), `
+		SELECT a.id, a.type, a.metadata, a.created_at, u.display_name, u.username
+		FROM activities a
+		LEFT JOIN users u ON u.id = a.actor_id
+		WHERE a.project_id = $1
+		ORDER BY a.created_at DESC
+		LIMIT 20
+	`, p.ID)
+	if err == nil {
+		defer actRows.Close()
+		for actRows.Next() {
+			var act ProjectActivity
+			var metaJSON []byte
+			if err := actRows.Scan(&act.ID, &act.Type, &metaJSON, &act.CreatedAt, &act.ActorName, &act.ActorUser); err == nil {
+				_ = json.Unmarshal(metaJSON, &act.Metadata)
+				activities = append(activities, act)
+			}
+		}
+	}
+
+	response.JSON(w, http.StatusOK, map[string]any{
+		"project":      p,
+		"availability": availStats,
+		"activities":   activities,
 	})
 }
 

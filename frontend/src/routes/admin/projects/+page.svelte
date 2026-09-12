@@ -148,18 +148,18 @@
 	>
 		<TableRow>
 			<TableCell>
-				<a href="/projects/{proj.slug}" target="_blank" class="font-semibold text-sm sm:text-base text-(--text-main) hover:text-(--accent-strong) transition-colors">
+				<a href="/admin/projects/{proj.id}" class="font-semibold text-sm text-(--text-main) hover:text-(--accent-sky) transition-colors">
 					{proj.name}
 				</a>
 				<span class="block text-xs font-mono text-(--text-muted)">/{proj.slug}</span>
 			</TableCell>
 			<TableCell>
-				<span class="font-medium text-sm sm:text-base text-(--text-main)">{proj.owner?.display_name || 'Owner'}</span>
+				<span class="font-medium text-sm text-(--text-main)">{proj.owner?.display_name || 'Owner'}</span>
 				<span class="block text-xs font-mono text-(--text-muted)">@{proj.owner?.username}</span>
 			</TableCell>
 			<TableCell mono class="text-xs">
 				{#if proj.public_url}
-					<a href={proj.public_url} target="_blank" rel="noreferrer" class="text-(--accent-strong) hover:underline block truncate max-w-xs">
+					<a href={proj.public_url} target="_blank" rel="noreferrer" class="text-(--accent-sky) hover:underline block truncate max-w-xs">
 						{proj.public_url} ↗
 					</a>
 				{:else}
@@ -169,7 +169,7 @@
 			<TableCell>
 				<button
 					type="button"
-					class="inline-flex items-center px-2.5 py-1 rounded text-xs font-mono font-medium cursor-pointer border transition-colors {proj.visibility === 'PUBLIC' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25 hover:bg-emerald-500/20' : 'bg-(--bg-muted) text-(--text-secondary) border-(--border-hairline) hover:bg-(--bg-hover)'}"
+					class="inline-flex items-center px-2.5 py-1 rounded-sm text-xs font-mono font-medium cursor-pointer border transition-colors {proj.visibility === 'PUBLIC' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25 hover:bg-emerald-500/20' : 'bg-(--bg-muted) text-(--text-secondary) border-(--border-hairline) hover:bg-(--bg-hover)'}"
 					on:click={() => toggleVisibility(proj.id, proj.visibility)}
 					title="Toggle visibility"
 				>
@@ -180,16 +180,24 @@
 				<StatusDot status={proj.status} />
 			</TableCell>
 			<TableCell align="right">
-				<select
-					class="px-2.5 py-1 text-xs font-mono bg-(--bg-surface) border border-(--border-hairline) rounded text-(--text-main) outline-none focus:border-(--accent-sky)"
-					value={proj.status}
-					on:change={(e) => updateProjectStatus(proj.id, e.currentTarget.value)}
-				>
-					<option value="ONLINE">ONLINE</option>
-					<option value="SETUP">SETUP</option>
-					<option value="OFFLINE">OFFLINE</option>
-					<option value="ARCHIVED">ARCHIVED</option>
-				</select>
+				<div class="flex items-center justify-end gap-2">
+					<a
+						href="/admin/projects/{proj.id}"
+						class="btn btn-secondary btn-sm text-xs px-2.5 py-1"
+					>
+						Moderate
+					</a>
+					<select
+						class="px-2 py-1 text-xs font-mono bg-(--bg-surface) border border-(--border-hairline) rounded-sm text-(--text-main) outline-none focus:border-(--accent-sky)"
+						value={proj.status}
+						on:change={(e) => updateProjectStatus(proj.id, e.currentTarget.value)}
+					>
+						<option value="ONLINE">ONLINE</option>
+						<option value="SETUP">SETUP</option>
+						<option value="OFFLINE">OFFLINE</option>
+						<option value="ARCHIVED">ARCHIVED</option>
+					</select>
+				</div>
 			</TableCell>
 		</TableRow>
 	</Table>

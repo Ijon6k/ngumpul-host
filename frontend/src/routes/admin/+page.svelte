@@ -54,7 +54,7 @@
 	     1. CLOUDFLARE TOP METRIC TILES
 	     ══════════════════════════════════════════════════════════════════ -->
 	<div class="bg-(--bg-surface) border border-(--border-hairline) rounded-xl overflow-hidden shadow-2xs">
-		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-(--border-hairline)">
+		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-(--border-hairline)">
 			<AdminStatCard
 				label="Pending Requests"
 				value={pendingRequests.length}
@@ -63,6 +63,16 @@
 				badgeClass={pendingRequests.length > 0 ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-(--cf-green-pastel) text-(--cf-green-text)'}
 				href="/admin/requests"
 				actionText="Review queue"
+			/>
+
+			<AdminStatCard
+				label="Open Reports"
+				value={stats?.open_reports ?? 0}
+				subtext={(stats?.open_reports ?? 0) > 0 ? 'Awaiting moderation' : 'No open reports'}
+				badge={(stats?.open_reports ?? 0) > 0 ? `${stats.open_reports} open` : 'Clean'}
+				badgeClass={(stats?.open_reports ?? 0) > 0 ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400' : 'bg-(--cf-green-pastel) text-(--cf-green-text)'}
+				href="/admin/reports"
+				actionText="Moderation"
 			/>
 
 			<AdminStatCard
@@ -162,68 +172,6 @@
 						</table>
 					</div>
 				{/if}
-			</AdminPanel>
-
-			<!-- 2. Real Ingress Domain & Reverse Proxy Routing Registry -->
-			<AdminPanel title="Subdomain & Ingress Proxy Registry" description="Assigned public subdomains and reverse-proxy routes mapped to isolated container instances" padding={false}>
-				<svelte:fragment slot="actions">
-					<a href="/admin/projects" class="btn btn-secondary btn-sm text-xs sm:text-sm py-1.5 px-3">
-						+ Register route
-					</a>
-				</svelte:fragment>
-
-				<div class="overflow-x-auto">
-					<table class="w-full text-left text-sm border-collapse font-sans">
-						<thead>
-							<tr class="border-b border-(--border-hairline) bg-(--bg-muted)/40 text-(--text-secondary) text-sm font-medium">
-								<th class="py-3 px-6 font-semibold">Subdomain</th>
-								<th class="py-3 px-4 font-semibold">Project</th>
-								<th class="py-3 px-4 font-semibold hidden sm:table-cell">Routing Type</th>
-								<th class="py-3 px-4 font-semibold">SSL / Ingress</th>
-								<th class="py-3 px-6 font-semibold text-right">Target Endpoint</th>
-							</tr>
-						</thead>
-						<tbody class="divide-y divide-(--border-hairline)">
-							{#if projectsList.length === 0}
-								<tr>
-									<td colspan="5" class="py-8 px-6 text-center text-sm text-(--text-muted)">No active domain routes configured yet.</td>
-								</tr>
-							{:else}
-								{#each projectsList as p}
-									<tr class="hover:bg-(--bg-muted)/25 transition-colors">
-										<td class="py-4 px-6 font-mono text-sm sm:text-base font-semibold text-(--cf-blue)">
-											{#if p.public_url}
-												<a href={p.public_url} target="_blank" rel="noreferrer" class="hover:underline flex items-center gap-1">
-													<span>{p.public_url.replace(/^https?:\/\//, '')}</span>
-													<span class="text-xs opacity-70">↗</span>
-												</a>
-											{:else}
-												<span class="text-(--text-muted)">{p.slug}.ngumpul.local</span>
-											{/if}
-										</td>
-										<td class="py-4 px-4 font-medium text-sm sm:text-base text-(--text-main)">
-											<a href="/projects/{p.slug}" class="hover:text-(--cf-blue)">{p.name}</a>
-										</td>
-										<td class="py-4 px-4 hidden sm:table-cell">
-											<span class="px-2.5 py-0.5 rounded-md text-xs sm:text-sm font-mono {p.hosting_type === 'HOSTED_HERE' ? 'bg-(--cf-pastel-bg) text-(--cf-pastel-text)' : 'bg-(--bg-muted) text-(--text-secondary)'}">
-												{p.hosting_type === 'HOSTED_HERE' ? 'Local Container' : 'External Proxy'}
-											</span>
-										</td>
-										<td class="py-4 px-4">
-											<span class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-emerald-600 dark:text-emerald-400">
-												<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-												TLS 1.3 Active
-											</span>
-										</td>
-										<td class="py-4 px-6 text-right font-mono text-xs sm:text-sm text-(--text-secondary)">
-											{p.slug}-upstream:80
-										</td>
-									</tr>
-								{/each}
-							{/if}
-						</tbody>
-					</table>
-				</div>
 			</AdminPanel>
 
 			<!-- 3. Hosted Projects Directory -->
@@ -386,6 +334,14 @@
 				<div class="flex flex-col gap-2.5 text-sm">
 					<a href="/admin/requests" class="flex items-center justify-between p-3 rounded-lg bg-(--bg-muted)/60 hover:bg-(--cf-pastel-bg)/30 transition-colors">
 						<span class="font-medium text-(--text-main)">Hosting Request Queue</span>
+						<span class="text-(--cf-blue)">→</span>
+					</a>
+					<a href="/admin/reports" class="flex items-center justify-between p-3 rounded-lg bg-(--bg-muted)/60 hover:bg-(--cf-pastel-bg)/30 transition-colors">
+						<span class="font-medium text-(--text-main)">Moderation Reports</span>
+						<span class="text-(--cf-blue)">→</span>
+					</a>
+					<a href="/admin/comments" class="flex items-center justify-between p-3 rounded-lg bg-(--bg-muted)/60 hover:bg-(--cf-pastel-bg)/30 transition-colors">
+						<span class="font-medium text-(--text-main)">Comments Moderation</span>
 						<span class="text-(--cf-blue)">→</span>
 					</a>
 					<a href="/admin/projects" class="flex items-center justify-between p-3 rounded-lg bg-(--bg-muted)/60 hover:bg-(--cf-pastel-bg)/30 transition-colors">

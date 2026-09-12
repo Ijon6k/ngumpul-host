@@ -20,14 +20,17 @@ import (
 	"ngumpul-host/backend/internal/admin"
 	"ngumpul-host/backend/internal/auth"
 	"ngumpul-host/backend/internal/availability"
+	"ngumpul-host/backend/internal/comment"
 	"ngumpul-host/backend/internal/config"
 	"ngumpul-host/backend/internal/database"
 	"ngumpul-host/backend/internal/hosting"
 	"ngumpul-host/backend/internal/notification"
 	"ngumpul-host/backend/internal/project"
+	"ngumpul-host/backend/internal/report"
 	"ngumpul-host/backend/internal/storage"
 	"ngumpul-host/backend/internal/system"
 	"ngumpul-host/backend/internal/user"
+	"ngumpul-host/backend/internal/visits"
 )
 
 func main() {
@@ -62,10 +65,15 @@ func main() {
 		log.Printf("[Availability] Initialization warning: %v", err)
 	}
 	availService.StartHeartbeatWorker(ctx, 5*time.Minute)
+	availService.StartProjectCheckWorker(ctx, 5*time.Minute)
+
+	visitsHandler := visits.NewHandler(pool)
+	commentHandler := comment.NewHandler(pool)
+	reportHandler := report.NewHandler(pool)
 
 	systemHandler := system.NewHandler(pool, availService)
 	userHandler := user.NewHandler(pool)
-	projectHandler := project.NewHandler(pool)
+	projectHandler := project.NewHandler(pool, availService, visitsHandler)
 	hostingHandler := hosting.NewHandler(pool)
 	activityHandler := activity.NewHandler(pool)
 	notificationHandler := notification.NewHandler(pool)
@@ -105,6 +113,9 @@ func main() {
 	// Health check endpoint
 	r.Get("/health", healthHandler)
 
+	// Outbound Visit Redirect ("Visits from Ngumpul" outbound click counting)
+	r.Get("/go/{slug}", visitsHandler.Redirect)
+
 	// Static uploaded files
 	r.Handle("/uploads/*", storageService.ServeHandler())
 
@@ -123,6 +134,7 @@ func main() {
 	// Public Resources & Telemetry
 	apiRouter.Get("/projects", projectHandler.ListPublic)
 	apiRouter.Get("/projects/{slug}", projectHandler.GetBySlug)
+	apiRouter.Get("/projects/{slug}/comments", commentHandler.ListByProject)
 	apiRouter.Get("/users", userHandler.ListMembers)
 	apiRouter.Get("/users/{username}", userHandler.GetMember)
 	apiRouter.Get("/activity", activityHandler.ListPublic)
@@ -136,7 +148,15 @@ func main() {
 		// Personal space & profile
 		userRouter.Patch("/me", authHandler.UpdateProfile)
 		userRouter.Get("/me/projects", projectHandler.ListMyProjects)
+		userRouter.Get("/me/projects/{id}", projectHandler.GetMyProject)
+		userRouter.Get("/me/projects/{id}/visits", visitsHandler.GetProjectVisits)
 		userRouter.Patch("/me/projects/{id}", projectHandler.UpdateMyProject)
+
+		// Comments & Reporting
+		userRouter.Post("/projects/{slug}/comments", commentHandler.Create)
+		userRouter.Delete("/comments/{id}", commentHandler.Delete)
+		userRouter.Post("/comments/{id}/report", reportHandler.ReportComment)
+		userRouter.Post("/projects/{slug}/report", reportHandler.ReportProject)
 
 		// Hosting requests
 		userRouter.Post("/hosting-requests", hostingHandler.Submit)
@@ -146,6 +166,9 @@ func main() {
 		userRouter.Get("/me/notifications", notificationHandler.ListMyNotifications)
 		userRouter.Patch("/me/notifications/{id}/read", notificationHandler.MarkRead)
 		userRouter.Post("/me/notifications/read-all", notificationHandler.MarkAllRead)
+
+		// Activity
+		userRouter.Get("/me/activity", activityHandler.ListMyActivity)
 
 		// File upload (avatars, covers)
 		userRouter.Post("/upload", storageService.UploadHandler)
@@ -173,6 +196,13 @@ func main() {
 		adminRouter.Get("/admin/projects", projectHandler.AdminList)
 		adminRouter.Post("/admin/projects", projectHandler.AdminCreate)
 		adminRouter.Patch("/admin/projects/{id}", projectHandler.AdminUpdate)
+
+		// Moderation: Comments & Reports
+		adminRouter.Get("/admin/comments", commentHandler.AdminList)
+		adminRouter.Delete("/admin/comments/{id}", commentHandler.Delete)
+		adminRouter.Get("/admin/reports", reportHandler.AdminList)
+		adminRouter.Post("/admin/reports/{id}/resolve", reportHandler.AdminResolve)
+		adminRouter.Post("/admin/reports/{id}/dismiss", reportHandler.AdminDismiss)
 
 		// Hosting requests review
 		adminRouter.Get("/admin/hosting-requests", hostingHandler.AdminListRequests)

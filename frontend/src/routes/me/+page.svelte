@@ -1,208 +1,232 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { user, logout } from '$lib/stores/auth';
+	import { user } from '$lib/stores/auth';
 	import { api } from '$lib/api';
 	import StatusDot from '$lib/components/StatusDot.svelte';
 	import ProjectCover from '$lib/components/ui/ProjectCover.svelte';
-	import { Plus, Gear, SignOut, ArrowRight, ArrowSquareOut } from 'phosphor-svelte';
+	import { Timeline, TimelineItem } from '$lib/components/ui';
+	import { Plus, ArrowRight, ArrowUpRight } from 'phosphor-svelte';
 
 	let myProjects: any[] = [];
 	let myRequests: any[] = [];
-	let notifications: any[] = [];
+	let myActivities: any[] = [];
+	let unreadNotificationsCount = 0;
 	let loading = true;
 
 	onMount(async () => {
 		try {
-			const [projRes, reqRes, notifRes] = await Promise.all([
+			const [projRes, reqRes, actRes, notifRes] = await Promise.all([
 				api.get('/me/projects'),
 				api.get('/me/hosting-requests'),
+				api.get('/me/activity'),
 				api.get('/me/notifications')
 			]);
 			myProjects = projRes.data?.projects || [];
 			myRequests = reqRes.data?.requests || [];
-			notifications = notifRes.data?.notifications || [];
+			myActivities = actRes.data?.activities || [];
+			const notifs = notifRes.data?.notifications || [];
+			unreadNotificationsCount = notifs.filter((n: any) => !n.is_read).length;
 		} catch (e) {
-			console.error('Failed to load personal space data:', e);
+			console.error('Failed to load workspace overview:', e);
 		} finally {
 			loading = false;
 		}
 	});
 
-	function getGreeting() {
+	function getGreeting(): string {
 		const hour = new Date().getHours();
 		if (hour < 12) return 'Good morning';
 		if (hour < 18) return 'Good afternoon';
 		return 'Good evening';
 	}
+
+	function formatRelativeTime(dateStr: string): string {
+		try {
+			const d = new Date(dateStr);
+			const diffSec = Math.floor((Date.now() - d.getTime()) / 1000);
+			if (diffSec < 60) return 'Just now';
+			const diffMin = Math.floor(diffSec / 60);
+			if (diffMin < 60) return `${diffMin}m ago`;
+			const diffHours = Math.floor(diffMin / 60);
+			if (diffHours < 24) return `${diffHours}h ago`;
+			const diffDays = Math.floor(diffHours / 24);
+			if (diffDays < 30) return `${diffDays}d ago`;
+			return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+		} catch {
+			return dateStr;
+		}
+	}
+
+	function getActivityDescription(a: any): string {
+		if (a.metadata?.title) return a.metadata.title;
+		if (a.metadata?.message) return a.metadata.message;
+		switch (a.type) {
+			case 'PROJECT_PUBLISHED':
+				return `Published ${a.project_name || 'project'} to catalog`;
+			case 'PROJECT_UPDATED':
+				return `Updated project settings for ${a.project_name || 'project'}`;
+			case 'HOSTING_REQUEST_CREATED':
+				return `Submitted hosting request for ${a.metadata?.project_name || 'new application'}`;
+			case 'COMMENT_CREATED':
+				return `Posted comment on ${a.project_name || 'project'}`;
+			default:
+				return `Activity recorded for ${a.project_name || 'account'}`;
+		}
+	}
 </script>
 
 <svelte:head>
-	<title>My Workspace · Ngumpul Host</title>
+	<title>Workspace Overview · Ngumpul Host</title>
 </svelte:head>
 
-<div class="container mx-auto px-4 sm:px-6 max-w-5xl py-8 sm:py-12 pb-24 flex flex-col gap-8 sm:gap-9">
-	{#if $user}
-		<header class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-(--border-hairline)">
-			<div class="flex items-center gap-4">
-				{#if $user.avatar_url}
-					<img src={$user.avatar_url} alt={$user.display_name} class="w-12 h-12 rounded-full object-cover border border-(--border-hairline)" />
-				{:else}
-					<div class="w-12 h-12 rounded-full bg-(--accent-soft) text-(--accent-strong) font-bold flex items-center justify-center text-base border border-(--border-hairline)">
-						{($user.display_name || 'U').slice(0, 2).toUpperCase()}
-					</div>
-				{/if}
-				<div>
-					<h1 class="font-display font-bold text-2xl sm:text-3xl text-(--text-main) tracking-tight">
-						{getGreeting()}, {$user.display_name}.
-					</h1>
-					<p class="text-xs text-(--text-muted) mt-0.5">
-						@{$user.username} · Member since {$user.created_at ? new Date($user.created_at).getFullYear() : '2026'}
-					</p>
-				</div>
+<div class="w-full flex flex-col">
+	<!-- Editorial Introduction Header (Typography-first, zero metric card clutter) -->
+	<header class="flex flex-col gap-1 pb-6">
+		<div class="flex items-start justify-between gap-4 flex-wrap">
+			<div class="flex flex-col">
+				<h1 class="font-sans font-normal text-2xl sm:text-3xl text-(--text-main) tracking-tight">
+					{getGreeting()}, {$user?.display_name || 'Site Administrator'}.
+				</h1>
+				<p class="text-sm sm:text-base text-(--text-secondary) font-normal mt-1">
+					Here's what's happening with your projects.
+				</p>
 			</div>
 
-			<div class="flex items-center gap-2.5 flex-wrap">
-				<a href="/me/requests" class="btn btn-primary btn-sm inline-flex items-center gap-1.5">
-					<Plus size={14} weight="bold" />
-					<span>Request Project</span>
+			<a
+				href="/me/requests"
+				class="btn btn-primary btn-sm text-xs px-3.5 py-1.5 inline-flex items-center gap-1.5 self-start"
+			>
+				<Plus size={13} weight="bold" />
+				<span>Request Hosting</span>
+			</a>
+		</div>
+
+		<!-- Lightweight summary line (real data, pure typography) -->
+		<p class="text-xs text-(--text-muted) pt-3">
+			{myProjects.length} {myProjects.length === 1 ? 'hosted project' : 'hosted projects'} ·
+			{myRequests.length} {myRequests.length === 1 ? 'hosting request' : 'hosting requests'} ·
+			{unreadNotificationsCount} {unreadNotificationsCount === 1 ? 'unread notification' : 'unread notifications'}
+		</p>
+	</header>
+
+	<div class="h-px bg-(--border-hairline) my-6"></div>
+
+	<!-- Section: Your Projects -->
+	<section class="flex flex-col gap-4">
+		<div class="flex items-baseline justify-between gap-4">
+			<h2 class="text-base sm:text-lg font-medium tracking-tight text-(--text-main)">
+				Your projects
+			</h2>
+			{#if myProjects.length > 0}
+				<a href="/me/projects" class="text-xs text-(--text-secondary) hover:text-(--text-main) transition-colors">
+					View all ({myProjects.length}) →
 				</a>
-				<a href="/me/settings" class="btn btn-secondary btn-sm inline-flex items-center gap-1.5">
-					<Gear size={14} weight="regular" />
-					<span>Settings</span>
-				</a>
-				<button type="button" class="btn btn-secondary btn-sm cursor-pointer inline-flex items-center gap-1.5" on:click={logout}>
-					<SignOut size={14} weight="regular" />
-					<span>Sign out</span>
-				</button>
+			{/if}
+		</div>
+
+		{#if loading}
+			<div class="py-12 text-center text-xs text-(--text-muted)">
+				Loading projects...
 			</div>
-		</header>
+		{:else if myProjects.length === 0}
+			<div class="py-10 px-6 border border-dashed border-(--border-hairline) rounded-md text-center flex flex-col items-center gap-2">
+				<p class="text-xs font-medium text-(--text-main)">No hosted projects yet</p>
+				<p class="text-xs text-(--text-muted) max-w-sm">
+					Submit an application to request reverse-proxy allocation on this community node.
+				</p>
+				<a href="/me/requests" class="btn btn-primary btn-sm text-xs px-3.5 py-1.5 mt-2">
+					Submit Hosting Request
+				</a>
+			</div>
+		{:else}
+			<!-- Restrained horizontal list (no heavy card-in-card boxes) -->
+			<div class="flex flex-col divide-y divide-(--border-hairline)">
+				{#each myProjects as proj (proj.id)}
+					<div class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-(--bg-muted)/20 px-2 -mx-2 rounded-sm transition-colors group">
+						<div class="flex items-center gap-3.5 min-w-0">
+							<div class="w-14 h-10 rounded-xs overflow-hidden shrink-0 border border-(--border-hairline) bg-(--bg-muted)">
+								<ProjectCover
+									src={proj.cover_image_url}
+									alt={proj.name}
+									name={proj.name}
+									aspectRatio="4/3"
+								/>
+							</div>
 
-		<div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8">
-			<!-- Main Column: Projects & Requests -->
-			<div class="flex flex-col gap-8">
-				<!-- Your Projects -->
-				<section class="flex flex-col gap-4">
-					<div class="flex items-baseline justify-between">
-						<h2 class="font-display text-lg font-bold text-(--text-main)">Hosted Applications</h2>
-						<a href="/me/projects" class="text-xs text-(--accent-strong) hover:underline font-medium inline-flex items-center gap-1">
-							<span>Manage details</span>
-							<ArrowRight size={12} weight="bold" />
-						</a>
-					</div>
+							<div class="flex flex-col min-w-0 gap-0.5">
+								<div class="flex items-center gap-2.5">
+									<a
+										href="/me/projects/{proj.id}"
+										class="font-medium text-sm text-(--text-main) hover:text-(--accent-sky) transition-colors truncate"
+									>
+										{proj.name}
+									</a>
+									<StatusDot status={proj.status} />
+								</div>
+								<p class="text-xs text-(--text-secondary) truncate max-w-lg">
+									{proj.description || 'No description provided.'}
+								</p>
+							</div>
+						</div>
 
-					{#if myProjects.length === 0}
-						<div class="p-8 text-center bg-(--bg-surface) border border-(--border-hairline) rounded-md flex flex-col items-center gap-2">
-							<p class="text-xs text-(--text-secondary)">You do not have any published projects on this node.</p>
-							<a href="/me/requests" class="btn btn-primary btn-sm mt-2">
-								Submit a hosting request
+						<div class="flex items-center gap-3 self-end sm:self-center shrink-0 text-xs">
+							<a
+								href="/me/projects/{proj.id}"
+								class="text-(--text-secondary) hover:text-(--text-main) font-medium transition-colors"
+							>
+								Manage project →
+							</a>
+							<a
+								href="/projects/{proj.slug}"
+								target="_blank"
+								rel="noreferrer"
+								class="text-(--text-muted) hover:text-(--text-main) transition-colors p-1"
+								title="Public Showcase"
+							>
+								<ArrowUpRight size={13} />
 							</a>
 						</div>
-					{:else}
-						<div class="flex flex-col gap-3">
-							{#each myProjects as proj}
-								<div class="bg-(--bg-surface) border border-(--border-hairline) rounded-md p-5 flex flex-col gap-3 hover:border-(--border-subtle) transition-colors">
-									<div class="flex items-start justify-between gap-4">
-										<div class="flex items-start gap-3.5">
-											<a href="/projects/{proj.slug}" class="w-16 h-12 rounded-sm overflow-hidden shrink-0 border border-(--border-hairline) bg-(--bg-muted)">
-												<ProjectCover
-													src={proj.cover_image_url}
-													alt={proj.name}
-													name={proj.name}
-													aspectRatio="4/3"
-												/>
-											</a>
-											<div>
-												<h3 class="font-sans font-semibold text-base text-(--text-main)">
-													<a href="/projects/{proj.slug}" class="hover:text-(--accent-strong) transition-colors">{proj.name}</a>
-												</h3>
-												{#if proj.public_url}
-													<a href={proj.public_url} target="_blank" rel="noreferrer" class="text-xs text-(--accent-strong) hover:underline inline-flex items-center gap-1 mt-0.5">
-														<span>{proj.public_url}</span>
-														<ArrowSquareOut size={12} weight="regular" />
-													</a>
-												{/if}
-											</div>
-										</div>
-										<StatusDot status={proj.status} />
-									</div>
-
-									{#if proj.description}
-										<p class="text-xs sm:text-sm text-(--text-secondary) leading-relaxed">{proj.description}</p>
-									{/if}
-
-									{#if proj.technology_stack && proj.technology_stack.length > 0}
-										<div class="text-[11px] text-(--text-muted) pt-2 border-t border-(--border-hairline)">
-											{proj.technology_stack.join(' · ')}
-										</div>
-									{/if}
-								</div>
-							{/each}
-						</div>
-					{/if}
-				</section>
-
-				<!-- Pending Requests -->
-				{#if myRequests.length > 0}
-					<section class="flex flex-col gap-4">
-						<div class="flex items-baseline justify-between">
-							<h2 class="font-display text-lg font-bold text-(--text-main)">Submitted Requests</h2>
-							<a href="/me/requests" class="text-xs text-(--accent-strong) hover:underline font-medium inline-flex items-center gap-1">
-								<span>New request</span>
-								<ArrowRight size={12} weight="bold" />
-							</a>
-						</div>
-
-						<div class="flex flex-col gap-3">
-							{#each myRequests as req}
-								<div class="bg-(--bg-surface) border border-(--border-hairline) rounded-md p-5 flex flex-col gap-2">
-									<div class="flex items-center justify-between gap-3">
-										<strong class="text-sm font-semibold text-(--text-main)">{req.project_name}</strong>
-										<span class="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-md border {req.status === 'PENDING' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' : req.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-(--bg-muted) text-(--text-secondary) border-(--border-hairline)'}">
-											{req.status}
-										</span>
-									</div>
-									<p class="text-xs text-(--text-muted) truncate">{req.repository_url}</p>
-									{#if req.admin_notes}
-										<div class="mt-2 p-3 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-xs">
-											<span class="font-semibold text-(--text-main) block text-xs">Administrator note:</span>
-											<p class="text-(--text-secondary) mt-0.5">{req.admin_notes}</p>
-										</div>
-									{/if}
-								</div>
-							{/each}
-						</div>
-					</section>
-				{/if}
-			</div>
-
-			<!-- Sidebar Column: Activity Notifications -->
-			<aside class="flex flex-col gap-4">
-				<div class="bg-(--bg-surface) border border-(--border-hairline) rounded-md p-5 flex flex-col gap-4">
-					<div class="flex items-center justify-between pb-3 border-b border-(--border-hairline)">
-						<h3 class="font-semibold text-sm text-(--text-main)">Notifications</h3>
-						<span class="text-xs text-(--text-muted)">{notifications.length}</span>
 					</div>
+				{/each}
+			</div>
+		{/if}
+	</section>
 
-					{#if notifications.length === 0}
-						<p class="text-xs text-(--text-muted) py-4 text-center">Inbox clear.</p>
-					{:else}
-						<ul class="flex flex-col gap-3 list-none">
-							{#each notifications.slice(0, 5) as n}
-								<li class="pb-3 border-b border-(--border-subtle) last:border-none last:pb-0">
-									<strong class="block text-xs font-medium text-(--text-main)">{n.title}</strong>
-									<p class="text-xs text-(--text-secondary) mt-0.5 leading-relaxed">{n.body}</p>
-								</li>
-							{/each}
-						</ul>
-					{/if}
-				</div>
-			</aside>
+	<div class="h-px bg-(--border-hairline) my-10"></div>
+
+	<!-- Section: Recent Activity (Vertical Dot Timeline, no card boxes) -->
+	<section class="flex flex-col gap-4">
+		<div class="flex items-baseline justify-between gap-4">
+			<h2 class="text-base sm:text-lg font-medium tracking-tight text-(--text-main)">
+				Recent activity
+			</h2>
+			{#if myActivities.length > 0}
+				<a href="/me/activity" class="text-xs text-(--text-secondary) hover:text-(--text-main) transition-colors">
+					All activity →
+				</a>
+			{/if}
 		</div>
-	{:else if !loading}
-		<div class="py-16 px-4 text-center bg-(--bg-surface) border border-(--border-hairline) rounded-md max-w-md mx-auto w-full flex flex-col gap-3">
-			<h2 class="font-display text-xl font-bold text-(--text-main)">Sign In Required</h2>
-			<p class="text-xs text-(--text-secondary)">Please authenticate to access your personal space.</p>
-			<a href="/login" class="btn btn-primary btn-sm mx-auto mt-2">Sign in</a>
-		</div>
-	{/if}
+
+		{#if loading}
+			<div class="py-8 text-center text-xs text-(--text-muted)">
+				Loading activity...
+			</div>
+		{:else if myActivities.length === 0}
+			<p class="text-xs text-(--text-muted) py-4">No recent activity recorded.</p>
+		{:else}
+			<div class="pt-2">
+				<Timeline density="compact">
+					{#each myActivities.slice(0, 5) as act (act.id)}
+						<TimelineItem
+							title={getActivityDescription(act)}
+							timestamp={formatRelativeTime(act.created_at)}
+							href={act.project_slug ? `/projects/${act.project_slug}` : ''}
+							linkText={act.project_slug ? `/${act.project_slug}` : ''}
+							density="compact"
+						/>
+					{/each}
+				</Timeline>
+			</div>
+		{/if}
+	</section>
 </div>

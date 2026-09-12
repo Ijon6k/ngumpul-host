@@ -25,6 +25,8 @@
    - [ProjectCover](#projectcover)
    - [Pagination](#pagination)
    - [EmptyState](#emptystate)
+   - [Timeline & TimelineItem](#timeline--timelineitem)
+   - [Tabs](#tabs)
 3. [Status & Telemetry Components (`$lib/components/status/`)](#3-status--telemetry-components-libcomponentsstatus)
    - [StatusDot](#statusdot)
    - [StatusIndicator](#statusindicator)
@@ -349,12 +351,50 @@ Tampilan standar saat tabel, list, atau feed tidak memiliki data.
 
 ---
 
+### `Timeline` & `TimelineItem`
+
+Primitif timeline vertikal dot terstandarisasi untuk histori proyek, aktivitas workspace, audit log, dan feed publik. Menggantikan pola tabel atau card-in-card berulang dengan garis konektor tipis dan dot semantik.
+
+#### Props `Timeline.svelte`
+| Prop | Tipe | Default | Deskripsi |
+| :--- | :--- | :--- | :--- |
+| `density` | `'comfortable' \| 'compact'` | `'comfortable'` | Kerapatan jarak vertikal antar elemen |
+
+#### Props `TimelineItem.svelte`
+| Prop | Tipe | Default | Deskripsi |
+| :--- | :--- | :--- | :--- |
+| `title` | `string` | `''` | Judul event aktivitas (atau via slot `title`) |
+| `timestamp` | `string` | `''` | Waktu relatif / format tanggal (atau via slot `timestamp`) |
+| `description` | `string` | `''` | Ringkasan teks detail event |
+| `dotColor` | `string` | `''` | Class Tailwind warna dot (contoh: `bg-emerald-500`) |
+| `status` | `string` | `''` | Resolusi warna dot otomatis via status (`ONLINE`, `OFFLINE`) |
+| `density` | `'comfortable' \| 'compact'` | `'comfortable'` | Jarak padding vertikal |
+| `href` | `string` | `''` | Link opsional ke halaman target (contoh: `/projects/slug`) |
+| `linkText` | `string` | `''` | Label teks link yang dapat diklik |
+
+---
+
+### `Tabs`
+
+Primitif tab minimalis berbasis tipografi dan garis bawah halus (bukan pill atau kotak tebal). Digunakan di Owner Project Workspace (`Overview | Visits | Activity | Settings`) dan Public Project Detail (`Overview | Activity`).
+
+#### Props
+| Prop | Tipe | Default | Deskripsi |
+| :--- | :--- | :--- | :--- |
+| `tabs` | `Array<{ id: string; label: string; icon?: any; badge?: number }>` | `[]` | Daftar tab navigasi |
+| `active` | `string` | *(tab pertama)* | Tab aktif (bindable `bind:active={...}`) |
+| `size` | `'sm' \| 'default'` | `'default'` | Ukuran teks dan padding |
+
+---
+
+
 ## 3. Status & Telemetry Components (`$lib/components/status/`)
 
 Didedikasikan untuk halaman status dan visualisasi ketersediaan sistem:
 
 - **`StatusDot.svelte`**:
-  - Badge status ringkas (`ONLINE`, `SETUP`, `PENDING`, `OFFLINE`, `ARCHIVED`).
+  - Indikator status tenang (`ONLINE`, `SETUP`, `PENDING`, `OFFLINE`, `ARCHIVED`).
+  - Mendukung `variant="inline"` (default: dot + text tanpa pill wrapper), `variant="dot"` (dot lingkaran saja), dan `variant="badge"` (semantic pill).
   - Mendukung `showLabel={true | false}`.
 - **`AvailabilityGrid.svelte`**:
   - Heatmap 90-hari ketersediaan Linux host.
@@ -402,6 +442,17 @@ Didedikasikan untuk showcase spesifikasi hardware fisik pada landing page (`+pag
   - Kartu katalog publik untuk `/projects`.
   - Menggabungkan `ProjectCover`, judul, deskripsi 2 baris, pemilik, stack teknologi (dipisahkan dengan tanda `·`), dan link visit.
   - Bebas dari pill chip spam.
+- **`Comments.svelte`**:
+  - Thread diskusi kronologis pada showcase proyek publik (`/projects/[slug]`).
+  - Composer komentar dengan rate-limiting 5/10 menit, sanitasi teks, author avatar & display name.
+  - Penanganan soft-delete (*"This comment was removed"*).
+  - Menu aksi kontekstual: Report modal trigger dan Delete dengan konfirmasi `ConfirmModal` (khusus author, project owner, atau admin).
+- **`ReportModal.svelte`**:
+  - Modal dialog pelaporan konten pelanggaran/spam untuk target Project dan Comment.
+  - Dropdown alasan terstandarisasi, rincian opsional, backdrop blur tenang.
+- **`ProjectAvailability.svelte`**:
+  - Widget telemetri kesehatan proyek berbasis probe HTTP 5-menit.
+  - Menampilkan uptime 30 hari dalam %, latensi respons rata-rata, dan status operasional real-time.
 - **`ActivityTimeline.svelte`**:
   - Feed kronologis aktivitas publik (publikasi proyek, update, verifikasi).
 

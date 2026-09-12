@@ -17,10 +17,13 @@
 		List,
 		Sun,
 		Moon,
-		Gear
+		Gear,
+		ShieldWarning,
+		ChatDots
 	} from 'phosphor-svelte';
 
 	let pendingCount = 0;
+	let openReportsCount = 0;
 	let theme = 'light';
 	let mobileMenuOpen = false;
 	let sidebarCollapsed = false;
@@ -46,6 +49,9 @@
 			const res = await api.get('/admin/stats');
 			if (res.data?.pending_requests != null) {
 				pendingCount = res.data.pending_requests;
+			}
+			if (res.data?.open_reports != null) {
+				openReportsCount = res.data.open_reports;
 			}
 		} catch (e) {
 			// Silently fail if not loaded
@@ -78,6 +84,19 @@
 			exact: false,
 			badge: pendingCount,
 			icon: Tray
+		},
+		{
+			label: 'Reports',
+			href: '/admin/reports',
+			exact: false,
+			badge: openReportsCount,
+			icon: ShieldWarning
+		},
+		{
+			label: 'Comments',
+			href: '/admin/comments',
+			exact: false,
+			icon: ChatDots
 		},
 		{
 			label: 'Projects',
@@ -127,6 +146,8 @@
 		const p = (path || '').replace(/\/$/, '') || '/';
 		if (p === '/admin') return 'Overview';
 		if (p.startsWith('/admin/requests')) return 'Hosting Requests';
+		if (p.startsWith('/admin/reports')) return 'Moderation Reports';
+		if (p.startsWith('/admin/comments')) return 'Comments Moderation';
 		if (p.startsWith('/admin/projects')) return 'Projects';
 		if (p.startsWith('/admin/users')) return 'Members';
 		if (p.startsWith('/admin/system')) return 'System Health';

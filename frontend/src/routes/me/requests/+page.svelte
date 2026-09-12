@@ -68,17 +68,11 @@
 	<title>Request Hosting · Ngumpul Host</title>
 </svelte:head>
 
-<div class="container mx-auto px-4 sm:px-6 max-w-5xl py-8 sm:py-12 pb-24 flex flex-col gap-6 sm:gap-8">
-	<div class="flex items-center gap-2 text-xs text-(--text-muted)">
-		<a href="/me" class="hover:text-(--text-main) transition-colors">Workspace</a>
-		<span>/</span>
-		<span class="text-(--text-main) font-medium">Hosting Requests</span>
-	</div>
-
-	<header class="max-w-2xl">
-		<h1 class="font-sans font-normal text-2xl sm:text-3xl text-(--text-main) tracking-[-0.03em]">Request Project Hosting</h1>
-		<p class="text-sm text-(--text-secondary) mt-1.5 leading-relaxed">
-			Submit your repository for infrastructure allocation. An administrator reviews the architecture and provisions reverse-proxy routing.
+<div class="p-6 sm:p-8 lg:p-10 max-w-5xl w-full flex flex-col gap-8">
+	<header class="flex flex-col gap-1 pb-6 border-b border-(--border-hairline)">
+		<h1 class="font-sans font-semibold text-2xl sm:text-3xl text-(--text-main) tracking-tight">Request Project Hosting</h1>
+		<p class="text-xs text-(--text-secondary) leading-relaxed">
+			Submit your application repository for server allocation. Operators review specifications and provision reverse-proxy routing.
 		</p>
 	</header>
 

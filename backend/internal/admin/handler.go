@@ -27,15 +27,17 @@ func NewHandler(db *pgxpool.Pool) *Handler {
 
 // GetStats handles GET /api/admin/stats
 func (h *Handler) GetStats(w http.ResponseWriter, r *http.Request) {
-	var pendingRequests, totalProjects, onlineProjects, totalMembers int
+	var pendingRequests, totalProjects, onlineProjects, totalMembers, openReports int
 
 	_ = h.db.QueryRow(r.Context(), "SELECT COUNT(*) FROM hosting_requests WHERE status = 'PENDING'").Scan(&pendingRequests)
 	_ = h.db.QueryRow(r.Context(), "SELECT COUNT(*) FROM projects").Scan(&totalProjects)
 	_ = h.db.QueryRow(r.Context(), "SELECT COUNT(*) FROM projects WHERE status = 'ONLINE'").Scan(&onlineProjects)
 	_ = h.db.QueryRow(r.Context(), "SELECT COUNT(*) FROM users").Scan(&totalMembers)
+	_ = h.db.QueryRow(r.Context(), "SELECT COUNT(*) FROM reports WHERE status = 'OPEN'").Scan(&openReports)
 
 	response.JSON(w, http.StatusOK, map[string]any{
 		"pending_requests": pendingRequests,
+		"open_reports":     openReports,
 		"total_projects":   totalProjects,
 		"online_projects":  onlineProjects,
 		"offline_projects": totalProjects - onlineProjects,

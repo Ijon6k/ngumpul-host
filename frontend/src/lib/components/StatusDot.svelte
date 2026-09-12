@@ -1,6 +1,7 @@
 <script lang="ts">
 	export let status: string = 'ONLINE';
 	export let showLabel: boolean = true;
+	export let variant: 'inline' | 'dot' | 'badge' = 'inline';
 
 	$: normalized = (status || 'ONLINE').toUpperCase();
 
@@ -51,14 +52,21 @@
 				};
 		}
 	})();
+
+	$: activeVariant = !showLabel ? 'dot' : variant;
 </script>
 
-{#if showLabel}
-	<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border {colorClasses.badge}" title={label}>
+{#if activeVariant === 'dot'}
+	<span class="inline-block w-1.5 h-1.5 rounded-full {colorClasses.dot} shrink-0" title={label}></span>
+{:else if activeVariant === 'badge'}
+	<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium border {colorClasses.badge}" title={label}>
 		<span class="w-1.5 h-1.5 rounded-full {colorClasses.dot} shrink-0"></span>
 		<span>{label}</span>
 	</span>
 {:else}
-	<span class="inline-block w-2 h-2 rounded-full {colorClasses.dot} shrink-0" title={label}></span>
+	<!-- Default 'inline' calm indicator: small dot + text, no boxed pill -->
+	<span class="inline-flex items-center gap-1.5 text-xs text-(--text-secondary) font-normal" title={label}>
+		<span class="w-1.5 h-1.5 rounded-full {colorClasses.dot} shrink-0"></span>
+		<span class="text-(--text-main)">{label}</span>
+	</span>
 {/if}
-

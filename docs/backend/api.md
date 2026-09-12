@@ -163,8 +163,7 @@
     }
     ```
 
-- **`GET /api/public/server`**
-  - **Response (200 OK):** Physical hardware telemetry (CPU, RAM, NVMe disk, latency).
+- **`GET /go/{slug}`**: Public outbound redirect tracking endpoint. Increments `project_visits` and redirects (HTTP 302) to the project's external application URL.
 
 ---
 
@@ -175,20 +174,19 @@ Requests must include a valid `ngumpul_session` cookie.
 - **`GET /api/me`**: Returns the currently authenticated user identity and role.
 - **`PATCH /api/me`**: Updates `display_name`, `bio`, or `avatar_url`.
 - **`GET /api/me/projects`**: Lists projects owned by the authenticated member.
-- **`PATCH /api/me/projects/{id}`**: Updates allowed fields on an owned project (description, documentation URL, tech stack).
+- **`GET /api/me/projects/{id}`**: Detailed project view for project owner including availability probes and activity history.
+- **`GET /api/me/projects/{id}/visits`**: Returns 30-day traffic analytics (`total_page_views`, `total_visits`, and daily breakdown `[{ date, page_views, visits }]`).
+- **`PATCH /api/me/projects/{id}`**: Updates allowed fields on an owned project (description, cover image, documentation URL, repository, demo, tech stack).
 - **`POST /api/hosting-requests`**: Submits a new hosting request.
-  - **Payload:**
-    ```json
-    {
-      "project_name": "Atlas Bot",
-      "description": "Discord moderation bot built with Go",
-      "repository_url": "https://github.com/erik/atlas",
-      "technology_stack": ["Go", "PostgreSQL", "Docker"],
-      "deployment_notes": "Needs port 8081 exposed and persistent volume for sqlite"
-    }
-    ```
 - **`GET /api/me/hosting-requests`**: Returns the user's submitted requests and operator notes.
+- **`GET /api/me/activity`**: Lists recent personal audit and project events.
 - **`GET /api/me/notifications`**: Lists in-app member notifications.
+- **`PATCH /api/me/notifications/{id}/read`**: Marks a notification as read.
+- **`POST /api/me/notifications/read-all`**: Marks all member notifications as read.
+- **`POST /api/projects/{slug}/comments`**: Posts a comment on a project showcase (rate limit: 5/10m per user).
+- **`DELETE /api/comments/{id}`**: Soft-deletes a comment. Permitted for comment author, project owner, or operator.
+- **`POST /api/reports`**: Submits a moderation report against a project or comment (rate limit: 5/10m per user/IP).
+  - **Payload:** `{ "target_type": "PROJECT" | "COMMENT", "target_id": "...", "reason": "SPAM" | "ABUSE_HARASSMENT" | "INAPPROPRIATE" | "MALICIOUS_SUSPICIOUS" | "OTHER", "details": "..." }`
 - **`POST /api/upload`**: Multipart file upload (`multipart/form-data`, file key: `file`, optional form field: `purpose` (`avatar` | `cover`)). Hard size limit: 10MB. Allowed MIME types: `image/jpeg`, `image/png`, `image/webp` (SVGs rejected). Enforces dimension sanity checks ($\le 4096\text{px}$). Returns `{ "url": "/uploads/covers/uuid.webp", "object_key": "covers/uuid.webp", "byte_size": 123456, "content_type": "image/webp", "width": 1200, "height": 900 }`.
 
 ---
@@ -202,7 +200,11 @@ Requests must possess `role == 'ADMIN'`.
 - **`GET /api/admin/invitations`**: Lists all generated invitations with usage counts, email restrictions, and expiration timestamps.
 - **`POST /api/admin/invitations`**: Generates a new invitation token (`{ "invited_email": "friend@example.com", "max_uses": 1, "expires_in_days": 7 }`). Returns one-time view of `raw_token` and `invite_url`.
 - **`POST /api/admin/invitations/{id}/revoke`**: Revokes an active invitation token immediately.
-- **`GET /api/admin/stats`**: Aggregate counts for total members, active projects, and pending requests.
+- **`GET /api/admin/stats`**: Aggregate counts for total members, active projects, pending requests, and `open_reports`.
+- **`GET /api/admin/reports`**: Lists community moderation reports (`?status=OPEN|REVIEWED|RESOLVED|DISMISSED`).
+- **`PATCH /api/admin/reports/{id}`**: Updates report status (`{ "status": "RESOLVED" | "DISMISSED" | "REVIEWED", "resolution_notes": "..." }`).
+- **`GET /api/admin/comments`**: Lists all project comments with report count, author, and soft-delete status. Supports `?search=...` and `?project_id=...`.
+- **`DELETE /api/admin/comments/{id}`**: Soft-deletes a comment as operator.
 - **`GET /api/admin/users`**: Lists all members with email, status, and role.
 - **`PATCH /api/admin/users/{id}/role`**: Updates member role (`{ "role": "ADMIN" | "USER" }`). Protected against self-demotion and demoting the last active administrator on the server.
 - **`PATCH /api/admin/users/{id}/status`**: Updates member account status (`{ "status": "ACTIVE" | "SUSPENDED" }`). Protected against self-suspension and suspending the last active administrator.
@@ -212,3 +214,4 @@ Requests must possess `role == 'ADMIN'`.
 - **`POST /api/admin/hosting-requests/{id}/complete`**: Finalizes container deployment, sets public URL, and marks project `ONLINE`.
 - **`GET /api/admin/system`**: Detailed Linux host telemetry, mounts, and probe diagnostics.
 - **`GET /api/admin/audit`**: Immutable operator audit log.
+

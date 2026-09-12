@@ -21,10 +21,11 @@
 
 	$: isHome = $page.url.pathname === '/';
 	$: isAdminRoute = $page.url.pathname.startsWith('/admin');
+	$: isWorkspaceRoute = $page.url.pathname.startsWith('/me');
 </script>
 
 <QueryClientProvider client={queryClient}>
-	{#if isAdminRoute}
+	{#if isAdminRoute || isWorkspaceRoute}
 		<slot />
 	{:else}
 		<div class="min-h-screen flex flex-col bg-(--bg-canvas)">

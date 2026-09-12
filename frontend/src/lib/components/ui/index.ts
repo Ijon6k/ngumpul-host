@@ -12,3 +12,6 @@ export { default as ProjectCover } from './ProjectCover.svelte';
 export { default as Pagination } from './Pagination.svelte';
 export { default as EmptyState } from './EmptyState.svelte';
 export { default as ConfirmModal } from './ConfirmModal.svelte';
+export { default as Timeline } from './Timeline.svelte';
+export { default as TimelineItem } from './TimelineItem.svelte';
+export { default as Tabs } from './Tabs.svelte';

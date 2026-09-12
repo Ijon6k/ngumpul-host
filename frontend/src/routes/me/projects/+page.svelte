@@ -3,260 +3,139 @@
 	import { api, extractError } from '$lib/api';
 	import StatusDot from '$lib/components/StatusDot.svelte';
 	import ProjectCover from '$lib/components/ui/ProjectCover.svelte';
-	import { UploadSimple, ArrowSquareOut } from 'phosphor-svelte';
+	import { Plus, Folder, ArrowUpRight } from 'phosphor-svelte';
 
 	let projects: any[] = [];
 	let loading = true;
-	let editingProject: any = null;
-	let saving = false;
-	let uploadingCover = false;
 	let error: string | null = null;
-	let success: string | null = null;
-
-	let editDesc = '';
-	let editCover = '';
-	let editRepo = '';
-	let editDocs = '';
-	let editDemo = '';
-	let editTechRaw = '';
-
-	let fileInput: HTMLInputElement;
-
-	async function handleCoverUpload(event: Event) {
-		const target = event.target as HTMLInputElement;
-		if (!target.files || target.files.length === 0) return;
-		const file = target.files[0];
-
-		if (file.size > 10 * 1024 * 1024) {
-			error = 'File size exceeds maximum limit of 10 MB.';
-			return;
-		}
-
-		uploadingCover = true;
-		error = null;
-		try {
-			const formData = new FormData();
-			formData.append('file', file);
-			formData.append('purpose', 'cover');
-
-			const res = await api.post('/upload', formData, {
-				headers: { 'Content-Type': 'multipart/form-data' }
-			});
-			if (res.data?.url) {
-				editCover = res.data.url;
-			}
-		} catch (err) {
-			error = extractError(err);
-		} finally {
-			uploadingCover = false;
-			if (fileInput) fileInput.value = '';
-		}
-	}
 
 	async function loadProjects() {
 		loading = true;
+		error = null;
 		try {
 			const res = await api.get('/me/projects');
 			projects = res.data?.projects || [];
 		} catch (err) {
-			console.error('Failed to load projects:', err);
+			error = extractError(err);
 		} finally {
 			loading = false;
 		}
 	}
 
 	onMount(loadProjects);
-
-	function startEdit(proj: any) {
-		editingProject = proj;
-		editDesc = proj.description || '';
-		editCover = proj.cover_image_url || '';
-		editRepo = proj.repository_url || '';
-		editDocs = proj.documentation_url || '';
-		editDemo = proj.demo_url || '';
-		editTechRaw = (proj.technology_stack || []).join(', ');
-		error = null;
-		success = null;
-	}
-
-	function cancelEdit() {
-		editingProject = null;
-	}
-
-	async function saveEdit() {
-		if (!editingProject) return;
-		saving = true;
-		error = null;
-		success = null;
-
-		const techStack = editTechRaw
-			.split(',')
-			.map((t) => t.trim())
-			.filter(Boolean);
-
-		try {
-			await api.patch(`/me/projects/${editingProject.id}`, {
-				description: editDesc,
-				cover_image_url: editCover,
-				repository_url: editRepo,
-				documentation_url: editDocs,
-				demo_url: editDemo,
-				technology_stack: techStack
-			});
-
-			success = 'Project metadata updated successfully.';
-			await loadProjects();
-			editingProject = null;
-		} catch (err) {
-			error = extractError(err);
-		} finally {
-			saving = false;
-		}
-	}
 </script>
 
 <svelte:head>
-	<title>Project Management · Ngumpul Host</title>
+	<title>Projects · Ngumpul Host</title>
 </svelte:head>
 
-<div class="container mx-auto px-4 sm:px-6 max-w-4xl py-8 sm:py-12 pb-24 flex flex-col gap-6 sm:gap-8">
-	<div class="flex items-center gap-2 text-xs text-(--text-muted)">
-		<a href="/me" class="hover:text-(--text-main) transition-colors">Workspace</a>
-		<span>/</span>
-		<span class="text-(--text-main) font-medium">Manage Projects</span>
-	</div>
+<div class="w-full flex flex-col">
+	<!-- Page Header -->
+	<header class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-6">
+		<div class="flex flex-col gap-1">
+			<h1 class="font-sans font-normal text-2xl sm:text-3xl text-(--text-main) tracking-tight">
+				Projects
+			</h1>
+			<p class="text-xs text-(--text-secondary) leading-relaxed">
+				All applications and software services linked to your account.
+			</p>
+		</div>
 
-	<header class="max-w-2xl">
-		<h1 class="font-sans font-normal text-2xl sm:text-3xl text-(--text-main) tracking-[-0.03em]">Project Management</h1>
-		<p class="text-xs sm:text-sm text-(--text-secondary) mt-1.5 leading-relaxed font-normal">
-			Update presentation-level details, repository links, documentation, and technology tags for your published workloads.
-		</p>
+		<a
+			href="/me/requests"
+			class="btn btn-primary btn-sm text-xs px-3.5 py-1.5 inline-flex items-center gap-1.5 self-start sm:self-auto"
+		>
+			<Plus size={13} weight="bold" />
+			<span>Request Project</span>
+		</a>
 	</header>
 
-	{#if success}
-		<div class="p-3 bg-(--accent-soft) text-(--accent-strong) border border-(--accent-sky)/30 rounded-md text-xs">{success}</div>
-	{/if}
-	{#if error}
-		<div class="p-3 bg-red-950/10 text-(--color-danger) border border-(--color-danger)/30 rounded-md text-xs">{error}</div>
-	{/if}
+	<div class="h-px bg-(--border-hairline) mb-8"></div>
 
+	<!-- Projects 2-Column Editorial Grid (Desktop: 2 cols, Mobile: 1 col) -->
 	{#if loading}
-		<p class="py-16 text-center text-xs text-(--text-muted)">Loading your projects...</p>
+		<div class="py-20 text-center text-xs text-(--text-muted) flex flex-col items-center justify-center gap-3">
+			<div class="w-5 h-5 border-2 border-(--text-muted) border-t-transparent rounded-full animate-spin"></div>
+			<span>Loading projects...</span>
+		</div>
+	{:else if error}
+		<div class="p-4 rounded-md bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-400 text-xs">
+			{error}
+		</div>
 	{:else if projects.length === 0}
-		<div class="text-center py-14 px-6 bg-(--bg-surface) border border-(--border-hairline) rounded-md flex flex-col items-center gap-2">
-			<p class="text-xs text-(--text-secondary)">You do not have any published projects to manage.</p>
-			<a href="/me/requests" class="btn btn-primary btn-sm mt-2">
-				Submit a hosting request
+		<div class="py-16 px-6 text-center border border-dashed border-(--border-hairline) rounded-md flex flex-col items-center gap-3 max-w-md mx-auto w-full">
+			<div class="w-10 h-10 rounded-full bg-(--bg-muted) flex items-center justify-center text-(--text-muted)">
+				<Folder size={20} />
+			</div>
+			<div class="flex flex-col gap-1">
+				<h3 class="font-medium text-sm text-(--text-main)">No projects hosted</h3>
+				<p class="text-xs text-(--text-muted) leading-relaxed">
+					You haven't published any projects on this server yet. Submit a request to deploy your application.
+				</p>
+			</div>
+			<a href="/me/requests" class="btn btn-primary btn-sm text-xs px-4 py-1.5 mt-2">
+				Submit Hosting Request
 			</a>
 		</div>
 	{:else}
-		<div class="flex flex-col gap-4">
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
 			{#each projects as proj (proj.id)}
-				<div class="bg-(--bg-surface) border border-(--border-hairline) rounded-md p-6 flex flex-col gap-4">
-					<div class="flex items-center justify-between flex-wrap gap-4">
-						<div>
-							<h3 class="font-display font-bold text-base text-(--text-main)">{proj.name}</h3>
-							{#if proj.public_url}
-								<a href={proj.public_url} target="_blank" rel="noreferrer" class="text-xs text-(--accent-strong) hover:underline block mt-0.5">
-									{proj.public_url} ↗
+				<article class="bg-(--bg-surface) border border-(--border-hairline) hover:border-(--border-subtle) rounded-md overflow-hidden flex flex-col transition-all duration-200 group">
+					<!-- Visual Anchor: Large Cover Area -->
+					<a href="/me/projects/{proj.id}" class="block relative w-full aspect-video bg-(--bg-muted) overflow-hidden" tabindex="-1">
+						<ProjectCover
+							src={proj.cover_image_url}
+							alt={proj.name}
+							name={proj.name}
+							aspectRatio="16/9"
+						/>
+					</a>
+
+					<!-- Content Below Image (Restrained, Editorial) -->
+					<div class="p-5 flex-1 flex flex-col justify-between gap-4">
+						<div class="flex flex-col gap-2">
+							<div class="flex items-center justify-between gap-3">
+								<h2 class="font-medium text-base text-(--text-main) group-hover:text-(--accent-sky) transition-colors">
+									<a href="/me/projects/{proj.id}">
+										{proj.name}
+									</a>
+								</h2>
+								<StatusDot status={proj.status} />
+							</div>
+
+							<p class="text-xs text-(--text-secondary) line-clamp-2 leading-relaxed font-normal">
+								{proj.description || 'No description provided for this project.'}
+							</p>
+
+							{#if proj.technology_stack && proj.technology_stack.length > 0}
+								<p class="text-xs text-(--text-muted) font-mono pt-1">
+									{proj.technology_stack.slice(0, 4).join(' · ')}
+								</p>
+							{/if}
+						</div>
+
+						<div class="pt-3 border-t border-(--border-hairline)/60 flex items-center justify-between text-xs">
+							<a
+								href="/me/projects/{proj.id}"
+								class="text-(--text-secondary) hover:text-(--text-main) font-medium transition-colors"
+							>
+								Manage project →
+							</a>
+
+							{#if proj.slug}
+								<a
+									href="/projects/{proj.slug}"
+									target="_blank"
+									rel="noreferrer"
+									class="text-(--text-muted) hover:text-(--text-main) transition-colors p-1"
+									title="Public Showcase"
+								>
+									<ArrowUpRight size={13} />
 								</a>
 							{/if}
 						</div>
-						<div class="flex items-center gap-3">
-							<StatusDot status={proj.status} />
-							<button type="button" class="btn btn-secondary btn-sm text-xs" on:click={() => startEdit(proj)}>
-								Edit details
-							</button>
-						</div>
 					</div>
-
-					<!-- Inline Editor -->
-					{#if editingProject && editingProject.id === proj.id}
-						<div class="mt-2 pt-4 border-t border-(--border-hairline) flex flex-col gap-3">
-							<h4 class="font-semibold text-xs text-(--accent-strong)">Editing Metadata: {proj.name}</h4>
-
-							<div class="flex flex-col gap-1.5">
-								<label for="e-desc" class="text-xs font-medium text-(--text-main)">Description</label>
-								<textarea id="e-desc" class="w-full px-3 py-1.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-xs text-(--text-main) outline-none focus:border-(--text-main)" rows="2" bind:value={editDesc}></textarea>
-							</div>
-
-							<div class="flex flex-col gap-2">
-								<label for="e-cover" class="text-xs font-medium text-(--text-main)">Project Cover Image</label>
-								<div class="flex flex-col sm:flex-row items-start gap-4">
-									<div class="w-32 sm:w-40 aspect-4/3 rounded-md overflow-hidden border border-(--border-hairline) bg-(--bg-muted) shrink-0">
-										<ProjectCover
-											src={editCover}
-											alt={proj.name}
-											name={proj.name}
-											aspectRatio="4/3"
-										/>
-									</div>
-									<div class="flex-1 flex flex-col gap-2 w-full">
-										<div class="flex items-center gap-2">
-											<input
-												type="file"
-												accept="image/jpeg,image/png,image/webp"
-												class="hidden"
-												bind:this={fileInput}
-												on:change={handleCoverUpload}
-											/>
-											<button
-												type="button"
-												class="btn btn-secondary btn-sm text-xs inline-flex items-center gap-1.5"
-												on:click={() => fileInput.click()}
-												disabled={uploadingCover}
-											>
-												<UploadSimple size={14} weight="bold" />
-												<span>{uploadingCover ? 'Uploading...' : 'Upload Cover (Max 10 MB)'}</span>
-											</button>
-											{#if editCover}
-												<button
-													type="button"
-													class="text-xs text-(--color-danger) hover:underline"
-													on:click={() => (editCover = '')}
-												>
-													Remove
-												</button>
-											{/if}
-										</div>
-										<input
-											id="e-cover"
-											type="text"
-											class="w-full px-3 py-1.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-xs font-mono text-(--text-main) outline-none focus:border-(--text-main)"
-											placeholder="Image URL /uploads/covers/... or https://..."
-											bind:value={editCover}
-										/>
-									</div>
-								</div>
-							</div>
-
-							<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-								<div class="flex flex-col gap-1.5">
-									<label for="e-repo" class="text-xs font-medium text-(--text-main)">Repository URL</label>
-									<input id="e-repo" type="url" class="w-full px-3 py-1.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-xs text-(--text-main) outline-none focus:border-(--text-main)" bind:value={editRepo} />
-								</div>
-								<div class="flex flex-col gap-1.5">
-									<label for="e-docs" class="text-xs font-medium text-(--text-main)">Documentation URL</label>
-									<input id="e-docs" type="url" class="w-full px-3 py-1.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-xs text-(--text-main) outline-none focus:border-(--text-main)" bind:value={editDocs} />
-								</div>
-							</div>
-
-							<div class="flex flex-col gap-1.5">
-								<label for="e-tech" class="text-xs font-medium text-(--text-main)">Technology Stack (comma separated)</label>
-								<input id="e-tech" type="text" class="w-full px-3 py-1.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-xs text-(--text-main) outline-none focus:border-(--text-main)" bind:value={editTechRaw} />
-							</div>
-
-							<div class="flex items-center gap-2 mt-2">
-								<button type="button" class="btn btn-primary btn-sm text-xs" on:click={saveEdit} disabled={saving}>
-									{saving ? 'Saving...' : 'Save changes'}
-								</button>
-								<button type="button" class="btn btn-secondary btn-sm text-xs" on:click={cancelEdit}>
-									Cancel
-								</button>
-							</div>
-						</div>
-					{/if}
-				</div>
+				</article>
 			{/each}
 		</div>
 	{/if}

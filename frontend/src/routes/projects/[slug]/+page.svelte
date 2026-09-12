@@ -4,28 +4,39 @@
 	import { api, extractError } from '$lib/api';
 	import StatusDot from '$lib/components/StatusDot.svelte';
 	import ProjectCover from '$lib/components/ui/ProjectCover.svelte';
+	import Comments from '$lib/components/Comments.svelte';
+	import ReportModal from '$lib/components/ReportModal.svelte';
+	import ProjectAvailability from '$lib/components/ProjectAvailability.svelte';
+	import { Tabs, Timeline, TimelineItem } from '$lib/components/ui';
 	import {
-		Globe,
-		GithubLogo,
 		ArrowUpRight,
-		ClockCounterClockwise,
-		CaretLeft,
-		Calendar,
-		User,
+		GithubLogo,
 		BookOpen,
-		Copy,
+		Globe,
+		User,
+		Calendar,
+		Flag,
+		ShareNetwork,
 		Check
 	} from 'phosphor-svelte';
 
 	let project: any = null;
 	let activities: any[] = [];
+	let availability: any = null;
 	let loading = true;
 	let error: string | null = null;
 	let copied = false;
+	let reportModalOpen = false;
+	let activeTab = 'overview';
 
-	function copyUrl(url: string) {
+	const tabsList = [
+		{ id: 'overview', label: 'Overview' },
+		{ id: 'activity', label: 'Activity' }
+	];
+
+	function copyUrl() {
 		if (!navigator?.clipboard) return;
-		navigator.clipboard.writeText(url);
+		navigator.clipboard.writeText(window.location.href);
 		copied = true;
 		setTimeout(() => {
 			copied = false;
@@ -38,6 +49,7 @@
 			const res = await api.get(`/projects/${slug}`);
 			project = res.data?.project;
 			activities = res.data?.activities || [];
+			availability = res.data?.availability;
 		} catch (err) {
 			error = extractError(err);
 		} finally {
@@ -66,44 +78,45 @@
 			if (diffHours < 24) return `${diffHours}h ago`;
 			const diffDays = Math.floor(diffHours / 24);
 			if (diffDays < 30) return `${diffDays}d ago`;
-			return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+			return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 		} catch {
 			return dateStr;
 		}
 	}
 
-	function getActivityMessage(act: any, defaultName: string): string {
-		if (act.metadata?.title) return act.metadata.title;
-		if (act.metadata?.message) return act.metadata.message;
-		switch (act.type) {
+	function getActivityDescription(a: any): string {
+		if (a.metadata?.title) return a.metadata.title;
+		if (a.metadata?.message) return a.metadata.message;
+		switch (a.type) {
 			case 'PROJECT_PUBLISHED':
-				return `${defaultName} was published to the catalog`;
+				return 'Project became publicly available';
 			case 'PROJECT_UPDATED':
-				return `Project metadata for ${defaultName} was updated`;
+				return 'Project details and links updated';
+			case 'HEALTH_CHECK_RECOVERED':
 			case 'PROJECT_ONLINE':
-				return `${defaultName} is online and operational`;
+				return 'Project came online and operational';
 			case 'PROJECT_OFFLINE':
-				return `${defaultName} is currently unavailable`;
+				return 'Project became temporarily unavailable';
 			default:
-				return `Update recorded for ${defaultName}`;
+				return 'Project event recorded';
 		}
 	}
 </script>
 
 <svelte:head>
-	<title>{project?.name ? `${project.name} — Ngumpul Host` : 'Project Showcase — Ngumpul Host'}</title>
+	<title>{project?.name ? `${project.name} · Ngumpul Host` : 'Project Showcase · Ngumpul Host'}</title>
 	<meta name="description" content={project?.description || 'Independent software project hosted on Ngumpul Host.'} />
 </svelte:head>
 
-<div class="container mx-auto px-4 sm:px-6 max-w-5xl py-8 sm:py-12 pb-24 flex flex-col gap-8">
+<div class="container mx-auto px-4 sm:px-6 max-w-5xl py-8 sm:py-12 pb-24 flex flex-col">
 	{#if loading}
 		<div class="py-32 text-center text-(--text-muted) text-sm flex flex-col items-center justify-center gap-3">
-			<div class="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-			<p class="text-xs">Loading project showcase...</p>
+			<div class="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+			<p class="text-xs">Loading showcase...</p>
 		</div>
 	{:else if error || !project}
 		<div class="py-20 px-6 text-center border border-dashed border-(--border-hairline) rounded-md max-w-lg mx-auto w-full bg-(--bg-surface) flex flex-col items-center gap-4">
-			<h2 class="font-sans font-semibold text-xl text-(--text-main)">Project Not Found</h2>
+			<h2 class="font-normal text-xl text-(--text-main)">Project Not Found</h2>
 			<p class="text-xs text-(--text-secondary) leading-relaxed">
 				{error || 'The requested project might not be published yet, or the link has expired.'}
 			</p>
@@ -112,44 +125,20 @@
 			</a>
 		</div>
 	{:else}
-		<!-- Breadcrumb & Top Navigation Controls -->
-		<div class="flex items-center justify-between flex-wrap gap-4 text-xs">
-			<nav aria-label="Breadcrumb" class="flex items-center gap-2 text-(--text-muted)">
-				<a href="/projects" class="hover:text-(--text-main) transition-colors font-medium">Projects</a>
-				<span class="opacity-40">/</span>
-				<span class="text-(--text-main) font-medium">{project.name}</span>
-			</nav>
+		<!-- Breadcrumb -->
+		<nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs text-(--text-muted) mb-6">
+			<a href="/projects" class="hover:text-(--text-main) transition-colors">Projects</a>
+			<span class="opacity-40">/</span>
+			<span class="text-(--text-main) font-medium">{project.name}</span>
+		</nav>
 
-			<div class="flex items-center gap-2.5">
-				<a
-					href="/projects"
-					class="text-(--text-secondary) hover:text-(--text-main) text-xs flex items-center gap-1.5 transition-colors px-3 py-1.5 rounded-md border border-(--border-hairline) bg-(--bg-surface)"
-				>
-					<CaretLeft size={12} weight="bold" />
-					<span>Catalog</span>
-				</a>
-
-				<button
-					on:click={() => copyUrl(project.public_url || window.location.href)}
-					class="text-(--text-secondary) hover:text-(--text-main) text-xs flex items-center gap-1.5 transition-colors px-3 py-1.5 rounded-md border border-(--border-hairline) bg-(--bg-surface) cursor-pointer"
-					title="Copy Project Link"
-				>
-					{#if copied}
-						<Check size={12} weight="bold" class="text-emerald-500" />
-						<span class="text-emerald-500 font-medium">Copied</span>
-					{:else}
-						<Copy size={12} weight="regular" />
-						<span>Share</span>
-					{/if}
-				</button>
-			</div>
-		</div>
-
-		<!-- Project Header: Editorial Showcase -->
+		<!-- Public Project Header (Editorial Showcase) -->
 		<header class="flex flex-col gap-3">
-			<div class="flex items-center gap-3">
+			<!-- Status & Node Info -->
+			<div class="flex items-center gap-2.5 text-xs text-(--text-muted)">
 				<StatusDot status={project.status} />
-				<span class="text-xs text-(--text-muted)">
+				<span>·</span>
+				<span>
 					{#if project.hosting_type === 'HOSTED_HERE'}
 						Hosted on community server
 					{:else}
@@ -158,35 +147,90 @@
 				</span>
 			</div>
 
-			<h1 class="font-sans font-semibold text-3xl sm:text-4xl text-(--text-main) tracking-[-0.03em] leading-tight">
+			<!-- Project Title -->
+			<h1 class="font-sans font-normal text-3xl sm:text-4xl lg:text-5xl text-(--text-main) tracking-[-0.02em] leading-tight">
 				{project.name}
 			</h1>
 
+			<!-- Short Description -->
 			{#if project.description}
-				<p class="text-sm sm:text-base text-(--text-secondary) max-w-3xl leading-relaxed font-normal">
+				<p class="text-sm sm:text-base text-(--text-secondary) max-w-2xl leading-relaxed font-normal">
 					{project.description}
 				</p>
 			{/if}
 
-			<div class="flex items-center flex-wrap gap-4 pt-2 text-xs text-(--text-muted)">
+			<!-- Creator and Hosted Date -->
+			<div class="flex items-center flex-wrap gap-4 pt-1 text-xs text-(--text-muted)">
 				{#if project.owner}
 					<a href="/people/{project.owner.username}" class="flex items-center gap-1.5 font-medium text-(--text-main) hover:underline">
 						<User size={14} />
-						<span>{project.owner.display_name}</span>
+						<span>by {project.owner.display_name}</span>
 					</a>
+					<span class="opacity-40">·</span>
 				{/if}
-
-				<span class="opacity-40">·</span>
 
 				<span class="flex items-center gap-1.5">
 					<Calendar size={14} />
-					<span>{project.published_at ? `Hosted since ${formatDate(project.published_at)}` : `Added ${formatDate(project.created_at)}`}</span>
+					<span>Hosted since {formatDate(project.published_at || project.created_at)}</span>
 				</span>
+			</div>
+
+			<!-- Header Actions (Restrained) -->
+			<div class="flex items-center gap-2.5 pt-3 flex-wrap">
+				{#if project.public_url}
+					<a
+						href="/go/{project.slug}"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="btn btn-primary btn-sm text-xs px-4 py-2 inline-flex items-center gap-1.5 font-medium"
+					>
+						<span>Visit project</span>
+						<ArrowUpRight size={13} weight="bold" />
+					</a>
+				{/if}
+
+				{#if project.repository_url}
+					<a
+						href={project.repository_url}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="btn btn-secondary btn-sm text-xs px-3 py-2 inline-flex items-center gap-1.5"
+					>
+						<GithubLogo size={14} />
+						<span>Source</span>
+						<ArrowUpRight size={11} />
+					</a>
+				{/if}
+
+				<button
+					type="button"
+					on:click={copyUrl}
+					class="btn btn-secondary btn-sm text-xs px-3 py-2 inline-flex items-center gap-1.5 cursor-pointer text-(--text-secondary) hover:text-(--text-main)"
+					title="Share link"
+				>
+					{#if copied}
+						<Check size={13} weight="bold" class="text-emerald-500" />
+						<span class="text-emerald-500 font-medium">Copied</span>
+					{:else}
+						<ShareNetwork size={14} />
+						<span>Share</span>
+					{/if}
+				</button>
+
+				<button
+					type="button"
+					on:click={() => (reportModalOpen = true)}
+					class="btn btn-secondary btn-sm text-xs px-3 py-2 inline-flex items-center gap-1.5 cursor-pointer text-(--text-muted) hover:text-(--text-main)"
+					title="Report this project"
+				>
+					<Flag size={13} />
+					<span>Report</span>
+				</button>
 			</div>
 		</header>
 
-		<!-- Large Project Artwork (Consistent 16:9 Showcase Cover with fallback) -->
-		<div class="relative w-full aspect-video sm:aspect-[21/9] max-h-[380px] rounded-md overflow-hidden border border-(--border-hairline) bg-(--bg-muted) shadow-xs">
+		<!-- Large Visual Cover Area -->
+		<div class="w-full aspect-video sm:aspect-[21/9] max-h-[400px] rounded-md overflow-hidden border border-(--border-hairline) bg-(--bg-muted) shadow-xs my-8">
 			<ProjectCover
 				src={project.cover_image_url}
 				alt={project.name}
@@ -195,188 +239,170 @@
 			/>
 		</div>
 
-		<!-- Main Asymmetric 2-Column Content Layout -->
-		<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start pt-2">
-			<!-- Main Column (Left): About, Technology, Project Activity -->
-			<div class="lg:col-span-8 flex flex-col gap-10">
-				<!-- Section 1: About the project -->
-				<section class="flex flex-col gap-3">
-					<h2 class="font-sans font-semibold text-base sm:text-lg text-(--text-main) tracking-[-0.01em]">
-						About the Project
-					</h2>
-					<div class="text-xs sm:text-sm text-(--text-secondary) leading-relaxed flex flex-col gap-3">
-						<p>{project.description || 'No additional detailed description provided for this project.'}</p>
-					</div>
-				</section>
+		<!-- Minimal Typographic Tabs: Overview | Activity -->
+		<div class="mb-8">
+			<Tabs tabs={tabsList} bind:active={activeTab} />
+		</div>
 
-				<!-- Section 2: Technology Stack -->
-				{#if project.technology_stack && project.technology_stack.length > 0}
+		<!-- TAB 1: OVERVIEW (About, Built with, Availability, Links, Comments) -->
+		{#if activeTab === 'overview'}
+			<div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+				<!-- Main Column (Left, 8 cols) -->
+				<div class="lg:col-span-8 flex flex-col gap-10">
+					<!-- Project Description -->
 					<section class="flex flex-col gap-3">
-						<h2 class="font-sans font-semibold text-base sm:text-lg text-(--text-main) tracking-[-0.01em]">
-							Built With
+						<h2 class="font-sans font-medium text-base text-(--text-main)">
+							About
 						</h2>
-						<div class="flex items-center flex-wrap gap-2">
-							{#each project.technology_stack as tech}
-								<span class="text-xs font-mono bg-(--bg-surface) text-(--text-main) px-2.5 py-1 rounded-sm border border-(--border-hairline)">
-									{tech}
-								</span>
-							{/each}
-						</div>
+						<p class="text-xs sm:text-sm text-(--text-secondary) leading-relaxed">
+							{project.description || 'No detailed description provided for this project.'}
+						</p>
 					</section>
-				{/if}
 
-				<!-- Section 3: Honest Project Activity History -->
-				<section class="flex flex-col gap-4">
-					<div class="flex items-center justify-between pb-2 border-b border-(--border-hairline)">
-						<h2 class="font-sans font-semibold text-base sm:text-lg text-(--text-main) tracking-[-0.01em] flex items-center gap-2">
-							<ClockCounterClockwise size={18} />
-							<span>Project History</span>
-						</h2>
-						<span class="text-[11px] text-(--text-muted)">Recorded activities</span>
+					<!-- Built With -->
+					{#if project.technology_stack && project.technology_stack.length > 0}
+						<section class="flex flex-col gap-3">
+							<h2 class="font-sans font-medium text-base text-(--text-main)">
+								Built with
+							</h2>
+							<p class="text-xs text-(--text-secondary) font-mono leading-relaxed">
+								{project.technology_stack.join(' · ')}
+							</p>
+						</section>
+					{/if}
+
+					<!-- Community Comments (Stay on Overview) -->
+					<Comments projectSlug={project.slug} projectOwnerId={project.owner_id} />
+				</div>
+
+				<!-- Sidebar Column (Right, 4 cols) -->
+				<aside class="lg:col-span-4 flex flex-col gap-8">
+					<!-- Availability Probe -->
+					<ProjectAvailability {availability} status={project.status} />
+
+					<!-- Connected Links -->
+					<div class="flex flex-col gap-3 text-xs">
+						<h3 class="font-medium text-xs text-(--text-main)">Links</h3>
+						<div class="flex flex-col gap-2">
+							{#if project.public_url}
+								<a
+									href="/go/{project.slug}"
+									target="_blank"
+									rel="noopener noreferrer"
+									class="text-(--accent-sky) hover:underline inline-flex items-center justify-between py-1"
+								>
+									<span class="truncate font-mono">{project.public_url}</span>
+									<ArrowUpRight size={12} />
+								</a>
+							{/if}
+
+							{#if project.repository_url}
+								<a
+									href={project.repository_url}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="text-(--text-secondary) hover:text-(--text-main) inline-flex items-center justify-between py-1 transition-colors"
+								>
+									<span class="flex items-center gap-2">
+										<GithubLogo size={13} />
+										<span>Source code</span>
+									</span>
+									<ArrowUpRight size={12} />
+								</a>
+							{/if}
+
+							{#if project.documentation_url}
+								<a
+									href={project.documentation_url}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="text-(--text-secondary) hover:text-(--text-main) inline-flex items-center justify-between py-1 transition-colors"
+								>
+									<span class="flex items-center gap-2">
+										<BookOpen size={13} />
+										<span>Documentation</span>
+									</span>
+									<ArrowUpRight size={12} />
+								</a>
+							{/if}
+
+							{#if project.demo_url && project.demo_url !== project.public_url}
+								<a
+									href={project.demo_url}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="text-(--text-secondary) hover:text-(--text-main) inline-flex items-center justify-between py-1 transition-colors"
+								>
+									<span class="flex items-center gap-2">
+										<Globe size={13} />
+										<span>Live demo</span>
+									</span>
+									<ArrowUpRight size={12} />
+								</a>
+							{/if}
+						</div>
 					</div>
 
-					{#if activities.length === 0}
-						<div class="p-6 bg-(--bg-surface) border border-dashed border-(--border-hairline) rounded-md text-center text-xs text-(--text-muted)">
-							No change history has been recorded for this project yet.
-						</div>
-					{:else}
-						<div class="flex flex-col border border-(--border-hairline) rounded-md bg-(--bg-surface) divide-y divide-(--border-hairline)">
-							{#each activities as act (act.id)}
-								<div class="p-4 flex items-start justify-between gap-4">
-									<div class="flex flex-col gap-1">
-										<p class="text-xs font-medium text-(--text-main)">
-											{getActivityMessage(act, project.name)}
-										</p>
-										{#if act.actor_name}
-											<p class="text-[11px] text-(--text-muted)">
-												by {act.actor_name}
-											</p>
-										{/if}
+					<!-- Creator Snippet -->
+					{#if project.owner}
+						<div class="flex flex-col gap-3 pt-6 border-t border-(--border-hairline) text-xs">
+							<h3 class="font-medium text-xs text-(--text-main)">Creator</h3>
+							<div class="flex items-center gap-3">
+								{#if project.owner.avatar_url}
+									<img src={project.owner.avatar_url} alt={project.owner.display_name} class="w-9 h-9 rounded-full object-cover border border-(--border-hairline)" />
+								{:else}
+									<div class="w-9 h-9 rounded-full bg-(--bg-muted) border border-(--border-hairline) flex items-center justify-center font-medium text-xs text-(--text-main)">
+										{project.owner.display_name?.charAt(0) || 'U'}
 									</div>
-									<span class="text-[11px] text-(--text-muted) shrink-0 font-mono">
-										{formatRelativeTime(act.created_at)}
-									</span>
+								{/if}
+								<div class="flex flex-col">
+									<a href="/people/{project.owner.username}" class="font-medium text-(--text-main) hover:underline">
+										{project.owner.display_name}
+									</a>
+									<span class="text-[11px] text-(--text-muted)">@{project.owner.username}</span>
 								</div>
-							{/each}
+							</div>
+							{#if project.owner.bio}
+								<p class="text-xs text-(--text-secondary) leading-relaxed">
+									{project.owner.bio}
+								</p>
+							{/if}
 						</div>
 					{/if}
-				</section>
+				</aside>
 			</div>
 
-			<!-- Sidebar Column (Right): Access Links & Creator Info -->
-			<aside class="lg:col-span-4 flex flex-col gap-6">
-				<!-- Action Box: Launch / Visit -->
-				<div class="p-5 bg-(--bg-surface) border border-(--border-hairline) rounded-md flex flex-col gap-4">
-					<div class="flex flex-col gap-1">
-						<span class="text-xs font-semibold text-(--text-main)">Access Link</span>
-						<span class="text-[11px] text-(--text-secondary)">Open the application directly in your browser.</span>
-					</div>
-
-					{#if project.public_url}
-						<a
-							href={project.public_url}
-							target="_blank"
-							rel="noopener noreferrer"
-							class="btn btn-primary w-full py-2.5 text-xs text-center flex items-center justify-center gap-1.5 font-medium"
-						>
-							<span>Open Application</span>
-							<ArrowUpRight size={14} weight="bold" />
-						</a>
-					{:else}
-						<div class="p-3 bg-(--bg-muted) rounded-md text-xs text-(--text-muted) text-center">
-							Public URL has not been configured yet.
-						</div>
-					{/if}
-
-					<div class="flex flex-col gap-2 pt-3 border-t border-(--border-hairline) text-xs">
-						{#if project.repository_url}
-							<a
-								href={project.repository_url}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="text-(--text-secondary) hover:text-(--text-main) flex items-center justify-between py-1 transition-colors"
-							>
-								<span class="flex items-center gap-2">
-									<GithubLogo size={14} />
-									<span>Source Code</span>
-								</span>
-								<ArrowUpRight size={12} />
-							</a>
-						{/if}
-
-						{#if project.documentation_url}
-							<a
-								href={project.documentation_url}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="text-(--text-secondary) hover:text-(--text-main) flex items-center justify-between py-1 transition-colors"
-							>
-								<span class="flex items-center gap-2">
-									<BookOpen size={14} />
-									<span>Documentation</span>
-								</span>
-								<ArrowUpRight size={12} />
-							</a>
-						{/if}
-
-						{#if project.demo_url && project.demo_url !== project.public_url}
-							<a
-								href={project.demo_url}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="text-(--text-secondary) hover:text-(--text-main) flex items-center justify-between py-1 transition-colors"
-							>
-								<span class="flex items-center gap-2">
-									<Globe size={14} />
-									<span>Live Demo</span>
-								</span>
-								<ArrowUpRight size={12} />
-							</a>
-						{/if}
-					</div>
+		<!-- TAB 2: ACTIVITY (Timeline, Not Table) -->
+		{:else if activeTab === 'activity'}
+			<div class="flex flex-col gap-6 max-w-2xl">
+				<div class="flex flex-col gap-1 pb-2">
+					<h2 class="font-sans font-medium text-base text-(--text-main)">Project activity</h2>
+					<p class="text-xs text-(--text-secondary)">Recorded change log and operational events.</p>
 				</div>
 
-				<!-- Creator Card -->
-				{#if project.owner}
-					<div class="p-5 bg-(--bg-surface) border border-(--border-hairline) rounded-md flex flex-col gap-3">
-						<span class="text-xs font-semibold text-(--text-main)">Project Creator</span>
-						<div class="flex items-center gap-3">
-							{#if project.owner.avatar_url}
-								<img src={project.owner.avatar_url} alt={project.owner.display_name} class="w-10 h-10 rounded-full object-cover border border-(--border-hairline)" />
-							{:else}
-								<div class="w-10 h-10 rounded-full bg-(--bg-muted) border border-(--border-hairline) flex items-center justify-center font-medium text-xs text-(--text-main)">
-									{project.owner.display_name?.charAt(0) || 'U'}
-								</div>
-							{/if}
-							<div class="flex flex-col">
-								<span class="text-xs font-semibold text-(--text-main)">{project.owner.display_name}</span>
-								<span class="text-[11px] text-(--text-muted)">@{project.owner.username}</span>
-							</div>
-						</div>
-
-						{#if project.owner.bio}
-							<p class="text-xs text-(--text-secondary) leading-relaxed pt-1">
-								{project.owner.bio}
-							</p>
-						{/if}
-
-						<a
-							href="/people/{project.owner.username}"
-							class="btn btn-secondary w-full py-2 mt-1 text-xs text-center"
-						>
-							View Creator Profile
-						</a>
-					</div>
+				{#if activities.length === 0}
+					<p class="text-xs text-(--text-muted) py-8">No recorded activity for this project yet.</p>
+				{:else}
+					<Timeline density="comfortable">
+						{#each activities as act (act.id)}
+							<TimelineItem
+								title={getActivityDescription(act)}
+								timestamp={formatRelativeTime(act.created_at)}
+								description={act.metadata?.message || ''}
+								density="comfortable"
+							/>
+						{/each}
+					</Timeline>
 				{/if}
+			</div>
+		{/if}
 
-				<!-- Calm Node Info (Privacy compliant, no cgroups or internal telemetry leaks) -->
-				<div class="p-4 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-[11px] text-(--text-muted) flex flex-col gap-1.5">
-					<span class="font-medium text-(--text-main)">Community Hosting Node</span>
-					<p class="leading-relaxed">
-						This project runs on Ngumpul Host shared community infrastructure on node Jakarta (cgk01).
-					</p>
-				</div>
-			</aside>
-		</div>
+		<!-- Report Modal -->
+		<ReportModal
+			bind:open={reportModalOpen}
+			targetType="PROJECT"
+			targetId={project.slug}
+			targetName={project.name}
+		/>
 	{/if}
 </div>

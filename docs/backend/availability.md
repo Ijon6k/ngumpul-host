@@ -171,3 +171,18 @@ In `frontend/src/lib/components/status/AvailabilityGrid.svelte`:
 - `no_data`: Neutral muted surface (`bg-neutral-800` / `bg-neutral-200`)
 
 Each block includes full accessible tooltips displaying exact dates, calculated percentages, and incident summaries.
+
+---
+
+## 7. Project HTTP Availability Probing Worker
+
+In addition to physical host kernel availability, Ngumpul Host includes an automated HTTP probe daemon for hosted software applications (`backend/internal/availability/project_checks.go`):
+
+1. **Execution Cadence:** Every 5 minutes (`5 * time.Minute`), the daemon selects all published projects with active `public_url`s.
+2. **Bounded Concurrency:** Probes are dispatched through a worker pool (bounded at 5 concurrent probes) to prevent socket exhaustion or spikes on the host node.
+3. **Failure & Recovery Thresholds:**
+   - **Offline Transition:** A project requires **2 consecutive failed probes** before its status transitions to `'OFFLINE'`, preventing transient network blips from creating false outage alarms.
+   - **Instant Recovery:** A single successful probe immediately transitions an offline project back to `'ONLINE'`.
+4. **Telemetry Logging:** Each check records execution latency in milliseconds and HTTP status code into `project_availability_checks`.
+5. **Project 30-Day Stats:** Project showcase and owner management views call `GetProjectAvailabilityStats` to compute the real 30-day percentage uptime and average response latency.
+
