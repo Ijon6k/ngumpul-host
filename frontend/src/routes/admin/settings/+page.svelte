@@ -8,12 +8,11 @@
 		Plus,
 		Copy,
 		Check,
-		Prohibit,
 		CheckCircle,
 		Clock,
 		WarningCircle
 	} from 'phosphor-svelte';
-	import { Table, TableRow, TableCell, type TableColumn } from '$lib/components/ui';
+	import { Table, TableRow, TableCell, type TableColumn, ConfirmModal } from '$lib/components/ui';
 
 	const columns: TableColumn[] = [
 		{ key: 'creator', label: 'Created By' },
@@ -32,6 +31,11 @@
 	let settingsError: string | null = null;
 	let settingsSuccess: string | null = null;
 	let confirmCloseModalOpen = false;
+
+	// Revoke invitation modal state
+	let revokeTargetId: string | null = null;
+	let revokeLoading = false;
+	let revokeError = '';
 
 	let invitations: any[] = [];
 	let loadingInvitations = true;
@@ -141,15 +145,23 @@
 		}
 	}
 
-	async function handleRevoke(id: string) {
-		if (!confirm('Are you sure you want to revoke this invitation token? It will no longer be usable.')) {
-			return;
-		}
+	function openRevokeModal(id: string) {
+		revokeTargetId = id;
+		revokeError = '';
+	}
+
+	async function confirmRevoke() {
+		if (!revokeTargetId) return;
+		revokeLoading = true;
+		revokeError = '';
 		try {
-			await api.post(`/admin/invitations/${id}/revoke`);
+			await api.post(`/admin/invitations/${revokeTargetId}/revoke`);
+			revokeTargetId = null;
 			await loadInvitations();
 		} catch (err) {
-			alert(extractError(err));
+			revokeError = extractError(err);
+		} finally {
+			revokeLoading = false;
 		}
 	}
 
@@ -472,7 +484,7 @@
 						<button
 							type="button"
 							class="text-(--color-danger) hover:underline text-sm cursor-pointer font-medium"
-							on:click={() => handleRevoke(inv.id)}
+							on:click={() => openRevokeModal(inv.id)}
 						>
 							Revoke
 						</button>
@@ -484,34 +496,35 @@
 		</Table>
 	</section>
 
-	<!-- Confirmation Modal for Closing Registrations -->
-	{#if confirmCloseModalOpen}
-		<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-			<div class="w-full max-w-md bg-(--bg-surface) border border-(--border-hairline) rounded-md p-6 flex flex-col gap-4 shadow-xl animate-in fade-in">
-				<div class="flex items-center gap-2.5 text-rose-500">
-					<Prohibit size={24} weight="bold" />
-					<h3 class="font-semibold text-lg text-(--text-main)">Close Server Registrations?</h3>
-				</div>
-				<p class="text-sm text-(--text-secondary) leading-relaxed">
-					Are you sure you want to close registrations? While registrations are closed, <strong>no new member accounts can be created on this host</strong> — even if someone holds a valid invitation token. Existing members will still be able to sign in.
-				</p>
-				<div class="flex items-center justify-end gap-2.5 pt-2 border-t border-(--border-hairline)">
-					<button
-						type="button"
-						class="btn btn-secondary btn-sm text-sm px-3.5 py-1.5"
-						on:click={() => (confirmCloseModalOpen = false)}
-					>
-						Cancel
-					</button>
-					<button
-						type="button"
-						class="btn btn-danger btn-sm text-sm px-3.5 py-1.5"
-						on:click={executeSaveSettings}
-					>
-						Confirm Close Registrations
-					</button>
-				</div>
-			</div>
-		</div>
-	{/if}
+	<!-- Confirm: Close Server Registrations -->
+	<ConfirmModal
+		bind:open={confirmCloseModalOpen}
+		confirmLabel="Close registrations"
+		destructive={true}
+		on:confirm={executeSaveSettings}
+		on:cancel={() => (confirmCloseModalOpen = false)}
+	>
+		<svelte:fragment slot="title">Close server registrations?</svelte:fragment>
+		<p>
+			While registrations are closed, <strong class="font-medium text-(--text-main)">no new member accounts can be created on this host</strong> —
+			even if someone holds a valid invitation token. Existing members will still be able to sign in.
+		</p>
+	</ConfirmModal>
+
+	<!-- Confirm: Revoke Invitation Token -->
+	<ConfirmModal
+		open={revokeTargetId !== null}
+		confirmLabel="Revoke token"
+		destructive={true}
+		loading={revokeLoading}
+		error={revokeError}
+		on:confirm={confirmRevoke}
+		on:cancel={() => { revokeTargetId = null; revokeError = ''; }}
+	>
+		<svelte:fragment slot="title">Revoke invitation token?</svelte:fragment>
+		<p>
+			This token will be <strong class="font-medium text-(--text-main)">immediately invalidated</strong>.
+			Anyone who hasn't used it yet will no longer be able to register with this link.
+		</p>
+	</ConfirmModal>
 </div>

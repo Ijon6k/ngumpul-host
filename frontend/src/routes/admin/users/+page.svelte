@@ -2,8 +2,8 @@
 	import { onMount } from 'svelte';
 	import { api, extractError } from '$lib/api';
 	import { user } from '$lib/stores/auth';
-	import { ShieldCheck, WarningCircle, CheckCircle, X } from 'phosphor-svelte';
-	import { Table, TableRow, TableCell, type TableColumn } from '$lib/components/ui';
+	import { ShieldCheck, WarningCircle, CheckCircle } from 'phosphor-svelte';
+	import { Table, TableRow, TableCell, type TableColumn, ConfirmModal } from '$lib/components/ui';
 
 	const columns: TableColumn[] = [
 		{ key: 'member', label: 'Member' },
@@ -115,7 +115,6 @@
 	});
 </script>
 
-<svelte:window on:keydown={(e) => { if (e.key === 'Escape' && activeModal && !isSubmitting) closeModal(); }} />
 
 <div class="flex flex-col gap-6">
 	<!-- Page Header -->
@@ -248,174 +247,95 @@
 		</TableRow>
 	</Table>
 
-	<!-- Administrative Action Modal -->
-	{#if activeModal}
-		<div class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-			<!-- Backdrop click target -->
-			<button
-				type="button"
-				class="fixed inset-0 w-full h-full cursor-default bg-transparent border-none p-0 m-0"
-				aria-label="Close dialog"
-				on:click={closeModal}
-			></button>
+	<!-- Administrative Action Modals (using ConfirmModal foundation) -->
 
-			<div
-				role="dialog"
-				aria-modal="true"
-				aria-labelledby="modal-title"
-				tabindex="-1"
-				class="relative w-full max-w-md p-6 bg-(--bg-surface) border border-(--border-hairline) rounded-md flex flex-col gap-4 shadow-xl z-10"
-			>
-				<!-- Header -->
-				<div class="flex items-start justify-between border-b border-(--border-hairline) pb-3">
-					<div class="flex items-center gap-2.5">
-						{#if activeModal.action === 'PROMOTE'}
-							<div class="p-2 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-								<ShieldCheck size={22} weight="bold" />
-							</div>
-							<div>
-								<h2 id="modal-title" class="font-display font-bold text-lg text-(--text-main)">Promote to Administrator</h2>
-								<div class="text-xs font-mono text-(--text-secondary)">High Impact Administrative Action</div>
-							</div>
-						{:else if activeModal.action === 'DEMOTE'}
-							<div class="p-2 rounded bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
-								<WarningCircle size={22} weight="bold" />
-							</div>
-							<div>
-								<h2 id="modal-title" class="font-display font-bold text-lg text-(--text-main)">Revoke Administrator Role</h2>
-								<div class="text-xs font-mono text-(--text-secondary)">Confirm Role Demotion</div>
-							</div>
-						{:else if activeModal.action === 'SUSPEND'}
-							<div class="p-2 rounded bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
-								<WarningCircle size={22} weight="bold" />
-							</div>
-							<div>
-								<h2 id="modal-title" class="font-display font-bold text-lg text-(--text-main)">Suspend User Account</h2>
-								<div class="text-xs font-mono text-(--text-secondary)">Account Access Restriction</div>
-							</div>
-						{:else if activeModal.action === 'RESTORE'}
-							<div class="p-2 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-								<CheckCircle size={22} weight="bold" />
-							</div>
-							<div>
-								<h2 id="modal-title" class="font-display font-bold text-lg text-(--text-main)">Restore User Account</h2>
-								<div class="text-xs font-mono text-(--text-secondary)">Confirm Access Restoration</div>
-							</div>
-						{/if}
-					</div>
-					<button
-						type="button"
-						on:click={closeModal}
-						class="text-(--text-muted) hover:text-(--text-main) p-1 transition-colors"
-						aria-label="Close modal"
-					>
-						<X size={18} />
-					</button>
-				</div>
-
-				<!-- Body Content -->
-				{#if activeModal.action === 'PROMOTE'}
-					<div class="flex flex-col gap-3 text-sm text-(--text-secondary) leading-relaxed">
-						<p>
-							Granting administrator role to <strong class="text-(--text-main)">{activeModal.user.display_name}</strong> (<span class="font-mono">@{activeModal.user.username}</span>) gives full access to server configurations, invitation token generation, audit logs, and member moderation.
-						</p>
-
-						<div class="flex flex-col gap-1.5 p-3.5 bg-(--bg-muted) rounded border border-(--border-hairline)">
-							<span class="text-xs text-(--text-muted)">Type the following confirmation phrase to proceed:</span>
-							<code class="px-2.5 py-1.5 bg-(--bg-surface) border border-(--border-hairline) rounded font-mono text-sm text-(--text-main) font-semibold select-all">
-								{expectedPhrase}
-							</code>
-						</div>
-
-						<div class="flex flex-col gap-1">
-							<input
-								type="text"
-								bind:value={confirmInput}
-								placeholder={expectedPhrase}
-								class="w-full px-3.5 py-2.5 bg-(--bg-surface) border border-(--border-hairline) rounded text-sm font-mono text-(--text-main) placeholder:text-(--text-muted)/40 outline-none focus:border-(--accent-sky)"
-								on:keydown={(e) => { if (e.key === 'Enter' && isPhraseValid) executeAction(); }}
-							/>
-						</div>
-					</div>
-				{:else if activeModal.action === 'DEMOTE'}
-					<div class="flex flex-col gap-3 text-sm text-(--text-secondary) leading-relaxed">
-						<p>
-							Are you sure you want to revoke the Administrator role from <strong class="text-(--text-main)">{activeModal.user.display_name}</strong> (<span class="font-mono">@{activeModal.user.username}</span>)?
-						</p>
-						<p class="p-3.5 bg-(--bg-muted) rounded border border-(--border-hairline) text-xs sm:text-sm text-(--text-muted)">
-							This user will be demoted to standard member status and will no longer have access to the management console, hosting approvals, or server configurations.
-						</p>
-					</div>
-				{:else if activeModal.action === 'SUSPEND'}
-					<div class="flex flex-col gap-3 text-sm text-(--text-secondary) leading-relaxed">
-						<p>
-							Are you sure you want to suspend the account of <strong class="text-(--text-main)">{activeModal.user.display_name}</strong> (<span class="font-mono">@{activeModal.user.username}</span>)?
-						</p>
-						<p class="p-3.5 bg-red-950/20 text-red-600 dark:text-red-400 rounded border border-red-500/20 text-xs sm:text-sm">
-							All active sessions for this user will be immediately terminated, and access will be blocked until restored by an administrator.
-						</p>
-					</div>
-				{:else if activeModal.action === 'RESTORE'}
-					<div class="flex flex-col gap-3 text-sm text-(--text-secondary) leading-relaxed">
-						<p>
-							Do you want to restore the account of <strong class="text-(--text-main)">{activeModal.user.display_name}</strong> (<span class="font-mono">@{activeModal.user.username}</span>) to active status?
-						</p>
-						<p class="p-3.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded border border-emerald-500/20 text-xs sm:text-sm">
-							The user will be able to sign in again and manage their projects and hosting applications.
-						</p>
-					</div>
-				{/if}
-
-				<!-- Footer Actions -->
-				<div class="flex items-center justify-end gap-2.5 pt-3 border-t border-(--border-hairline)">
-					<button
-						type="button"
-						class="btn btn-secondary btn-sm text-sm px-3.5 py-1.5 font-mono"
-						on:click={closeModal}
-						disabled={isSubmitting}
-					>
-						Cancel
-					</button>
-
-					{#if activeModal.action === 'PROMOTE'}
-						<button
-							type="button"
-							class="btn btn-primary btn-sm text-sm px-4 py-1.5 font-mono disabled:opacity-40 disabled:cursor-not-allowed"
-							disabled={!isPhraseValid || isSubmitting}
-							on:click={executeAction}
-						>
-							{isSubmitting ? 'Processing...' : 'Grant Admin Role'}
-						</button>
-					{:else if activeModal.action === 'DEMOTE'}
-						<button
-							type="button"
-							class="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white text-sm font-mono font-medium disabled:opacity-50 transition-colors"
-							disabled={isSubmitting}
-							on:click={executeAction}
-						>
-							{isSubmitting ? 'Processing...' : 'Yes, Revoke Admin Role'}
-						</button>
-					{:else if activeModal.action === 'SUSPEND'}
-						<button
-							type="button"
-							class="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white text-sm font-mono font-medium disabled:opacity-50 transition-colors"
-							disabled={isSubmitting}
-							on:click={executeAction}
-						>
-							{isSubmitting ? 'Processing...' : 'Yes, Suspend Account'}
-						</button>
-					{:else if activeModal.action === 'RESTORE'}
-						<button
-							type="button"
-							class="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-mono font-medium disabled:opacity-50 transition-colors"
-							disabled={isSubmitting}
-							on:click={executeAction}
-						>
-							{isSubmitting ? 'Processing...' : 'Yes, Restore Account'}
-						</button>
-					{/if}
-				</div>
+	<!-- PROMOTE: requires typed confirmation phrase -->
+	<ConfirmModal
+		open={activeModal?.action === 'PROMOTE'}
+		confirmLabel="Grant admin role"
+		destructive={false}
+		loading={isSubmitting}
+		disabled={!isPhraseValid}
+		error={activeModal?.action === 'PROMOTE' ? (error ?? '') : ''}
+		on:confirm={executeAction}
+		on:cancel={closeModal}
+	>
+		<svelte:fragment slot="title">Promote to administrator?</svelte:fragment>
+		<p>
+			Granting administrator role to <strong class="text-(--text-main)">{activeModal?.user.display_name}</strong>
+			(<span class="font-mono">@{activeModal?.user.username}</span>) gives full access to server
+			configurations, invitation token generation, audit logs, and member moderation.
+		</p>
+		<svelte:fragment slot="extra">
+			<div class="flex flex-col gap-1.5 p-3.5 bg-(--bg-muted) rounded-[6px] border border-(--border-hairline)">
+				<span class="text-xs text-(--text-muted)">Type the following phrase to proceed:</span>
+				<code class="px-2.5 py-1.5 bg-(--bg-surface) border border-(--border-hairline) rounded-[4px] font-mono text-sm text-(--text-main) font-semibold select-all">
+					{expectedPhrase}
+				</code>
 			</div>
-		</div>
-	{/if}
+			<input
+				type="text"
+				bind:value={confirmInput}
+				placeholder={expectedPhrase}
+				class="mt-2 w-full px-3.5 py-2.5 bg-(--bg-surface) border border-(--border-hairline) rounded-[4px] text-sm font-mono text-(--text-main) placeholder:text-(--text-muted)/40 outline-none focus:border-(--accent-sky)"
+				on:keydown={(e) => { if (e.key === 'Enter' && isPhraseValid) executeAction(); }}
+			/>
+		</svelte:fragment>
+	</ConfirmModal>
+
+	<!-- DEMOTE: destructive -->
+	<ConfirmModal
+		open={activeModal?.action === 'DEMOTE'}
+		confirmLabel="Revoke admin role"
+		destructive={true}
+		loading={isSubmitting}
+		error={activeModal?.action === 'DEMOTE' ? (error ?? '') : ''}
+		on:confirm={executeAction}
+		on:cancel={closeModal}
+	>
+		<svelte:fragment slot="title">Revoke administrator role?</svelte:fragment>
+		<p>
+			<strong class="text-(--text-main)">{activeModal?.user.display_name}</strong>
+			(<span class="font-mono">@{activeModal?.user.username}</span>) will be demoted to standard
+			member status and lose access to the management console, hosting approvals, and server
+			configurations.
+		</p>
+	</ConfirmModal>
+
+	<!-- SUSPEND: destructive -->
+	<ConfirmModal
+		open={activeModal?.action === 'SUSPEND'}
+		confirmLabel="Suspend account"
+		destructive={true}
+		loading={isSubmitting}
+		error={activeModal?.action === 'SUSPEND' ? (error ?? '') : ''}
+		on:confirm={executeAction}
+		on:cancel={closeModal}
+	>
+		<svelte:fragment slot="title">Suspend user account?</svelte:fragment>
+		<p>
+			All active sessions for <strong class="text-(--text-main)">{activeModal?.user.display_name}</strong>
+			(<span class="font-mono">@{activeModal?.user.username}</span>) will be immediately terminated.
+			Access will be blocked until restored by an administrator.
+		</p>
+	</ConfirmModal>
+
+	<!-- RESTORE: non-destructive -->
+	<ConfirmModal
+		open={activeModal?.action === 'RESTORE'}
+		confirmLabel="Restore account"
+		destructive={false}
+		loading={isSubmitting}
+		error={activeModal?.action === 'RESTORE' ? (error ?? '') : ''}
+		on:confirm={executeAction}
+		on:cancel={closeModal}
+	>
+		<svelte:fragment slot="title">Restore user account?</svelte:fragment>
+		<p>
+			<strong class="text-(--text-main)">{activeModal?.user.display_name}</strong>
+			(<span class="font-mono">@{activeModal?.user.username}</span>) will be able to sign in again
+			and manage their projects and hosting applications.
+		</p>
+	</ConfirmModal>
 </div>
+

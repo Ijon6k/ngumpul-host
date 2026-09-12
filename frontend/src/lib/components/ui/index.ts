@@ -11,3 +11,4 @@ export { default as PageHeader } from './PageHeader.svelte';
 export { default as ProjectCover } from './ProjectCover.svelte';
 export { default as Pagination } from './Pagination.svelte';
 export { default as EmptyState } from './EmptyState.svelte';
+export { default as ConfirmModal } from './ConfirmModal.svelte';
