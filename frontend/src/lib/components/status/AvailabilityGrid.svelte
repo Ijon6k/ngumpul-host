@@ -49,16 +49,16 @@
 	}
 </script>
 
-<div class="flex flex-col gap-3 w-full">
-	<!-- Compact GitHub-like Activity Heatmap Grid -->
+<div class="flex flex-col gap-3 w-full select-none">
+	<!-- High-resolution Vertical Bar Sequence -->
 	<div
-		class="flex items-center gap-1 sm:gap-1.5 w-full overflow-x-auto py-1"
+		class="flex items-center gap-[2px] sm:gap-[3px] w-full py-1"
 		role="region"
 		aria-label="Availability activity heatmap"
 	>
 		{#each blocks as block (block.index)}
 			<div
-				class="flex-1 min-w-[8px] max-w-[32px] aspect-square rounded-[2px] transition-all duration-150 cursor-pointer {getBlockColor(block)} {compact ? 'h-3' : 'h-5 sm:h-6'}"
+				class="flex-1 min-w-[2px] rounded-[1.5px] transition-all duration-150 cursor-pointer {getBlockColor(block)} {compact ? 'h-4 sm:h-5' : 'h-6 sm:h-8'}"
 				role="button"
 				tabindex="0"
 				aria-label="{block.label}: {block.details}"

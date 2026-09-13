@@ -279,14 +279,17 @@ The central catalog of self-hosted community software and showcase applications.
 | `technology_stack` | `TEXT[]` | `NOT NULL` | `'{}'` | Native PostgreSQL array of tech tags (e.g. `['Go', 'Svelte']`). |
 | `hosting_type` | `VARCHAR(32)` | `NOT NULL, CHECK (hosting_type IN ('HOSTED_HERE', 'EXTERNAL'))` | `'HOSTED_HERE'` | Hosting topology indicator. |
 | `public_url` | `TEXT` | `NOT NULL` | `''` | Live outbound destination URL reached via `/go/:slug`. |
-| `status` | `VARCHAR(32)` | `NOT NULL, CHECK (status IN ('PENDING', 'SETUP', 'ONLINE', 'OFFLINE', 'ARCHIVED'))` | `'ONLINE'` | Operational health and lifecycle state. |
+| `status` | `VARCHAR(32)` | `NOT NULL` | `'ONLINE'` | Backward-compatible status field. |
+| `lifecycle_status` | `VARCHAR(32)` | `NOT NULL, CHECK (lifecycle_status IN ('SETUP', 'ACTIVE', 'SUSPENDED', 'ARCHIVED'))` | `'ACTIVE'` | Administrative lifecycle state. |
+| `availability` | `VARCHAR(32)` | `NOT NULL, CHECK (availability IN ('UNKNOWN', 'REACHABLE', 'UNREACHABLE'))` | `'UNKNOWN'` | Real-time network reachability probe state. |
+| `availability_reason` | `VARCHAR(64)` | `NOT NULL` | `''` | Classified diagnostic failure code (`DNS_ERROR`, `CONNECTION_FAILED`, `TIMEOUT`, `TLS_ERROR`, `HTTP_ERROR`). |
 | `visibility` | `VARCHAR(32)` | `NOT NULL, CHECK (visibility IN ('PUBLIC', 'UNPUBLISHED', 'ARCHIVED'))` | `'PUBLIC'` | Catalog visibility gate. |
 | `published_at` | `TIMESTAMPTZ` | `NULL` | — | Timestamp when project was first made public. |
 | `created_at` | `TIMESTAMPTZ` | `NOT NULL` | `NOW()` | Registration timestamp. |
 | `updated_at` | `TIMESTAMPTZ` | `NOT NULL` | `NOW()` | Last metadata modification timestamp. |
 
-* **Indexes:** `idx_projects_slug` on `(slug)`, `idx_projects_owner_id` on `(owner_id)`, `idx_projects_status` on `(status)`, `idx_projects_visibility` on `(visibility)`.
-* **Invariants:** Only `PUBLIC` projects appear in public queries and RSS feeds. Outbound visits require a non-empty `public_url`.
+* **Indexes:** `idx_projects_slug` on `(slug)`, `idx_projects_owner_id` on `(owner_id)`, `idx_projects_status` on `(status)`, `idx_projects_lifecycle_status` on `(lifecycle_status)`, `idx_projects_availability` on `(availability)`, `idx_projects_visibility` on `(visibility)`.
+* **Invariants:** Only `PUBLIC` and non-`ARCHIVED` projects appear in public catalog queries. Outbound visits require a non-empty `public_url`. Monitoring workers only update `availability`, never modifying `lifecycle_status`.
 
 ---
 
@@ -303,6 +306,7 @@ Tracks member submissions requesting homelab server provisioning for their proje
 | `subdomain` | `VARCHAR(64)` | `NOT NULL` | `''` | Requested or assigned unique subdomain prefix (`.ngumpul.local`). |
 | `description` | `TEXT` | `NOT NULL` | `''` | Short description (max 280 characters) or change reason. |
 | `readme` | `TEXT` | `NOT NULL` | `''` | Submitted Markdown documentation or uploaded `.md` README. |
+| `cover_image_url` | `TEXT` | `NOT NULL` | `''` | Uploaded project cover artwork URL (WebP compressed). Propagated to project catalog upon approval. |
 | `repository_url` | `TEXT` | `NOT NULL` | `''` | Public Git repository URL containing code/Dockerfile. |
 | `documentation_url`| `TEXT` | `NOT NULL` | `''` | Supplementary docs or architectural notes. |
 | `deployment_notes` | `TEXT` | `NOT NULL` | `''` | Resource requirements (RAM, ports, volumes, env keys). |
@@ -461,8 +465,8 @@ Key-value configuration for the single-instance homelab server.
 
 | Column | Type | Constraints | Default | Description |
 | :--- | :--- | :--- | :--- | :--- |
-| `key` | `VARCHAR(64)` | `PRIMARY KEY` | — | Setting identifier string (e.g. `registration_mode`). |
-| `value` | `TEXT` | `NOT NULL` | — | Setting value (`OPEN`, `INVITE_ONLY`, `CLOSED`). |
+| `key` | `VARCHAR(64)` | `PRIMARY KEY` | — | Setting identifier string (e.g. `registration_mode`, `domain`, `app_url`). |
+| `value` | `TEXT` | `NOT NULL` | — | Setting value (e.g. `INVITE_ONLY`, `node.example.com`). |
 | `updated_at` | `TIMESTAMPTZ` | `NOT NULL` | `NOW()` | Last change timestamp. |
 
 ---
@@ -574,4 +578,19 @@ Health probe logs recorded by the background HTTP worker monitoring hosted proje
 
 * **Indexes:** `idx_proj_avail_project_checked` on `(project_id, checked_at DESC)`.
 
+---
 
+## 3. Migration History (`backend/migrations/`)
+
+All schema evolution is executed via deterministic SQL migrations tracked in the `schema_migrations` table:
+
+| Migration | File | Description | Impacted Tables |
+| :--- | :--- | :--- | :--- |
+| **`001`** | `001_initial_schema.sql` | Core application tables, enums, indexes, and availability state. | `users`, `sessions`, `projects`, `hosting_requests`, `activities`, `notifications`, `audit_logs`, `availability_state`, `availability_incidents` |
+| **`002`** | `002_media_objects.sql` | File storage metadata tracking uploads to SeaweedFS / local filesystem. | `media_objects` |
+| **`003`** | `003_access_and_invitations.sql` | Private community invitation engine with token expiry and creator tracking. | `invitations` |
+| **`004`** | `004_comments_reports_and_visits.sql` | Public project interaction, content moderation reports, and privacy-conscious visit counters. | `comments`, `reports`, `project_visits`, `project_page_views` |
+| **`005`** | `005_subdomain_and_readme.sql` | Dedicated subdomain fields and Markdown documentation storage. | `projects`, `hosting_requests` |
+| **`006`** | `006_subdomain_change_request.sql` | Subdomain mutation workflow support linking requests to existing projects. | `hosting_requests` (`project_id`, `request_type`) |
+| **`007`** | `007_project_state_architecture.sql` | Decoupled 3-tier project state architecture: lifecycle, visibility, availability, and diagnostic error reasons. | `projects` (`lifecycle_status`, `visibility`, `availability`, `availability_reason`) |
+| **`008`** | `008_hosting_request_cover_image.sql` | Cover photo upload support during hosting intake with propagation to active catalog upon completion. | `hosting_requests` (`cover_image_url`) |

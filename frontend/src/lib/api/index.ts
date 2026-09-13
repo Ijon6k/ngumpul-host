@@ -7,6 +7,7 @@ export { hostingRequestsApi } from './hostingRequests';
 export { activityApi } from './activity';
 export { systemApi } from './system';
 export { authApi } from './auth';
+export { setupApi } from './setup';
 export { usersApi } from './users';
 export * as adminApi from './admin';
 

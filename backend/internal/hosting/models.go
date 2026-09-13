@@ -20,6 +20,7 @@ type Request struct {
 	DocumentationURL string           `json:"documentation_url"`
 	DeploymentNotes  string           `json:"deployment_notes"`
 	TechnologyStack  []string         `json:"technology_stack"`
+	CoverImageURL    string           `json:"cover_image_url"`
 	Status           string           `json:"status"`
 	AdminNotes       string           `json:"admin_notes"`
 	ReviewedBy       *string          `json:"reviewed_by"`
@@ -35,6 +36,7 @@ type SubmitRequestPayload struct {
 	Subdomain        string   `json:"subdomain"`
 	Description      string   `json:"description"`
 	Readme           string   `json:"readme"`
+	CoverImageURL    string   `json:"cover_image_url"`
 	RepositoryURL    string   `json:"repository_url"`
 	DocumentationURL string   `json:"documentation_url"`
 	DeploymentNotes  string   `json:"deployment_notes"`

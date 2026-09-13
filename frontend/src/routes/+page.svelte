@@ -42,9 +42,9 @@
 	<!-- 2. Bento Grid Section: Real host device telemetry & Pinterest 3D server visual -->
 	<BentoGrid {hostSpecs} />
 
-	<!-- 3. Projects Section: Casual showcase of hosted things (3 recent items) -->
+	<!-- 3. Projects Section: Casual showcase of hosted things (4 recent items in 2x2 grid) -->
 	<section class="py-16 sm:py-20 border-b border-(--border-hairline) bg-(--bg-canvas)">
-		<div class="container mx-auto px-6 max-w-6xl flex flex-col gap-8">
+		<div class="container mx-auto px-4 sm:px-6 max-w-5xl flex flex-col gap-8">
 			<div>
 				<h2 class="font-sans font-normal text-2xl sm:text-3xl text-(--text-main) tracking-[-0.02em]">
 					Things we're hosting
@@ -59,8 +59,8 @@
 					<p class="text-sm">No projects registered yet.</p>
 				</div>
 			{:else}
-				<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-					{#each projects.slice(0, 3) as project (project.id)}
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+					{#each projects.slice(0, 4) as project (project.id)}
 						<ProjectCard {project} />
 					{/each}
 				</div>

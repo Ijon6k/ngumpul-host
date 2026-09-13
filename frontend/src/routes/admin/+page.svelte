@@ -166,7 +166,7 @@
 										<td class="py-4 px-4 text-xs sm:text-sm text-(--text-muted)">{formatDate(req.created_at)}</td>
 										<td class="py-4 px-6 text-right">
 											<a href="/admin/requests" class="btn btn-primary btn-sm text-xs sm:text-sm py-1.5 px-3">
-												Review →
+												Review
 											</a>
 										</td>
 									</tr>
@@ -181,7 +181,7 @@
 			<AdminPanel title="Hosted Projects Directory" badge="{projectsList.length} registered" padding={false}>
 				<svelte:fragment slot="actions">
 					<a href="/admin/projects" class="btn btn-secondary btn-sm text-xs sm:text-sm py-1.5 px-3">
-						Manage projects →
+						Manage projects
 					</a>
 				</svelte:fragment>
 

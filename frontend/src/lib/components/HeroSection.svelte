@@ -98,7 +98,7 @@
 				<MetricPillar
 					value="{hostSpecs?.availability?.uptime ?? hostSpecs?.uptime_formatted ?? 'Running'}"
 					label="System Uptime"
-					subtext="Current boot session on bare metal"
+					subtext="Continuous host session without reboots"
 					class="text-white"
 				/>
 			</div>

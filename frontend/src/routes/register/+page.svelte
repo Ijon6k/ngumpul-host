@@ -3,7 +3,8 @@
 	import { page } from '$app/stores';
 	import { authApi, extractError } from '$lib/api';
 	import { user } from '$lib/stores/auth';
-	import { Lock, Ticket, CheckCircle, WarningCircle } from 'phosphor-svelte';
+	import { AuthSplitLayout } from '$lib/components/layout';
+	import { CheckCircle, WarningCircle, Lock } from 'phosphor-svelte';
 
 	let username = '';
 	let displayName = '';
@@ -76,16 +77,16 @@
 		}
 
 		if (registrationMode === 'INVITE_ONLY' && !invitationToken.trim()) {
-			error = 'An invitation token is required to register on this host.';
+			error = 'An invitation token is required to register on this node.';
 			return;
 		}
 
 		loading = true;
 		try {
 			const res = await authApi.register({
-				username,
-				display_name: displayName || username,
-				email,
+				username: username.trim().toLowerCase(),
+				display_name: displayName.trim() || username.trim(),
+				email: email.trim().toLowerCase(),
 				password,
 				invitation_token: invitationToken.trim() || undefined
 			});
@@ -101,149 +102,139 @@
 	}
 </script>
 
-<div class="container mx-auto px-6 py-16 flex justify-center items-center">
-	<div class="w-full max-w-md bg-(--bg-surface) border border-(--border-hairline) rounded-md p-7 sm:p-8 flex flex-col gap-6">
-		{#if registrationMode === 'LOADING'}
-			<div class="py-12 flex flex-col items-center justify-center gap-3 text-(--text-muted)">
-				<div class="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-				<p class="text-sm">Checking server registration status...</p>
-			</div>
-		{:else if registrationMode === 'CLOSED'}
-			<header class="text-left flex flex-col gap-2.5">
-				<div class="w-10 h-10 rounded-md bg-(--bg-muted) border border-(--border-hairline) flex items-center justify-center text-(--text-secondary)">
-					<Lock size={20} weight="regular" />
-				</div>
-				<h1 class="font-display font-bold text-2xl text-(--text-main) tracking-tight">Registrations Closed</h1>
-				<p class="text-sm text-(--text-secondary) leading-relaxed">
-					This server operates privately for a restricted community. New member registration is currently disabled by the host operator.
-				</p>
-			</header>
+<svelte:head>
+	<title>Create Profile · Ngumpul Host</title>
+</svelte:head>
 
-			<div class="p-4 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-sm text-(--text-secondary) flex flex-col gap-1">
-				<span class="font-medium text-(--text-main)">Already have an account?</span>
-				<span>Please sign in directly using your account credentials.</span>
+<AuthSplitLayout
+	title={registrationMode === 'CLOSED' ? 'Registrations Closed' : 'Create profile'}
+	description={registrationMode === 'CLOSED'
+		? 'New member registration is currently disabled by the host operator.'
+		: registrationMode === 'INVITE_ONLY'
+			? 'Join the community server with a verified invitation token.'
+			: 'Join the community server to share and showcase independent projects.'}
+>
+	{#if registrationMode === 'LOADING'}
+		<div class="py-12 flex flex-col items-center justify-center gap-3 text-(--text-muted)">
+			<div class="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+			<p class="text-xs">Checking registration mode...</p>
+		</div>
+	{:else if registrationMode === 'CLOSED'}
+		<div class="p-4 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-sm text-(--text-secondary) flex flex-col gap-1.5">
+			<div class="flex items-center gap-2 text-(--text-main) font-medium">
+				<Lock size={16} weight="regular" />
+				<span>Private Community</span>
 			</div>
+			<p class="text-xs text-(--text-muted) leading-relaxed">
+				This node operates on a closed basis. Existing members can sign in directly.
+			</p>
+		</div>
 
-			<a href="/login" class="btn btn-primary w-full py-2.5 text-sm font-medium text-center">
-				Sign In →
-			</a>
-		{:else}
-			<header class="text-left">
-				<h1 class="font-display font-bold text-2xl text-(--text-main) tracking-tight">Create Account</h1>
-				<p class="text-sm text-(--text-secondary) mt-1">
-					{#if registrationMode === 'INVITE_ONLY'}
-						Join the community server with a verified invitation token.
-					{:else}
-						Join the self-hosted community server to showcase your software.
+		<a href="/login" class="btn btn-primary w-full py-2.5 text-sm font-medium text-center">
+			Sign in
+		</a>
+	{:else}
+		{#if error}
+			<div class="p-3.5 bg-red-950/10 text-(--color-danger) border border-(--color-danger)/30 rounded-md text-sm leading-relaxed">
+				{error}
+			</div>
+		{/if}
+
+		<form on:submit|preventDefault={handleRegister} class="flex flex-col gap-4">
+			{#if registrationMode === 'INVITE_ONLY'}
+				<div class="flex flex-col gap-1.5">
+					<label for="reg-token" class="text-sm font-medium text-(--text-main) flex items-center justify-between">
+						<span>Invitation Token</span>
+						{#if validatingToken}
+							<span class="text-xs text-(--text-muted)">Validating...</span>
+						{:else if tokenStatus?.valid}
+							<span class="text-xs text-emerald-500 font-medium flex items-center gap-1">
+								<CheckCircle size={13} weight="bold" /> Verified
+							</span>
+						{:else if tokenStatus && !tokenStatus.valid}
+							<span class="text-xs text-(--color-danger) font-medium flex items-center gap-1">
+								<WarningCircle size={13} weight="bold" /> Invalid
+							</span>
+						{/if}
+					</label>
+					<input
+						id="reg-token"
+						type="text"
+						class="w-full px-3.5 py-2.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-sm font-mono text-(--text-main) outline-none focus:border-(--text-main) transition-colors placeholder:text-(--text-muted)/50"
+						placeholder="Paste invite token"
+						required
+						bind:value={invitationToken}
+						on:blur={() => validateToken(invitationToken)}
+					/>
+					{#if tokenStatus?.message && !tokenStatus.valid}
+						<p class="text-xs text-(--color-danger)">{tokenStatus.message}</p>
 					{/if}
-				</p>
-			</header>
-
-			{#if error}
-				<div class="p-3.5 bg-red-950/10 text-(--color-danger) border border-(--color-danger)/30 rounded-md text-sm">
-					{error}
 				</div>
 			{/if}
 
-			<form on:submit|preventDefault={handleRegister} class="flex flex-col gap-4">
-				{#if registrationMode === 'INVITE_ONLY' || invitationToken}
-					<div class="flex flex-col gap-1.5">
-						<label for="reg-token" class="text-sm font-medium text-(--text-main) flex items-center justify-between">
-							<span class="flex items-center gap-1.5">
-								<Ticket size={16} />
-								Invitation Token {registrationMode === 'INVITE_ONLY' ? '*' : '(Optional)'}
-							</span>
-							{#if validatingToken}
-								<span class="text-xs text-(--text-muted)">Verifying...</span>
-							{:else if tokenStatus?.valid}
-								<span class="text-xs text-emerald-500 font-medium flex items-center gap-1">
-									<CheckCircle size={14} weight="bold" /> Verified
-								</span>
-							{:else if tokenStatus && !tokenStatus.valid}
-								<span class="text-xs text-(--color-danger) font-medium flex items-center gap-1">
-									<WarningCircle size={14} weight="bold" /> Invalid
-								</span>
-							{/if}
-						</label>
-						<input
-							id="reg-token"
-							type="text"
-							class="w-full px-3.5 py-2.5 bg-(--bg-muted) border {tokenStatus && !tokenStatus.valid ? 'border-(--color-danger)' : 'border-(--border-hairline)'} rounded-md text-sm font-mono text-(--text-main) outline-none focus:border-(--text-main) transition-colors"
-							required={registrationMode === 'INVITE_ONLY'}
-							placeholder="Enter 64-character token..."
-							bind:value={invitationToken}
-							on:blur={() => validateToken(invitationToken)}
-						/>
-						{#if tokenStatus && !tokenStatus.valid && tokenStatus.message}
-							<p class="text-xs text-(--color-danger)">{tokenStatus.message}</p>
-						{/if}
-						{#if tokenStatus?.valid && tokenStatus.invitedEmail}
-							<p class="text-xs text-emerald-600 dark:text-emerald-400">
-								This invitation is restricted to email <strong>{tokenStatus.invitedEmail}</strong>
-							</p>
-						{/if}
-					</div>
-				{/if}
+			<div class="flex flex-col gap-1.5">
+				<label for="reg-name" class="text-sm font-medium text-(--text-main)">Display Name</label>
+				<input
+					id="reg-name"
+					type="text"
+					class="w-full px-3.5 py-2.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-sm text-(--text-main) outline-none focus:border-(--text-main) transition-colors placeholder:text-(--text-muted)/50"
+					placeholder="Alex Rivera"
+					required
+					bind:value={displayName}
+				/>
+			</div>
 
+			<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 				<div class="flex flex-col gap-1.5">
-					<label for="reg-username" class="text-sm font-medium text-(--text-main)">Username *</label>
+					<label for="reg-username" class="text-sm font-medium text-(--text-main)">Username</label>
 					<input
 						id="reg-username"
 						type="text"
-						class="w-full px-3.5 py-2.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-sm text-(--text-main) outline-none focus:border-(--text-main) transition-colors"
+						class="w-full px-3.5 py-2.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-sm text-(--text-main) outline-none focus:border-(--text-main) transition-colors placeholder:text-(--text-muted)/50"
+						placeholder="alex"
 						required
-						placeholder="e.g. arya"
-						pattern="[a-zA-Z0-9_-]+"
-						title="Letters, numbers, underscores, and dashes only"
+						autocomplete="username"
 						bind:value={username}
 					/>
 				</div>
 
 				<div class="flex flex-col gap-1.5">
-					<label for="reg-display" class="text-sm font-medium text-(--text-main)">Display Name</label>
-					<input
-						id="reg-display"
-						type="text"
-						class="w-full px-3.5 py-2.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-sm text-(--text-main) outline-none focus:border-(--text-main) transition-colors"
-						placeholder="e.g. Arya Pratama"
-						bind:value={displayName}
-					/>
-				</div>
-
-				<div class="flex flex-col gap-1.5">
-					<label for="reg-email" class="text-sm font-medium text-(--text-main)">Email Address *</label>
+					<label for="reg-email" class="text-sm font-medium text-(--text-main)">Email</label>
 					<input
 						id="reg-email"
 						type="email"
-						class="w-full px-3.5 py-2.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-sm text-(--text-main) outline-none focus:border-(--text-main) transition-colors"
+						class="w-full px-3.5 py-2.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-sm text-(--text-main) outline-none focus:border-(--text-main) transition-colors placeholder:text-(--text-muted)/50"
+						placeholder="alex@example.com"
 						required
 						autocomplete="email"
 						bind:value={email}
 					/>
 				</div>
+			</div>
 
-				<div class="flex flex-col gap-1.5">
-					<label for="reg-password" class="text-sm font-medium text-(--text-main)">Password (min. 8 characters) *</label>
-					<input
-						id="reg-password"
-						type="password"
-						class="w-full px-3.5 py-2.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-sm text-(--text-main) outline-none focus:border-(--text-main) transition-colors"
-						required
-						minlength="8"
-						autocomplete="new-password"
-						bind:value={password}
-					/>
-				</div>
+			<div class="flex flex-col gap-1.5">
+				<label for="reg-pass" class="text-sm font-medium text-(--text-main)">Password</label>
+				<input
+					id="reg-pass"
+					type="password"
+					class="w-full px-3.5 py-2.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-sm text-(--text-main) outline-none focus:border-(--text-main) transition-colors"
+					placeholder="•••••••• (min 8 characters)"
+					required
+					autocomplete="new-password"
+					bind:value={password}
+				/>
+			</div>
 
-				<button type="submit" class="btn btn-primary w-full py-2.5 mt-2 text-sm font-medium" disabled={loading || (tokenStatus !== null && !tokenStatus.valid)}>
-					{loading ? 'Creating account...' : 'Create Account →'}
-				</button>
-			</form>
+			<button type="submit" class="btn btn-primary w-full py-2.5 mt-2 text-sm font-medium" disabled={loading}>
+				{loading ? 'Creating account...' : 'Create account'}
+			</button>
+		</form>
+	{/if}
 
-			<footer class="flex items-center justify-between text-sm text-(--text-muted) pt-3 border-t border-(--border-hairline)">
-				<span>Already have an account?</span>
-				<a href="/login" class="text-(--accent-strong) hover:underline font-medium">Sign in</a>
-			</footer>
-		{/if}
-	</div>
-</div>
+	<svelte:fragment slot="footer">
+		<footer class="flex items-center justify-between text-sm text-(--text-muted) pt-4 border-t border-(--border-hairline)">
+			<span>Already registered?</span>
+			<a href="/login" class="text-(--accent-strong) hover:underline font-medium">Sign in</a>
+		</footer>
+	</svelte:fragment>
+</AuthSplitLayout>

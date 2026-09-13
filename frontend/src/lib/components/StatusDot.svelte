@@ -8,15 +8,22 @@
 	$: label = (() => {
 		switch (normalized) {
 			case 'ONLINE':
+			case 'REACHABLE':
 			case 'OPERATIONAL':
 				return 'Online';
-			case 'SETUP':
-				return 'Setup';
-			case 'PENDING':
-				return 'Pending';
+			case 'UNREACHABLE':
 			case 'OFFLINE':
 			case 'DEGRADED':
-				return 'Offline';
+				return 'Unreachable';
+			case 'SUSPENDED':
+				return 'Suspended';
+			case 'SETUP':
+				return 'Setting up';
+			case 'PENDING':
+				return 'Pending';
+			case 'CHECKING':
+			case 'UNKNOWN':
+				return 'Checking';
 			case 'ARCHIVED':
 				return 'Archived';
 			default:
@@ -27,22 +34,35 @@
 	$: colorClasses = (() => {
 		switch (normalized) {
 			case 'ONLINE':
+			case 'REACHABLE':
 			case 'OPERATIONAL':
 				return {
 					dot: 'bg-emerald-500',
 					badge: 'bg-(--bg-surface)/85 dark:bg-neutral-900/85 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
 				};
-			case 'SETUP':
-			case 'PENDING':
-				return {
-					dot: 'bg-amber-500',
-					badge: 'bg-(--bg-surface)/85 dark:bg-neutral-900/85 text-amber-700 dark:text-amber-300 border-amber-500/30'
-				};
+			case 'UNREACHABLE':
 			case 'OFFLINE':
 			case 'DEGRADED':
 				return {
 					dot: 'bg-rose-500',
 					badge: 'bg-(--bg-surface)/85 dark:bg-neutral-900/85 text-rose-700 dark:text-rose-300 border-rose-500/30'
+				};
+			case 'SUSPENDED':
+				return {
+					dot: 'bg-amber-500',
+					badge: 'bg-(--bg-surface)/85 dark:bg-neutral-900/85 text-amber-700 dark:text-amber-300 border-amber-500/30'
+				};
+			case 'SETUP':
+				return {
+					dot: 'bg-(--accent-sky)',
+					badge: 'bg-(--bg-surface)/85 dark:bg-neutral-900/85 text-sky-700 dark:text-sky-300 border-(--accent-sky)/30'
+				};
+			case 'CHECKING':
+			case 'PENDING':
+			case 'UNKNOWN':
+				return {
+					dot: 'bg-amber-400',
+					badge: 'bg-(--bg-surface)/85 dark:bg-neutral-900/85 text-amber-600 dark:text-amber-300 border-amber-400/30'
 				};
 			case 'ARCHIVED':
 			default:

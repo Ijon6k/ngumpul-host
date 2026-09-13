@@ -4,6 +4,7 @@
 	import type { Project } from '$lib/types/project';
 	import StatusDot from '$lib/components/StatusDot.svelte';
 	import ProjectCover from '$lib/components/ui/ProjectCover.svelte';
+	import { resolveProjectStatus } from '$lib/utils/projectStatus';
 	import { Plus, Folder, ArrowUpRight } from 'phosphor-svelte';
 
 	let projects: Project[] = [];
@@ -101,7 +102,7 @@
 										{proj.name}
 									</a>
 								</h2>
-								<StatusDot status={proj.status} />
+								<StatusDot status={resolveProjectStatus(proj).dotStatus} />
 							</div>
 
 							<p class="text-xs text-(--text-secondary) line-clamp-2 leading-relaxed font-normal">

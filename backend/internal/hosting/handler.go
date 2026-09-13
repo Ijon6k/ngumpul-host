@@ -144,11 +144,11 @@ func (h *Handler) Submit(w http.ResponseWriter, r *http.Request) {
 	var requestID string
 	err := h.db.QueryRow(r.Context(), `
 		INSERT INTO hosting_requests (
-			requester_id, project_name, subdomain, description, readme, repository_url,
+			requester_id, project_name, subdomain, description, readme, cover_image_url, repository_url,
 			documentation_url, deployment_notes, technology_stack, request_type, status
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'NEW_PROJECT', 'PENDING')
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'NEW_PROJECT', 'PENDING')
 		RETURNING id
-	`, user.ID, req.ProjectName, req.Subdomain, req.Description, req.Readme, req.RepositoryURL, req.DocumentationURL, req.DeploymentNotes, req.TechnologyStack).Scan(&requestID)
+	`, user.ID, req.ProjectName, req.Subdomain, req.Description, req.Readme, req.CoverImageURL, req.RepositoryURL, req.DocumentationURL, req.DeploymentNotes, req.TechnologyStack).Scan(&requestID)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, "Failed to submit hosting request")
 		return
@@ -178,7 +178,7 @@ func (h *Handler) ListMyRequests(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rows, err := h.db.Query(r.Context(), `
-		SELECT id, requester_id, project_id, request_type, project_name, subdomain, description, readme, repository_url,
+		SELECT id, requester_id, project_id, request_type, project_name, subdomain, description, readme, cover_image_url, repository_url,
 		       documentation_url, deployment_notes, technology_stack, status,
 		       admin_notes, reviewed_by, created_at, updated_at, reviewed_at
 		FROM hosting_requests
@@ -195,7 +195,7 @@ func (h *Handler) ListMyRequests(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var hr Request
 		if err := rows.Scan(
-			&hr.ID, &hr.RequesterID, &hr.ProjectID, &hr.RequestType, &hr.ProjectName, &hr.Subdomain, &hr.Description, &hr.Readme, &hr.RepositoryURL,
+			&hr.ID, &hr.RequesterID, &hr.ProjectID, &hr.RequestType, &hr.ProjectName, &hr.Subdomain, &hr.Description, &hr.Readme, &hr.CoverImageURL, &hr.RepositoryURL,
 			&hr.DocumentationURL, &hr.DeploymentNotes, &hr.TechnologyStack, &hr.Status,
 			&hr.AdminNotes, &hr.ReviewedBy, &hr.CreatedAt, &hr.UpdatedAt, &hr.ReviewedAt,
 		); err == nil {
@@ -211,7 +211,7 @@ func (h *Handler) AdminListRequests(w http.ResponseWriter, r *http.Request) {
 	statusFilter := r.URL.Query().Get("status")
 
 	query := `
-		SELECT hr.id, hr.requester_id, hr.project_id, hr.request_type, hr.project_name, hr.subdomain, hr.description, hr.readme, hr.repository_url,
+		SELECT hr.id, hr.requester_id, hr.project_id, hr.request_type, hr.project_name, hr.subdomain, hr.description, hr.readme, hr.cover_image_url, hr.repository_url,
 		       hr.documentation_url, hr.deployment_notes, hr.technology_stack, hr.status,
 		       hr.admin_notes, hr.reviewed_by, hr.created_at, hr.updated_at, hr.reviewed_at,
 		       u.id, u.username, u.display_name, u.avatar_url, u.bio, u.role, u.created_at
@@ -237,7 +237,7 @@ func (h *Handler) AdminListRequests(w http.ResponseWriter, r *http.Request) {
 		var hr Request
 		var u auth.PublicUser
 		if err := rows.Scan(
-			&hr.ID, &hr.RequesterID, &hr.ProjectID, &hr.RequestType, &hr.ProjectName, &hr.Subdomain, &hr.Description, &hr.Readme, &hr.RepositoryURL,
+			&hr.ID, &hr.RequesterID, &hr.ProjectID, &hr.RequestType, &hr.ProjectName, &hr.Subdomain, &hr.Description, &hr.Readme, &hr.CoverImageURL, &hr.RepositoryURL,
 			&hr.DocumentationURL, &hr.DeploymentNotes, &hr.TechnologyStack, &hr.Status,
 			&hr.AdminNotes, &hr.ReviewedBy, &hr.CreatedAt, &hr.UpdatedAt, &hr.ReviewedAt,
 			&u.ID, &u.Username, &u.DisplayName, &u.AvatarURL, &u.Bio, &u.Role, &u.CreatedAt,
@@ -248,6 +248,63 @@ func (h *Handler) AdminListRequests(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.JSON(w, http.StatusOK, map[string]any{"requests": list})
+}
+
+// AdminGetRequest handles GET /api/admin/hosting-requests/{id}
+func (h *Handler) AdminGetRequest(w http.ResponseWriter, r *http.Request) {
+	requestID := chi.URLParam(r, "id")
+
+	query := `
+		SELECT hr.id, hr.requester_id, hr.project_id, hr.request_type, hr.project_name, hr.subdomain, hr.description, hr.readme, hr.cover_image_url, hr.repository_url,
+		       hr.documentation_url, hr.deployment_notes, hr.technology_stack, hr.status,
+		       hr.admin_notes, hr.reviewed_by, hr.created_at, hr.updated_at, hr.reviewed_at,
+		       u.id, u.username, u.display_name, u.avatar_url, u.bio, u.role, u.created_at
+		FROM hosting_requests hr
+		JOIN users u ON u.id = hr.requester_id
+		WHERE hr.id::text = $1
+	`
+	var hr Request
+	var u auth.PublicUser
+	err := h.db.QueryRow(r.Context(), query, requestID).Scan(
+		&hr.ID, &hr.RequesterID, &hr.ProjectID, &hr.RequestType, &hr.ProjectName, &hr.Subdomain, &hr.Description, &hr.Readme, &hr.CoverImageURL, &hr.RepositoryURL,
+		&hr.DocumentationURL, &hr.DeploymentNotes, &hr.TechnologyStack, &hr.Status,
+		&hr.AdminNotes, &hr.ReviewedBy, &hr.CreatedAt, &hr.UpdatedAt, &hr.ReviewedAt,
+		&u.ID, &u.Username, &u.DisplayName, &u.AvatarURL, &u.Bio, &u.Role, &u.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			response.Error(w, http.StatusNotFound, "Request not found")
+			return
+		}
+		response.Error(w, http.StatusInternalServerError, "Database error")
+		return
+	}
+	hr.Requester = &u
+
+	var linkedProject any = nil
+	if hr.ProjectID != nil && *hr.ProjectID != "" {
+		var p project.Project
+		pErr := h.db.QueryRow(r.Context(), `
+			SELECT id, owner_id, name, slug, description, cover_image_url, repository_url,
+			       documentation_url, demo_url, technology_stack, hosting_type, public_url,
+			       status, lifecycle_status, availability, availability_reason, visibility, created_at, updated_at, published_at
+			FROM projects
+			WHERE id = $1
+		`, *hr.ProjectID).Scan(
+			&p.ID, &p.OwnerID, &p.Name, &p.Slug, &p.Description, &p.CoverImageURL,
+			&p.RepositoryURL, &p.DocumentationURL, &p.DemoURL, &p.TechnologyStack,
+			&p.HostingType, &p.PublicURL, &p.Status, &p.LifecycleStatus, &p.Availability, &p.AvailabilityReason,
+			&p.Visibility, &p.CreatedAt, &p.UpdatedAt, &p.PublishedAt,
+		)
+		if pErr == nil {
+			linkedProject = p
+		}
+	}
+
+	response.JSON(w, http.StatusOK, map[string]any{
+		"request":        hr,
+		"linked_project": linkedProject,
+	})
 }
 
 // RequestSubdomainChange handles POST /api/projects/{id}/request-subdomain-change
@@ -511,10 +568,10 @@ func (h *Handler) AdminComplete(w http.ResponseWriter, r *http.Request) {
 
 	var hr Request
 	err := h.db.QueryRow(r.Context(), `
-		SELECT id, requester_id, project_name, subdomain, description, readme, repository_url, documentation_url, technology_stack
+		SELECT id, requester_id, project_name, subdomain, description, readme, cover_image_url, repository_url, documentation_url, technology_stack
 		FROM hosting_requests
 		WHERE id = $1
-	`, requestID).Scan(&hr.ID, &hr.RequesterID, &hr.ProjectName, &hr.Subdomain, &hr.Description, &hr.Readme, &hr.RepositoryURL, &hr.DocumentationURL, &hr.TechnologyStack)
+	`, requestID).Scan(&hr.ID, &hr.RequesterID, &hr.ProjectName, &hr.Subdomain, &hr.Description, &hr.Readme, &hr.CoverImageURL, &hr.RepositoryURL, &hr.DocumentationURL, &hr.TechnologyStack)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			response.Error(w, http.StatusNotFound, "Request not found")
@@ -549,24 +606,29 @@ func (h *Handler) AdminComplete(w http.ResponseWriter, r *http.Request) {
 	var projectID string
 	err = h.db.QueryRow(r.Context(), `
 		INSERT INTO projects (
-			owner_id, name, slug, description, readme, repository_url, documentation_url,
-			technology_stack, hosting_type, public_url, status, visibility, published_at
+			owner_id, name, slug, description, readme, cover_image_url, repository_url, documentation_url,
+			technology_stack, hosting_type, public_url, status, lifecycle_status, availability, visibility, published_at
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, 'HOSTED_HERE', $9, 'ONLINE', 'PUBLIC', NOW()
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, 'HOSTED_HERE', $10, 'ONLINE', 'ACTIVE', 'UNKNOWN', 'PUBLIC', NOW()
 		)
 		ON CONFLICT (slug) DO UPDATE
 		SET public_url = EXCLUDED.public_url,
 		    readme = CASE WHEN EXCLUDED.readme != '' THEN EXCLUDED.readme ELSE projects.readme END,
+		    cover_image_url = CASE WHEN EXCLUDED.cover_image_url != '' THEN EXCLUDED.cover_image_url ELSE projects.cover_image_url END,
 		    status = 'ONLINE',
+		    lifecycle_status = 'ACTIVE',
 		    visibility = 'PUBLIC',
 		    updated_at = NOW()
 		RETURNING id
-	`, hr.RequesterID, hr.ProjectName, slug, hr.Description, hr.Readme, hr.RepositoryURL, hr.DocumentationURL,
+	`, hr.RequesterID, hr.ProjectName, slug, hr.Description, hr.Readme, hr.CoverImageURL, hr.RepositoryURL, hr.DocumentationURL,
 		hr.TechnologyStack, req.PublicURL).Scan(&projectID)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, "Failed to register project: "+err.Error())
 		return
 	}
+
+	// Link project ID to request
+	_, _ = h.db.Exec(r.Context(), `UPDATE hosting_requests SET project_id = $1 WHERE id = $2`, projectID, requestID)
 
 	// Notify requester
 	_, _ = h.db.Exec(r.Context(), `

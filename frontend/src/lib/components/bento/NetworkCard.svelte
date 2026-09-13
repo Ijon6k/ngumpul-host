@@ -36,6 +36,6 @@
 	<!-- Footer -->
 	<div class="pt-2 border-t border-(--border-hairline) text-xs text-(--text-muted) font-normal flex items-center gap-1.5">
 		<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-		<span>Low-latency routing from home network</span>
+		<span>Low-latency routing from host node</span>
 	</div>
 </div>

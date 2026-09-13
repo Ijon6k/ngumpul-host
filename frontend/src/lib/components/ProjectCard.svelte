@@ -1,5 +1,4 @@
 <script lang="ts">
-	import StatusDot from './StatusDot.svelte';
 	import ProjectCover from '$lib/components/ui/ProjectCover.svelte';
 	import { ArrowUpRight } from 'phosphor-svelte';
 
@@ -32,6 +31,8 @@
 		}
 	}
 
+	import { resolveProjectStatus } from '$lib/utils/projectStatus';
+	$: projectStatus = resolveProjectStatus(project);
 	$: visibleTechs = (project.technology_stack || []).slice(0, 4);
 	$: hostedDate = formatHostedDate(project.published_at || project.created_at);
 </script>
@@ -46,21 +47,25 @@
 			aspectRatio="full"
 			class="w-full h-full !rounded-none"
 		/>
-		<div class="absolute top-3 right-3 z-10 pointer-events-none">
-			<StatusDot status={project.status} variant="badge" />
+		<div class="absolute top-0 right-0 z-10 pointer-events-none">
+			<div class="px-2.5 py-1 rounded-bl-md bg-(--bg-surface)/90 dark:bg-neutral-900/90 backdrop-blur-xs border-b border-l border-(--border-hairline) shadow-2xs">
+				<span class="text-xs font-medium {projectStatus.colorClass}">
+					{projectStatus.label}
+				</span>
+			</div>
 		</div>
 	</a>
 
 	<!-- Card Body: Editorial Hierarchy -->
 	<div class="flex flex-col grow p-5 gap-3">
 		<div class="flex flex-col gap-1.5">
-			<h3 class="font-sans font-semibold text-base sm:text-lg text-(--text-main) tracking-[-0.01em] line-clamp-1 h-6 leading-snug">
+			<h3 class="font-sans font-semibold text-base sm:text-lg text-(--text-main) tracking-[-0.01em] line-clamp-1 leading-snug">
 				<a href="/projects/{project.slug}" class="hover:text-(--accent-strong) transition-colors">
 					{project.name}
 				</a>
 			</h3>
 
-			<p class="text-xs sm:text-sm text-(--text-secondary) line-clamp-2 h-10 leading-relaxed font-normal">
+			<p class="text-xs sm:text-sm text-(--text-secondary) line-clamp-2 min-h-[2.5rem] sm:min-h-[2.85rem] leading-relaxed font-normal">
 				{project.description || ''}
 			</p>
 		</div>

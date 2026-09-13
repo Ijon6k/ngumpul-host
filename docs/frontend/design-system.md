@@ -52,7 +52,9 @@ To preserve structural discipline and eliminate awkward visual rounding, all UI 
 1. **Inputs & Micro-Actions (`radius-sm`):** Buttons and form fields must remain crisp (`2px`–`4px`). Firm corners enhance text readability, anchor user focus, and communicate professional utility. *(Exception: Icon-only circular buttons may use `radius-full`).*
 2. **Cards & Panels (`radius-md`):** Bento boxes, metric panels, and dashboard widgets use `6px`–`8px`. This avoids cartoonish bubble shapes while providing comfortable separation from the canvas.
 3. **Overlays & Dialogs (`radius-lg`):** Modals and toasts floating above the application plane use `12px`–`16px` to naturally decouple from the rigid grid beneath.
-4. **Semantic Badges & Pills (`radius-full`):** Badges and tags use pill geometry to immediately distinguish informative metadata from clickable rectangular buttons.
+4. **Semantic Badges & Indicators:**
+   - **Inline & Floating Badges (`radius-full`):** Standard status tags and dots use pill geometry (`rounded-full`) to distinguish metadata from buttons.
+   - **Project Card Corner Status (`rounded-bl-md`):** On project cover images, status badges sit flush against the top-right corner (`top-0 right-0`) with internal curvature `rounded-bl-md`. Uses theme-adaptive neutral surface (`bg-(--bg-surface)/90 dark:bg-neutral-900/90 backdrop-blur-xs`) with subtle inner hairline borders (`border-b border-l border-(--border-hairline)`). Renders direct semantic colored text without pill outlines, colored borders, or dot circles.
 
 ### The Nested Radius Formula
 When nesting a rounded card or element inside a parent container with padding:
@@ -84,6 +86,8 @@ $$\text{Radius}_{\text{inner}} = \text{Radius}_{\text{outer}} - \text{Padding}$$
 * **Micro-badges (`StatusDot`):** `text-xs px-2.5 py-0.5 font-medium`.
 * **Breadcrumb Navigation:** `text-sm` (16px / `1rem`) with `text-(--text-muted)` and active item `text-(--text-main) font-medium`.
 * **Project Artwork Aspect Ratio:** Standard `16:9` aspect ratio (`aspect-[16/9]`) across catalog cards, project showcase pages, and personal workspace dashboard views via `ProjectCover.svelte`.
+* **Catalog Grid & Card Parity:** Both the `/projects` catalog and the landing page showcase (`/+page.svelte`) share identical card sizing via `max-w-5xl` containers and 2-column grids (`grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8`). The landing page renders a balanced 2x2 grid (max 4 projects).
+* **Card Description Line-Clamp:** Card descriptions are clamped to strictly 2 lines (`line-clamp-2 min-h-[2.5rem] sm:min-h-[2.85rem] leading-relaxed`) to prevent 2nd line letter clipping and maintain horizontal alignment across grid rows.
 
 
 ---

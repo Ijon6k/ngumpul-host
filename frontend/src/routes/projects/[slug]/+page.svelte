@@ -6,17 +6,16 @@
 	import ProjectCover from '$lib/components/ui/ProjectCover.svelte';
 	import Comments from '$lib/components/Comments.svelte';
 	import ReportModal from '$lib/components/ReportModal.svelte';
-	import ProjectAvailability from '$lib/components/ProjectAvailability.svelte';
-	import { Tabs, Timeline, TimelineItem, Breadcrumb, MarkdownView } from '$lib/components/ui';
+	import { Tabs, Timeline, TimelineItem, Breadcrumb, MarkdownView, UptimeHistory } from '$lib/components/ui';
 	import {
 		ArrowUpRight,
-		User,
-		Calendar,
 		Flag,
 		ShareNetwork,
 		Check
 	} from 'phosphor-svelte';
 	import { detectLinkInfo } from '$lib/utils/linkDetector';
+	import { getPingColorClass } from '$lib/utils/format';
+	import { resolveProjectStatus } from '$lib/utils/projectStatus';
 
 	import type { PageData } from './$types';
 
@@ -24,16 +23,18 @@
 
 	let copied = false;
 	let reportModalOpen = false;
-	let activeTab = 'comments';
+	let activeTab = 'overview';
 	let commentCount = 0;
 
 	$: project = data.project;
+	$: projectStatus = resolveProjectStatus(project);
 	$: availability = data.availability;
 	$: activities = data.activities || [];
 	let loading = false;
 	let error: string | null = null;
 
 	$: tabsList = [
+		{ id: 'overview', label: 'Overview' },
 		{ id: 'comments', label: commentCount > 0 ? `Comments (${commentCount})` : 'Comments' },
 		{ id: 'activity', label: 'Activity' }
 	];
@@ -109,7 +110,7 @@
 	<meta name="description" content={project?.description || 'Independent software project hosted on Ngumpul Host.'} />
 </svelte:head>
 
-<div class="container mx-auto px-4 sm:px-6 max-w-5xl py-8 sm:py-12 pb-24 flex flex-col">
+<div class="container mx-auto px-4 sm:px-6 max-w-screen-xl py-8 sm:py-12 pb-24 flex flex-col">
 	{#if loading}
 		<div class="py-32 text-center text-(--text-muted) text-sm flex flex-col items-center justify-center gap-3">
 			<div class="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
@@ -137,19 +138,6 @@
 
 		<!-- Public Project Header (Editorial Showcase) -->
 		<header class="flex flex-col gap-3">
-			<!-- Status & Node Info -->
-			<div class="flex items-center gap-2.5 text-xs text-(--text-muted)">
-				<StatusDot status={project.status} />
-				<span>·</span>
-				<span>
-					{#if project.hosting_type === 'HOSTED_HERE'}
-						Hosted on community server
-					{:else}
-						External registered service
-					{/if}
-				</span>
-			</div>
-
 			<!-- Project Title -->
 			<h1 class="font-sans font-normal text-3xl sm:text-4xl lg:text-5xl text-(--text-main) tracking-[-0.02em] leading-tight">
 				{project.name}
@@ -161,22 +149,6 @@
 					{project.description}
 				</p>
 			{/if}
-
-			<!-- Creator and Hosted Date -->
-			<div class="flex items-center flex-wrap gap-4 pt-1 text-xs text-(--text-muted)">
-				{#if project.owner}
-					<a href="/people/{project.owner.username}" class="flex items-center gap-1.5 font-medium text-(--text-main) hover:underline">
-						<User size={14} />
-						<span>by {project.owner.display_name}</span>
-					</a>
-					<span class="opacity-40">·</span>
-				{/if}
-
-				<span class="flex items-center gap-1.5">
-					<Calendar size={14} />
-					<span>Hosted since {formatDate(project.published_at || project.created_at)}</span>
-				</span>
-			</div>
 
 			<!-- Header Actions (Restrained) -->
 			<div class="flex items-center gap-2.5 pt-3 flex-wrap">
@@ -247,29 +219,104 @@
 			</div>
 		</header>
 
-		<!-- Large Visual Cover Area (16:9 Ratio) -->
-		<div class="w-full aspect-[16/9] max-h-[480px] rounded-md overflow-hidden border border-(--border-hairline) bg-(--bg-muted) shadow-xs my-8 flex">
-			<ProjectCover
-				src={project.cover_image_url}
-				alt={project.name}
-				name={project.name}
-				aspectRatio="16/9"
-				class="w-full h-full !rounded-none !border-none"
-			/>
-		</div>
-
-		<!-- Main Content Grid (Directly below cover photo) -->
-		<div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-			<!-- Main Column (Left, 8 cols) -->
+		<!-- Desktop Side-by-Side Composition (Cover & Tabs on Left, Sticky Context Column on Right) -->
+		<div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start mt-8">
+			<!-- Left Column: 16:9 Cover + Main Tabs (Overview | Comments | Activity) -->
 			<div class="lg:col-span-8 flex flex-col gap-8">
-				<!-- Community Discussion & Activity (Tabs) -->
-				<section class="flex flex-col gap-6">
+				<!-- Project Cover Artwork (16:9 Ratio) -->
+				<div class="w-full aspect-[16/9] max-h-[460px] rounded-md overflow-hidden border border-(--border-hairline) bg-(--bg-muted) shadow-xs flex">
+					<ProjectCover
+						src={project.cover_image_url}
+						alt={project.name}
+						name={project.name}
+						aspectRatio="16/9"
+						class="w-full h-full !rounded-none !border-none"
+					/>
+				</div>
+
+				<!-- Main Tabs Container -->
+				<div class="flex flex-col gap-6">
 					<Tabs tabs={tabsList} bind:active={activeTab} />
 
-					{#if activeTab === 'comments'}
+					<!-- TAB 1: OVERVIEW -->
+					{#if activeTab === 'overview'}
+						<div class="flex flex-col gap-8">
+							<!-- 1. About -->
+							{#if project.description}
+								<section class="flex flex-col gap-2.5">
+									<h2 class="font-sans font-medium text-sm text-(--text-main)">
+										About
+									</h2>
+									<p class="text-xs sm:text-sm text-(--text-secondary) leading-relaxed">
+										{project.description}
+									</p>
+								</section>
+							{/if}
+
+							<!-- 2. README / Documentation -->
+							{#if project.readme}
+								<section class="flex flex-col gap-2.5">
+									<MarkdownView content={project.readme} title="README.md" bordered={true} />
+								</section>
+							{/if}
+
+							<!-- 3. Built With -->
+							{#if project.technology_stack && project.technology_stack.length > 0}
+								<section class="flex flex-col gap-2.5">
+									<h2 class="font-sans font-medium text-sm text-(--text-main)">
+										Built with
+									</h2>
+									<p class="text-xs text-(--text-secondary) font-mono leading-relaxed">
+										{project.technology_stack.join(' · ')}
+									</p>
+								</section>
+							{/if}
+
+							<!-- 4. Relevant Project Information -->
+							<section class="flex flex-col gap-3 pt-4 border-t border-(--border-hairline)">
+								<h2 class="font-sans font-medium text-sm text-(--text-main)">
+									Project information
+								</h2>
+								<dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2.5 text-xs">
+									<div class="flex items-baseline justify-between gap-4 py-1 border-b border-(--border-hairline)/50">
+										<dt class="text-(--text-muted)">Published</dt>
+										<dd class="text-(--text-main) font-medium">{formatDate(project.published_at || project.created_at)}</dd>
+									</div>
+									<div class="flex items-baseline justify-between gap-4 py-1 border-b border-(--border-hairline)/50">
+										<dt class="text-(--text-muted)">Hosted since</dt>
+										<dd class="text-(--text-main) font-medium">{formatDate(project.created_at)}</dd>
+									</div>
+									<div class="flex items-baseline justify-between gap-4 py-1 border-b border-(--border-hairline)/50">
+										<dt class="text-(--text-muted)">Public URL</dt>
+										<dd class="text-(--text-main) font-mono truncate max-w-[180px]">
+											{#if project.public_url}
+												<a href="/go/{project.slug}" target="_blank" class="text-(--accent-sky) hover:underline">{project.public_url}</a>
+											{:else}
+												<span class="text-(--text-muted)">—</span>
+											{/if}
+										</dd>
+									</div>
+									{#if project.repository_url}
+										<div class="flex items-baseline justify-between gap-4 py-1 border-b border-(--border-hairline)/50">
+											<dt class="text-(--text-muted)">Repository</dt>
+											<dd class="text-(--text-main) font-mono truncate max-w-[180px]">
+												<a href={project.repository_url} target="_blank" rel="noopener noreferrer" class="hover:underline text-(--accent-sky)">
+													{project.repository_url.replace(/^https?:\/\//, '')}
+												</a>
+											</dd>
+										</div>
+									{/if}
+								</dl>
+							</section>
+						</div>
+
+					<!-- TAB 2: COMMENTS -->
+					{:else if activeTab === 'comments'}
 						<div class="flex flex-col gap-6">
 							<Comments projectSlug={project.slug} projectOwnerId={project.owner_id} bind:commentCount />
 						</div>
+
+					<!-- TAB 3: ACTIVITY -->
 					{:else if activeTab === 'activity'}
 						<div class="flex flex-col gap-6 max-w-2xl">
 							{#if activities.length === 0}
@@ -288,91 +335,111 @@
 							{/if}
 						</div>
 					{/if}
-				</section>
-
-				<!-- Built With -->
-				{#if project.technology_stack && project.technology_stack.length > 0}
-					<section class="flex flex-col gap-2.5 pt-6 border-t border-(--border-hairline)">
-						<h2 class="font-sans font-medium text-sm text-(--text-main)">
-							Built with
-						</h2>
-						<p class="text-xs text-(--text-secondary) font-mono leading-relaxed">
-							{project.technology_stack.join(' · ')}
-						</p>
-					</section>
-				{/if}
-
-				<!-- Project README / Documentation (Framed with marker border & README.md header) -->
-				{#if project.readme}
-					<section class={project.technology_stack && project.technology_stack.length > 0 ? '' : 'pt-6 border-t border-(--border-hairline)'}>
-						<MarkdownView content={project.readme} title="README.md" bordered={true} />
-					</section>
-				{/if}
+				</div>
 			</div>
 
-			<!-- Sidebar Column (Right, 4 cols) -->
-			<aside class="lg:col-span-4 flex flex-col gap-8">
-				<!-- Availability Probe -->
-				<ProjectAvailability {availability} status={project.status} />
+			<!-- Right Column: Sticky Project Context Column (Desktop lg+) -->
+			<aside class="lg:col-span-4 lg:sticky lg:top-24 self-start flex flex-col gap-6 pt-2 lg:pt-0">
+				<!-- Availability & Health -->
+				<div class="flex flex-col gap-3">
+					<div class="flex items-center justify-between">
+						<span class="text-xs font-semibold text-(--text-main)">Availability</span>
+						<div class="flex items-center gap-1.5 text-xs">
+							<StatusDot status={projectStatus.dotStatus} showLabel={false} />
+							<span class="font-medium {projectStatus.colorClass}">
+								{projectStatus.label}
+							</span>
+						</div>
+					</div>
 
-				<!-- Connected Links -->
-				<div class="flex flex-col gap-3 text-xs">
-					<h3 class="font-medium text-xs text-(--text-main)">Links</h3>
-					<div class="flex flex-col gap-2">
-						{#if project.public_url}
-							{@const pubInfo = detectLinkInfo(project.public_url, 'Website')}
-							<a
-								href="/go/{project.slug}"
-								target="_blank"
-								rel="noopener noreferrer"
-								class="text-(--accent-sky) hover:underline inline-flex items-center justify-between py-1"
-							>
-								<span class="flex items-center gap-2 truncate">
-									<svelte:component this={pubInfo.icon} size={13} />
-									<span class="truncate font-mono">{project.public_url}</span>
+					{#if availability?.uptime_percent != null || availability?.latest_response_time_ms || availability?.last_checked_at}
+						<div class="flex items-center gap-2 text-xs text-(--text-muted) flex-wrap">
+							{#if availability?.uptime_percent != null}
+								<span class="font-mono">{availability.uptime_percent.toFixed(1)}% uptime</span>
+							{/if}
+							{#if availability?.latest_response_time_ms}
+								<span class="opacity-40">·</span>
+								<span class="font-mono font-medium {getPingColorClass(availability.latest_response_time_ms)}">
+									{availability.latest_response_time_ms} ms
 								</span>
-								<ArrowUpRight size={12} class="shrink-0 ml-1" />
-							</a>
-						{/if}
+							{/if}
+							{#if availability?.last_checked_at}
+								<span class="opacity-40">·</span>
+								<span>Checked {formatRelativeTime(availability.last_checked_at)}</span>
+							{/if}
+						</div>
+					{/if}
 
-						{#if project.repository_url}
-							{@const repoInfo = detectLinkInfo(project.repository_url, 'Source code')}
-							<a
-								href={project.repository_url}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="text-(--text-secondary) hover:text-(--text-main) inline-flex items-center justify-between py-1 transition-colors"
-							>
-								<span class="flex items-center gap-2">
-									<svelte:component this={repoInfo.icon} size={13} />
-									<span>{repoInfo.label}</span>
-								</span>
-								<ArrowUpRight size={12} />
-							</a>
-						{/if}
-
-						{#if project.documentation_url}
-							{@const docInfo = detectLinkInfo(project.documentation_url, 'Documentation')}
-							<a
-								href={project.documentation_url}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="text-(--text-secondary) hover:text-(--text-main) inline-flex items-center justify-between py-1 transition-colors"
-							>
-								<span class="flex items-center gap-2">
-									<svelte:component this={docInfo.icon} size={13} />
-									<span>{docInfo.label}</span>
-								</span>
-								<ArrowUpRight size={12} />
-							</a>
-						{/if}
+					<!-- Multi-Range Bar Sequence -->
+					<div class="pt-1">
+						<UptimeHistory {availability} status={project.status} variant="compact" showRangeSelector={true} />
 					</div>
 				</div>
 
-				<!-- Creator Snippet -->
+				<!-- Connected Links (External/Companion resources only) -->
+				{#if project.repository_url || project.documentation_url || project.demo_url}
+					<div class="h-px bg-(--border-hairline)"></div>
+
+					<div class="flex flex-col gap-3">
+						<h3 class="font-semibold text-xs text-(--text-main)">Links</h3>
+						<div class="flex flex-col gap-2 text-xs">
+							{#if project.repository_url}
+								{@const repoInfo = detectLinkInfo(project.repository_url, 'Source code')}
+								<a
+									href={project.repository_url}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="text-(--text-secondary) hover:text-(--text-main) inline-flex items-center justify-between py-1 transition-colors"
+								>
+									<span class="flex items-center gap-2">
+										<svelte:component this={repoInfo.icon} size={14} />
+										<span>{repoInfo.label}</span>
+									</span>
+									<ArrowUpRight size={13} />
+								</a>
+							{/if}
+
+							{#if project.documentation_url}
+								{@const docInfo = detectLinkInfo(project.documentation_url, 'Documentation')}
+								<a
+									href={project.documentation_url}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="text-(--text-secondary) hover:text-(--text-main) inline-flex items-center justify-between py-1 transition-colors"
+								>
+									<span class="flex items-center gap-2">
+										<svelte:component this={docInfo.icon} size={14} />
+										<span>{docInfo.label}</span>
+									</span>
+									<ArrowUpRight size={13} />
+								</a>
+							{/if}
+
+							{#if project.demo_url && project.demo_url !== project.public_url}
+								{@const demoInfo = detectLinkInfo(project.demo_url, 'Live demo')}
+								<a
+									href={project.demo_url}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="text-(--text-secondary) hover:text-(--text-main) inline-flex items-center justify-between py-1 transition-colors"
+								>
+									<span class="flex items-center gap-2">
+										<svelte:component this={demoInfo.icon} size={14} />
+										<span>{demoInfo.label}</span>
+									</span>
+									<ArrowUpRight size={13} />
+								</a>
+							{/if}
+						</div>
+					</div>
+				{/if}
+
 				{#if project.owner}
-					<div class="flex flex-col gap-3 pt-6 border-t border-(--border-hairline) text-xs">
-						<h3 class="font-medium text-xs text-(--text-main)">Creator</h3>
+					<div class="h-px bg-(--border-hairline)"></div>
+
+					<!-- Creator Section -->
+					<div class="flex flex-col gap-3">
+						<h3 class="font-semibold text-xs text-(--text-main)">Creator</h3>
 						<div class="flex items-center gap-3">
 							{#if project.owner.avatar_url}
 								<img src={project.owner.avatar_url} alt={project.owner.display_name} class="w-9 h-9 rounded-full object-cover border border-(--border-hairline)" />
@@ -381,11 +448,11 @@
 									{project.owner.display_name?.charAt(0) || 'U'}
 								</div>
 							{/if}
-							<div class="flex flex-col">
+							<div class="flex flex-col text-xs">
 								<a href="/people/{project.owner.username}" class="font-medium text-(--text-main) hover:underline">
 									{project.owner.display_name}
 								</a>
-								<span class="text-xs text-(--text-muted)">@{project.owner.username}</span>
+								<span class="text-(--text-muted)">@{project.owner.username}</span>
 							</div>
 						</div>
 						{#if project.owner.bio}
@@ -395,6 +462,14 @@
 						{/if}
 					</div>
 				{/if}
+
+				<div class="h-px bg-(--border-hairline)"></div>
+
+				<!-- Hosted Since -->
+				<div class="flex items-center justify-between text-xs text-(--text-muted)">
+					<span>Hosted since</span>
+					<span class="text-(--text-main) font-mono">{formatDate(project.published_at || project.created_at)}</span>
+				</div>
 			</aside>
 		</div>
 

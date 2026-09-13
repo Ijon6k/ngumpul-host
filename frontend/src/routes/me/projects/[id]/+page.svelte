@@ -7,7 +7,7 @@
 	import StatusDot from '$lib/components/StatusDot.svelte';
 	import ProjectCover from '$lib/components/ui/ProjectCover.svelte';
 	import ProjectAvailability from '$lib/components/ProjectAvailability.svelte';
-	import { Tabs, Timeline, TimelineItem, Breadcrumb, BreadcrumbItem, BreadcrumbDropdown, MarkdownView } from '$lib/components/ui';
+	import { Tabs, Timeline, TimelineItem, Breadcrumb, BreadcrumbItem, BreadcrumbDropdown, MarkdownView, UptimeHistory } from '$lib/components/ui';
 	import {
 		ArrowUpRight,
 		UploadSimple,
@@ -17,9 +17,14 @@
 		X
 	} from 'phosphor-svelte';
 	import { detectLinkInfo } from '$lib/utils/linkDetector';
+	import { getPingColorClass } from '$lib/utils/format';
+	import { resolveProjectStatus } from '$lib/utils/projectStatus';
+	import { compressImageToWebP } from '$lib/utils/imageCompressor';
+	import { domainSuffix } from '$lib/stores/node';
 
-	let projectId = $page.params.id || '';
+	let projectId = '';
 	let project: any = null;
+	$: projectStatus = resolveProjectStatus(project);
 	let availability: any = null;
 	let activities: any[] = [];
 	let allProjects: Array<{ id: string; label: string }> = [];
@@ -32,6 +37,12 @@
 	let loading = true;
 	let error: string | null = null;
 	let activeTab = 'overview';
+
+	// Reactive route parameter watcher to support breadcrumb project switching
+	$: if ($page.params.id && $page.params.id !== projectId) {
+		projectId = $page.params.id;
+		loadProjectData();
+	}
 
 	// Settings Form State
 	let formName = '';
@@ -69,7 +80,6 @@
 	];
 
 	onMount(async () => {
-		await loadProjectData();
 		// Load all user projects for the breadcrumb switcher
 		try {
 			const res = await projectsApi.getMyProjects();
@@ -122,7 +132,13 @@
 		uploadingCover = true;
 		saveError = null;
 		try {
-			const url = await projectsApi.uploadCover(file);
+			// Client-side WebP compression (1600x1200 max, 0.82 quality)
+			const result = await compressImageToWebP(file, {
+				maxWidth: 1600,
+				maxHeight: 1200,
+				quality: 0.82
+			});
+			const url = await projectsApi.uploadCover(result.file);
 			if (url) {
 				formCover = url;
 			}
@@ -338,7 +354,7 @@
 					<h1 class="font-sans font-normal text-2xl sm:text-3xl text-(--text-main) tracking-tight">
 						{project.name}
 					</h1>
-					<StatusDot status={project.status} />
+					<StatusDot status={projectStatus.dotStatus} />
 				</div>
 
 				<p class="text-xs sm:text-sm text-(--text-secondary) leading-relaxed font-normal">
@@ -370,6 +386,14 @@
 			</div>
 		</header>
 
+		{#if projectStatus.key === 'suspended'}
+			<div class="mb-6 p-4 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs flex items-center justify-between">
+				<div>
+					<strong>Administrative Notice:</strong> This project has been placed under administrative suspension by the host operator.
+				</div>
+			</div>
+		{/if}
+
 		<!-- Minimal Typographic Tabs -->
 		<div class="mb-8">
 			<Tabs tabs={tabsList} bind:active={activeTab} />
@@ -388,15 +412,26 @@
 				<!-- Health & Availability -->
 				<section class="flex flex-col gap-3 pt-0">
 					<h2 class="text-sm font-medium text-(--text-main) tracking-tight">Project health</h2>
-					<div class="flex items-center gap-4 text-xs text-(--text-muted) flex-wrap">
-						<StatusDot status={project.status} />
+					<div class="flex items-center gap-3 text-xs text-(--text-muted) flex-wrap">
+						<StatusDot status={projectStatus.dotStatus} showLabel={false} />
+						<span class="font-medium {projectStatus.colorClass}">
+							{projectStatus.label}
+						</span>
+						{#if project.availability_reason && (projectStatus.key === 'unreachable' || project.availability === 'UNREACHABLE')}
+							<span class="px-2 py-0.5 rounded-sm bg-rose-500/10 text-rose-600 dark:text-rose-400 font-mono text-xs">
+								{project.availability_reason}
+							</span>
+						{/if}
 						{#if availability?.uptime_percent != null}
 							<span>·</span>
 							<span class="font-mono">{availability.uptime_percent.toFixed(1)}% uptime</span>
 						{/if}
 						{#if availability?.latest_response_time_ms}
 							<span>·</span>
-							<span class="font-mono">{availability.latest_response_time_ms} ms response time</span>
+							<span class="font-mono font-medium {getPingColorClass(availability.latest_response_time_ms)}">
+								{availability.latest_response_time_ms} ms
+							</span>
+							<span>latency</span>
 						{/if}
 						{#if availability?.last_checked_at}
 							<span>·</span>
@@ -404,9 +439,9 @@
 						{/if}
 					</div>
 
-					<!-- 30-day quiet availability summary -->
-					<div class="max-w-md pt-2">
-						<ProjectAvailability {availability} status={project.status} />
+					<!-- Multi-range quiet availability bar history -->
+					<div class="max-w-xl pt-2">
+						<UptimeHistory {availability} status={project.status} variant="detailed" showRangeSelector={true} />
 					</div>
 				</section>
 
@@ -879,7 +914,7 @@
 								class="grow text-xs px-3 py-2 bg-transparent text-(--text-main) font-mono outline-none"
 							/>
 							<span class="text-xs text-(--text-muted) font-mono px-3 py-2 bg-(--bg-muted)/60 border-l border-(--border-hairline) select-none">
-								.ngumpul.local
+								{$domainSuffix}
 							</span>
 						</div>
 

@@ -3,6 +3,15 @@
 	import { adminApi, hostingRequestsApi, extractError } from '$lib/api';
 	import type { HostingRequest } from '$lib/types/hosting';
 	import { Table, TableRow, TableCell, type TableColumn } from '$lib/components/ui';
+	import {
+		Globe,
+		CloudArrowUp,
+		Clock,
+		Gear,
+		CheckCircle,
+		XCircle
+	} from 'phosphor-svelte';
+	import { domainSuffix } from '$lib/stores/node';
 
 	let requests: HostingRequest[] = [];
 	let loading = true;
@@ -67,7 +76,7 @@
 
 	function handleSubdomainInput() {
 		adminSubdomain = adminSubdomain.toLowerCase().replace(/[^a-z0-9-]/g, '');
-		publicURL = `https://${adminSubdomain || 'app'}.ngumpul.local`;
+		publicURL = `https://${adminSubdomain || 'app'}${$domainSuffix}`;
 		if (!adminSubdomain) {
 			subdomainStatus = 'idle';
 			subdomainMessage = '';
@@ -100,7 +109,7 @@
 		actionType = type;
 		adminNotes = '';
 		adminSubdomain = req.subdomain || req.project_name.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-+|-+$/g, '');
-		publicURL = req.public_url || `https://${adminSubdomain || 'app'}.ngumpul.local`;
+		publicURL = req.public_url || `https://${adminSubdomain || 'app'}${$domainSuffix}`;
 		subdomainStatus = 'idle';
 		subdomainMessage = '';
 		error = null;
@@ -227,14 +236,20 @@
 				<div class="flex items-center gap-2 flex-wrap">
 					<span class="font-semibold text-sm sm:text-base text-(--text-main)">{req.project_name}</span>
 					{#if req.request_type === 'SUBDOMAIN_CHANGE'}
-						<span class="text-xs px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 font-medium">
-							Subdomain Change
+						<span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-[4px] bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20 font-medium">
+							<Globe size={12} weight="bold" />
+							<span>Subdomain change</span>
+						</span>
+					{:else}
+						<span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-[4px] bg-(--bg-muted) text-(--text-secondary) border border-(--border-hairline) font-medium">
+							<CloudArrowUp size={12} weight="bold" />
+							<span>New hosting</span>
 						</span>
 					{/if}
 				</div>
 				{#if req.subdomain}
 					<div class="text-xs font-mono text-(--accent-strong) mt-0.5">
-						https://{req.subdomain}.ngumpul.local
+						https://{req.subdomain}{$domainSuffix}
 					</div>
 				{/if}
 				{#if req.description}
@@ -257,24 +272,24 @@
 			</TableCell>
 			<TableCell alignTop>
 				{#if req.status === 'PENDING'}
-					<span class="inline-flex items-center gap-1.5 text-xs font-mono font-medium px-2.5 py-1 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-						<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-						PENDING
+					<span class="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-[4px] bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+						<Clock size={12} weight="bold" />
+						<span>Pending</span>
 					</span>
 				{:else if req.status === 'APPROVED' || req.status === 'SETUP'}
-					<span class="inline-flex items-center gap-1.5 text-xs font-mono font-medium px-2.5 py-1 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-						<span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-						{req.status}
+					<span class="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-[4px] bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/20">
+						<Gear size={12} weight="bold" />
+						<span>In setup</span>
 					</span>
 				{:else if req.status === 'COMPLETED'}
-					<span class="inline-flex items-center gap-1.5 text-xs font-mono font-medium px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-						<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-						PUBLISHED
+					<span class="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-[4px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+						<CheckCircle size={12} weight="bold" />
+						<span>Published</span>
 					</span>
 				{:else}
-					<span class="inline-flex items-center gap-1.5 text-xs font-mono font-medium px-2.5 py-1 rounded bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
-						<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-						REJECTED
+					<span class="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-[4px] bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20">
+						<XCircle size={12} weight="bold" />
+						<span>Declined</span>
 					</span>
 				{/if}
 			</TableCell>
@@ -282,34 +297,39 @@
 				{req.created_at ? new Date(req.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
 			</TableCell>
 			<TableCell alignTop align="right" class="whitespace-nowrap">
-				{#if req.status === 'PENDING'}
-					<div class="flex items-center justify-end gap-1.5">
+				<div class="flex items-center justify-end gap-1.5">
+					<a
+						href="/admin/requests/{req.id}"
+						class="btn btn-secondary btn-sm text-xs py-1 px-2.5 font-mono"
+					>
+						Review
+					</a>
+
+					{#if req.status === 'PENDING'}
 						<button
 							type="button"
-							class="btn btn-primary btn-sm text-xs py-1 px-2.5 font-mono"
+							class="btn btn-primary btn-sm text-xs py-1 px-2 font-mono"
 							on:click={() => openModal(req, 'approve')}
 						>
 							Approve
 						</button>
 						<button
 							type="button"
-							class="btn btn-secondary btn-sm text-xs py-1 px-2.5 font-mono text-(--color-danger)"
+							class="btn btn-secondary btn-sm text-xs py-1 px-2 font-mono text-(--color-danger)"
 							on:click={() => openModal(req, 'reject')}
 						>
 							Reject
 						</button>
-					</div>
-				{:else if req.status === 'APPROVED' || req.status === 'SETUP'}
-					<button
-						type="button"
-						class="btn btn-primary btn-sm text-xs py-1 px-2.5 font-mono"
-						on:click={() => openModal(req, 'complete')}
-					>
-						Publish URL ➔
-					</button>
-				{:else}
-					<span class="text-xs font-mono text-(--text-muted)">Closed</span>
-				{/if}
+					{:else if req.status === 'APPROVED' || req.status === 'SETUP'}
+						<button
+							type="button"
+							class="btn btn-primary btn-sm text-xs py-1 px-2 font-mono"
+							on:click={() => openModal(req, 'complete')}
+						>
+							Publish
+						</button>
+					{/if}
+				</div>
 			</TableCell>
 		</TableRow>
 	</Table>
@@ -350,7 +370,7 @@
 								placeholder="subdomain"
 							/>
 							<div class="px-3 py-2 bg-(--bg-surface) border-l border-(--border-hairline) text-sm font-mono text-(--text-muted) flex items-center select-none">
-								.ngumpul.local
+								{$domainSuffix}
 							</div>
 						</div>
 						{#if subdomainChecking}
@@ -363,7 +383,7 @@
 							<span class="text-xs text-red-500 font-medium">{subdomainMessage}</span>
 						{/if}
 						<span class="text-xs text-(--text-muted)">
-							Target domain: <span class="font-mono text-(--text-main)">https://{adminSubdomain || 'app'}.ngumpul.local</span>
+							Target domain: <span class="font-mono text-(--text-main)">https://{adminSubdomain || 'app'}{$domainSuffix}</span>
 						</span>
 					</div>
 

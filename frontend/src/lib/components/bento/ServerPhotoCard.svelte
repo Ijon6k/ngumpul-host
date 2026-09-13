@@ -29,7 +29,7 @@
 		</div>
 
 		<span class="text-xs text-neutral-400 font-normal">
-			Bare metal
+			Host node
 		</span>
 	</div>
 

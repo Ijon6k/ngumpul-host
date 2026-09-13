@@ -3,20 +3,29 @@
 	import { activityApi } from '$lib/api';
 	import type { ActivityEvent } from '$lib/types/activity';
 	import ActivityTimeline from '$lib/components/ActivityTimeline.svelte';
+	import { Pagination } from '$lib/components/ui';
 
 	let activities: ActivityEvent[] = [];
 	let loading = true;
+	let currentPage = 1;
+	const pageSize = 20;
+	let totalActivities = 0;
 
-	onMount(async () => {
+	async function loadActivities(page: number) {
+		loading = true;
 		try {
-			const res = await activityApi.getPublicActivity();
+			const res = await activityApi.getPublicActivity(page, pageSize);
 			activities = res.activities || [];
+			totalActivities = res.total ?? activities.length;
+			currentPage = page;
 		} catch (err) {
 			console.error('Failed to load activity:', err);
 		} finally {
 			loading = false;
 		}
-	});
+	}
+
+	onMount(() => loadActivities(1));
 </script>
 
 <svelte:head>
@@ -37,8 +46,14 @@
 			<p>Retrieving activity feed...</p>
 		</div>
 	{:else}
-		<div class="p-8 sm:p-10 bg-(--bg-surface) border border-(--border-hairline) rounded-md">
+		<div class="p-8 sm:p-10 bg-(--bg-surface) border border-(--border-hairline) rounded-md flex flex-col gap-6">
 			<ActivityTimeline {activities} />
+			<Pagination
+				{currentPage}
+				totalItems={totalActivities}
+				{pageSize}
+				onPageChange={loadActivities}
+			/>
 		</div>
 	{/if}
 </div>

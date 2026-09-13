@@ -63,7 +63,7 @@ func (s *Service) Initialize(ctx context.Context, uptimeSec int64) error {
 		_, err = s.pool.Exec(ctx, `
 			INSERT INTO availability_state (id, boot_id, started_at, last_seen_at, first_monitored_at, heartbeat_count, current_status)
 			VALUES (1, $1, $2, $3, $4, 1, 'OPERATIONAL')
-		`, bootID, bootTime, now, bootTime)
+		`, bootID, bootTime, now, now)
 		if err != nil {
 			return fmt.Errorf("failed to initialize availability_state: %w", err)
 		}

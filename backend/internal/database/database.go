@@ -55,11 +55,6 @@ func ConnectAndMigrate(ctx context.Context, cfg *config.Config) (*pgxpool.Pool, 
 
 	log.Println("Database migrations applied successfully.")
 
-	if cfg.BootstrapAdmin {
-		if err := SeedInitialData(ctx, pool, cfg); err != nil {
-			log.Printf("Warning: failed to seed initial data: %v", err)
-		}
-	}
 
 	return pool, nil
 }

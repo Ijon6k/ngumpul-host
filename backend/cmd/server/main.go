@@ -27,6 +27,7 @@ import (
 	"ngumpul-host/backend/internal/notification"
 	"ngumpul-host/backend/internal/project"
 	"ngumpul-host/backend/internal/report"
+	"ngumpul-host/backend/internal/setup"
 	"ngumpul-host/backend/internal/storage"
 	"ngumpul-host/backend/internal/system"
 	"ngumpul-host/backend/internal/user"
@@ -53,6 +54,9 @@ func main() {
 
 	sessionManager := auth.NewSessionManager(pool)
 	authHandler := auth.NewHandler(pool, sessionManager, cfg, accessService)
+
+	setupService := setup.NewService(pool, sessionManager, cfg)
+	setupHandler := setup.NewHandler(setupService, cfg)
 
 	storageService, err := storage.NewService(cfg, pool)
 	if err != nil {
@@ -124,6 +128,8 @@ func main() {
 	apiRouter.Get("/health", healthHandler)
 
 	// Public Auth & Access
+	apiRouter.Get("/setup/status", setupHandler.GetStatus)
+	apiRouter.Post("/setup", setupHandler.Setup)
 	apiRouter.Get("/auth/mode", accessHandler.GetRegistrationMode)
 	apiRouter.Get("/invitations/validate", accessHandler.ValidateInvitation)
 	apiRouter.Post("/auth/register", authHandler.Register)
@@ -197,7 +203,12 @@ func main() {
 		// Project administration
 		adminRouter.Get("/admin/projects", projectHandler.AdminList)
 		adminRouter.Post("/admin/projects", projectHandler.AdminCreate)
+		adminRouter.Get("/admin/projects/{id}", projectHandler.AdminGetProject)
 		adminRouter.Patch("/admin/projects/{id}", projectHandler.AdminUpdate)
+		adminRouter.Post("/admin/projects/{id}/suspend", projectHandler.AdminSuspend)
+		adminRouter.Post("/admin/projects/{id}/restore", projectHandler.AdminRestore)
+		adminRouter.Post("/admin/projects/{id}/archive", projectHandler.AdminArchive)
+		adminRouter.Post("/admin/projects/{id}/activate", projectHandler.AdminActivate)
 
 		// Moderation: Comments & Reports
 		adminRouter.Get("/admin/comments", commentHandler.AdminList)
@@ -208,6 +219,7 @@ func main() {
 
 		// Hosting requests review
 		adminRouter.Get("/admin/hosting-requests", hostingHandler.AdminListRequests)
+		adminRouter.Get("/admin/hosting-requests/{id}", hostingHandler.AdminGetRequest)
 		adminRouter.Post("/admin/hosting-requests/{id}/approve", hostingHandler.AdminApprove)
 		adminRouter.Post("/admin/hosting-requests/{id}/reject", hostingHandler.AdminReject)
 		adminRouter.Post("/admin/hosting-requests/{id}/complete", hostingHandler.AdminComplete)

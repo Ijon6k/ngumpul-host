@@ -23,8 +23,9 @@
 	import {
 		adminPendingCount,
 		adminOpenReportsCount,
-		refreshAdminStats
-	} from '$lib/stores/adminStats';
+		refreshAdminStats,
+		adminBreadcrumb
+	} from '$lib/stores';
 	import { Breadcrumb } from '$lib/components/ui';
 
 	let theme = 'light';
@@ -50,6 +51,12 @@
 
 		await refreshAdminStats();
 	});
+
+	let prevPath = '';
+	$: if ($page.url.pathname !== prevPath) {
+		prevPath = $page.url.pathname;
+		adminBreadcrumb.set(null);
+	}
 
 	function toggleTheme() {
 		theme = theme === 'light' ? 'dark' : 'light';
@@ -398,10 +405,12 @@
 
 					<!-- Breadcrumb Navigation -->
 					<Breadcrumb
-						items={[
-							{ label: 'Console', href: '/admin' },
-							{ label: getPageTitle($page.url.pathname) }
-						]}
+						items={$adminBreadcrumb && $adminBreadcrumb.length > 0
+							? [{ label: 'Console', href: '/admin' }, ...$adminBreadcrumb]
+							: [
+									{ label: 'Console', href: '/admin' },
+									{ label: getPageTitle($page.url.pathname) }
+							  ]}
 					/>
 				</div>
 

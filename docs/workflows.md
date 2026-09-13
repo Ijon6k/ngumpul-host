@@ -28,9 +28,10 @@ sequenceDiagram
     API-->>Web: Sets HTTP-only 'ngumpul_session' cookie & returns user profile
     Web-->>Member: Redirect to /me (Workspace)
 
-    Member->>Web: Fill Hosting Request Form (/me/requests)
-    Web->>API: POST /api/hosting-requests (project_name, repo_url, tech_stack, notes)
-    API->>DB: INSERT INTO hosting_requests (requester_id, status='PENDING')
+    Member->>Web: Fill Hosting Request Form (/me/requests) with optional 16:9 Cover Photo
+    Web->>API: POST /api/upload (WebP compressed cover) -> Returns cover URL
+    Web->>API: POST /api/hosting-requests (project_name, subdomain, cover_image_url, repo_url, tech_stack, notes)
+    API->>DB: INSERT INTO hosting_requests (requester_id, cover_image_url, status='PENDING')
     API->>DB: INSERT INTO activities (type='REQUEST_SUBMITTED')
     API-->>Web: HTTP 201 Created
     Web-->>Member: Request displayed with 'PENDING' status badge
@@ -39,7 +40,7 @@ sequenceDiagram
     Web->>API: GET /api/admin/hosting-requests
     API->>DB: SELECT * FROM hosting_requests WHERE status='PENDING'
     API-->>Web: Return pending requests
-    Web-->>Operator: Display request with repository and tech stack
+    Web-->>Operator: Display request with 16:9 cover photo, repository, and tech stack
 ```
 
 ---
@@ -69,7 +70,7 @@ sequenceDiagram
 
     Operator->>Web: Click "Complete Deployment" (/admin/requests)
     Web->>API: POST /api/admin/hosting-requests/{id}/complete (public_url)
-    API->>DB: UPDATE projects SET status='ONLINE', visibility='PUBLIC', public_url='https://myapp.ngumpul.id'
+    API->>DB: UPDATE projects SET status='ONLINE', lifecycle_status='ACTIVE', visibility='PUBLIC', public_url='https://myapp.ngumpul.id', cover_image_url=req.cover_image_url
     API->>DB: UPDATE hosting_requests SET status='COMPLETED'
     API->>DB: INSERT INTO activities (type='PROJECT_PUBLISHED')
     API->>DB: INSERT INTO notifications (user_id=Member, title="Project Live!")

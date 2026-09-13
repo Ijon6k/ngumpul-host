@@ -3,6 +3,7 @@
 	import { adminApi, extractError } from '$lib/api';
 	import type { Project } from '$lib/types/project';
 	import StatusDot from '$lib/components/StatusDot.svelte';
+	import { resolveProjectStatus } from '$lib/utils/projectStatus';
 	import { Table, TableRow, TableCell, type TableColumn } from '$lib/components/ui';
 
 	let projects: Project[] = [];
@@ -10,14 +11,14 @@
 	let error: string | null = null;
 	let success: string | null = null;
 	let searchQuery = '';
-	let statusFilter = 'ALL';
+	let lifecycleFilter = 'ALL';
 
 	const columns: TableColumn[] = [
 		{ key: 'project', label: 'Project / Slug' },
 		{ key: 'owner', label: 'Owner' },
-		{ key: 'endpoint', label: 'Public Endpoint' },
+		{ key: 'lifecycle', label: 'Lifecycle' },
 		{ key: 'visibility', label: 'Visibility' },
-		{ key: 'status', label: 'Status' },
+		{ key: 'availability', label: 'Operational Status' },
 		{ key: 'actions', label: 'Actions', align: 'right' }
 	];
 
@@ -35,20 +36,6 @@
 
 	onMount(loadProjects);
 
-	async function updateProjectStatus(projId: string, newStatus: string) {
-		error = null;
-		success = null;
-		try {
-			await adminApi.projects.updateProject(projId, {
-				status: newStatus
-			});
-			success = 'Project status successfully updated.';
-			await loadProjects();
-		} catch (err) {
-			error = extractError(err);
-		}
-	}
-
 	async function toggleVisibility(projId: string, currentVis: string) {
 		error = null;
 		success = null;
@@ -65,7 +52,11 @@
 	}
 
 	$: filteredProjects = projects.filter((p) => {
-		const matchesStatus = statusFilter === 'ALL' || p.status === statusFilter;
+		const matchesLifecycle =
+			lifecycleFilter === 'ALL' ||
+			(p.lifecycle_status || '').toUpperCase() === lifecycleFilter ||
+			(lifecycleFilter === 'ACTIVE' && (!p.lifecycle_status || p.lifecycle_status === 'ACTIVE'));
+
 		const q = searchQuery.toLowerCase();
 		const matchesSearch =
 			!searchQuery ||
@@ -74,7 +65,7 @@
 			p.owner?.display_name?.toLowerCase().includes(q) ||
 			p.owner?.username?.toLowerCase().includes(q) ||
 			p.public_url?.toLowerCase().includes(q);
-		return matchesStatus && matchesSearch;
+		return matchesLifecycle && matchesSearch;
 	});
 </script>
 
@@ -84,12 +75,12 @@
 		<div>
 			<h1 class="font-display font-bold text-2xl text-(--text-main)">Project Management</h1>
 			<p class="text-sm text-(--text-secondary) mt-1">
-				Configure publication states, runtime status overrides, and public endpoints for community projects.
+				Operational directory of managed applications, configurations, and administrative lifecycle states.
 			</p>
 		</div>
 
 		<div class="flex items-center gap-2">
-			<button type="button" class="btn btn-secondary btn-sm font-mono text-xs sm:text-sm" on:click={loadProjects}>
+			<button type="button" class="btn btn-secondary btn-sm font-mono text-xs sm:text-sm cursor-pointer" on:click={loadProjects}>
 				Refresh
 			</button>
 		</div>
@@ -98,13 +89,13 @@
 	{#if success}
 		<div class="p-3 bg-(--accent-soft) text-(--accent-strong) border border-(--accent-sky)/30 rounded text-sm font-mono flex items-center justify-between">
 			<span>{success}</span>
-			<button type="button" on:click={() => (success = null)} class="text-(--accent-strong) font-bold">×</button>
+			<button type="button" on:click={() => (success = null)} class="text-(--accent-strong) font-bold cursor-pointer">×</button>
 		</div>
 	{/if}
 	{#if error}
 		<div class="p-3 bg-red-950/20 text-(--color-danger) border border-(--color-danger)/30 rounded text-sm font-mono flex items-center justify-between">
 			<span>{error}</span>
-			<button type="button" on:click={() => (error = null)} class="text-(--color-danger) font-bold">×</button>
+			<button type="button" on:click={() => (error = null)} class="text-(--color-danger) font-bold cursor-pointer">×</button>
 		</div>
 	{/if}
 
@@ -113,15 +104,15 @@
 		<div class="flex items-center gap-1 border border-(--border-hairline) rounded p-1 bg-(--bg-surface)">
 			{#each [
 				{ id: 'ALL', label: 'All' },
-				{ id: 'ONLINE', label: 'Online' },
+				{ id: 'ACTIVE', label: 'Active' },
+				{ id: 'SUSPENDED', label: 'Suspended' },
 				{ id: 'SETUP', label: 'Setup' },
-				{ id: 'OFFLINE', label: 'Offline' },
 				{ id: 'ARCHIVED', label: 'Archived' }
 			] as tab}
 				<button
 					type="button"
-					class="px-3 py-1.5 text-sm font-medium rounded transition-colors {statusFilter === tab.id ? 'bg-(--accent-soft) text-(--accent-strong) font-semibold' : 'text-(--text-secondary) hover:text-(--text-main)'}"
-					on:click={() => (statusFilter = tab.id)}
+					class="px-3 py-1.5 text-xs font-medium rounded transition-colors cursor-pointer {lifecycleFilter === tab.id ? 'bg-(--accent-soft) text-(--accent-strong) font-semibold' : 'text-(--text-secondary) hover:text-(--text-main)'}"
+					on:click={() => (lifecycleFilter = tab.id)}
 				>
 					{tab.label}
 				</button>
@@ -147,6 +138,7 @@
 		emptyMessage="No projects match the selected criteria."
 		let:item={proj}
 	>
+		{@const resolved = resolveProjectStatus(proj)}
 		<TableRow>
 			<TableCell>
 				<a href="/admin/projects/{proj.id}" class="font-semibold text-sm text-(--text-main) hover:text-(--accent-sky) transition-colors">
@@ -158,14 +150,14 @@
 				<span class="font-medium text-sm text-(--text-main)">{proj.owner?.display_name || 'Owner'}</span>
 				<span class="block text-xs font-mono text-(--text-muted)">@{proj.owner?.username}</span>
 			</TableCell>
-			<TableCell mono class="text-xs">
-				{#if proj.public_url}
-					<a href={proj.public_url} target="_blank" rel="noreferrer" class="text-(--accent-sky) hover:underline block truncate max-w-xs">
-						{proj.public_url} ↗
-					</a>
-				{:else}
-					<span class="text-(--text-muted)">—</span>
-				{/if}
+			<TableCell>
+				<span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-mono font-medium border
+					{proj.lifecycle_status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' :
+					 proj.lifecycle_status === 'SUSPENDED' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30' :
+					 proj.lifecycle_status === 'SETUP' ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30' :
+					 'bg-(--bg-muted) text-(--text-muted) border-(--border-hairline)'}">
+					{proj.lifecycle_status || 'ACTIVE'}
+				</span>
 			</TableCell>
 			<TableCell>
 				<button
@@ -174,31 +166,24 @@
 					on:click={() => toggleVisibility(proj.id, proj.visibility)}
 					title="Toggle visibility"
 				>
-					{proj.visibility}
+					{proj.visibility || 'PUBLIC'}
 				</button>
 			</TableCell>
 			<TableCell>
-				<StatusDot status={proj.status} />
+				<div class="flex items-center gap-2">
+					<StatusDot status={resolved.dotStatus} showLabel={false} />
+					<span class="text-xs font-medium {resolved.colorClass}">
+						{resolved.label}
+					</span>
+				</div>
 			</TableCell>
 			<TableCell align="right">
-				<div class="flex items-center justify-end gap-2">
-					<a
-						href="/admin/projects/{proj.id}"
-						class="btn btn-secondary btn-sm text-xs px-2.5 py-1"
-					>
-						Moderate
-					</a>
-					<select
-						class="px-2 py-1 text-xs font-mono bg-(--bg-surface) border border-(--border-hairline) rounded-sm text-(--text-main) outline-none focus:border-(--accent-sky)"
-						value={proj.status}
-						on:change={(e) => updateProjectStatus(proj.id, e.currentTarget.value)}
-					>
-						<option value="ONLINE">ONLINE</option>
-						<option value="SETUP">SETUP</option>
-						<option value="OFFLINE">OFFLINE</option>
-						<option value="ARCHIVED">ARCHIVED</option>
-					</select>
-				</div>
+				<a
+					href="/admin/projects/{proj.id}"
+					class="btn btn-secondary btn-sm text-xs px-3 py-1.5"
+				>
+					Manage
+				</a>
 			</TableCell>
 		</TableRow>
 	</Table>

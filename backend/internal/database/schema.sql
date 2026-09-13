@@ -303,4 +303,14 @@ ALTER TABLE hosting_requests ADD COLUMN IF NOT EXISTS request_type VARCHAR(32) N
 CREATE INDEX IF NOT EXISTS idx_hosting_requests_project_id ON hosting_requests(project_id);
 CREATE INDEX IF NOT EXISTS idx_hosting_requests_request_type ON hosting_requests(request_type);
 
+-- Project state decoupling
+ALTER TABLE projects DROP CONSTRAINT IF EXISTS projects_status_check;
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS lifecycle_status VARCHAR(32) NOT NULL DEFAULT 'ACTIVE' CHECK (lifecycle_status IN ('SETUP', 'ACTIVE', 'SUSPENDED', 'ARCHIVED'));
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS availability VARCHAR(32) NOT NULL DEFAULT 'UNKNOWN' CHECK (availability IN ('UNKNOWN', 'REACHABLE', 'UNREACHABLE'));
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS availability_reason VARCHAR(64) NOT NULL DEFAULT '';
+
+CREATE INDEX IF NOT EXISTS idx_projects_lifecycle_status ON projects(lifecycle_status);
+CREATE INDEX IF NOT EXISTS idx_projects_availability ON projects(availability);
+
+
 

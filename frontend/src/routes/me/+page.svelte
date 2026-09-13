@@ -7,6 +7,7 @@
 	import type { ActivityEvent } from '$lib/types/activity';
 	import StatusDot from '$lib/components/StatusDot.svelte';
 	import ProjectCover from '$lib/components/ui/ProjectCover.svelte';
+	import { resolveProjectStatus } from '$lib/utils/projectStatus';
 	import { Timeline, TimelineItem } from '$lib/components/ui';
 	import { Plus, ArrowRight, ArrowUpRight } from 'phosphor-svelte';
 
@@ -164,7 +165,7 @@
 									>
 										{proj.name}
 									</a>
-									<StatusDot status={proj.status} />
+									<StatusDot status={resolveProjectStatus(proj).dotStatus} />
 								</div>
 								<p class="text-xs text-(--text-secondary) truncate max-w-lg">
 									{proj.description || 'No description provided.'}

@@ -103,12 +103,8 @@
 			{:else}
 				<a
 					href="/login"
-					class="text-xs font-medium px-2.5 py-1.5 transition-colors rounded-md {isTransparent ? 'text-neutral-200 hover:text-white hover:bg-white/10' : 'text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted)'}"
-				>Sign in</a>
-				<a
-					href="/register"
 					class="btn btn-sm text-xs {isTransparent ? 'bg-white text-neutral-950 hover:bg-neutral-100' : 'btn-primary'}"
-				>Request hosting</a>
+				>Sign in</a>
 			{/if}
 		</div>
 	</div>

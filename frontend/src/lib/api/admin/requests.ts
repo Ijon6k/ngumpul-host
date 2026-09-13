@@ -5,6 +5,9 @@ export const adminRequestsApi = {
 	listRequests: (status = 'ALL') =>
 		http.get<{ requests: HostingRequest[] }>(`/admin/hosting-requests${status !== 'ALL' ? `?status=${status}` : ''}`),
 
+	getRequest: (id: string) =>
+		http.get<{ request: HostingRequest; project?: any }>(`/admin/hosting-requests/${id}`),
+
 	approveRequest: (id: string, body?: Record<string, any>) =>
 		http.post(`/admin/hosting-requests/${id}/approve`, body || {}),
 

@@ -30,6 +30,7 @@
    - [MarkdownView](#markdownview)
 3. [Status & Telemetry Components (`$lib/components/status/`)](#3-status--telemetry-components-libcomponentsstatus)
    - [StatusDot](#statusdot)
+   - [UptimeHistory](#uptimehistory)
    - [AvailabilityGrid](#availabilitygrid)
    - [StatusOverviewCard](#statusoverviewcard)
    - [ServiceHealthCard & ServiceStatusRow](#servicehealthcard--servicestatusrow)
@@ -351,7 +352,7 @@ Renders visual project artwork **full-bleed** with 4:3, 16:9, or flexible contai
 
 ### `Pagination`
 
-Tabular page navigation control with automated page window calculation and Phosphor icon buttons.
+Tabular page navigation control with automated page window calculation, Previous/Next labeled buttons, and Phosphor icon controls.
 
 #### Props
 | Prop | Type | Default | Description |
@@ -360,6 +361,10 @@ Tabular page navigation control with automated page window calculation and Phosp
 | `totalItems` | `number` | `0` | Total record count |
 | `pageSize` | `number` | `12` | Number of records per page |
 | `onPageChange` | `(page: number) => void` | *(required)* | Callback triggered upon page change |
+| `variant` | `'full' \| 'compact' \| 'simple'` | `'full'` | Full numbered buttons or compact `Page X of Y` indicator |
+| `showLabels` | `boolean` | `true` | Show 'Previous' and 'Next' text labels alongside carets |
+| `showInfo` | `boolean` | `true` | Show 'Showing X–Y of Z' counter description |
+| `hideOnSinglePage` | `boolean` | `true` | Automatically hide navigation bar when total pages is $\le 1$ |
 
 ---
 
@@ -513,11 +518,18 @@ Dedicated components for system availability and telemetry visualizations:
 - **`StatusDot.svelte`**:
   - Calm operational indicator (`ONLINE`, `SETUP`, `PENDING`, `OFFLINE`, `ARCHIVED`).
   - Supports `variant="inline"` (default: dot + text without pill wrapper), `variant="dot"` (circle dot only), and `variant="badge"` (semantic pill).
-  - Supports `showLabel={true | false}`.
+  - Supports `showLabel={true | false}`. When rendering inside tables or lists alongside custom colored text spans (`resolved.colorClass`), always set `showLabel={false}` to prevent duplicate uncolored status text.
+- **`UptimeHistory.svelte`**:
+  - Unified multi-range discrete vertical uptime bar visualization (`1d` / 24 or 48 bars, `7d` / 56 bars at 3-hour intervals, `30d` / 30 bars).
+  - Binds strictly to real probe telemetry without synthetic data fabrication; dates prior to project deployment are non-penalized (`no_data` neutral blocks).
+  - Anti-slop empty state: When no telemetry records exist yet (`total_checks == 0` or all bars `no_data`), displays an editorial calm pending notice instead of empty spam bars and dashes.
+  - Interactive tooltip upon hover displaying exact time window, percentage, and probe check count ($X/Y$).
+  - Supports range toggle buttons (`24h`, `7d`, `30d`) with instant client-side switching across pre-calculated range buckets.
+  - Props: `availability` (multi-range payload), `blocks` (direct block array), `status`, `range`, `variant` (`'compact' | 'detailed'`), `showRangeSelector`.
 - **`AvailabilityGrid.svelte`**:
-  - 90-day Linux host availability heatmap.
-  - Each block represents a mathematical time bucket (`operational`, `partial`, `incident`, `no_data`).
-  - Displays detailed percentage and timestamp tooltip upon hover.
+  - High-resolution host availability vertical bar sequence replacing legacy square grids.
+  - Slices observation windows into 24 bars (`1d`), 56 bars (`7d`), or 30 bars (`30d`).
+  - Displays detailed percentage and incident duration tooltip upon hover.
 - **`StatusOverviewCard.svelte`**:
   - Global status banner showing trailing availability window percentage and formatted host uptime.
 - **`ServiceHealthCard.svelte` & `ServiceStatusRow.svelte`**:
@@ -557,12 +569,13 @@ Dedicated to physical host hardware specification showcase on landing page (`+pa
 ## 6. Showcase & Public Feed Components (`$lib/components/`)
 
 - **`ProjectCard.svelte`**:
-  - Public catalog card for `/projects`.
-  - Uses an **16:9** aspect container (`aspect-[16/9]`) with full-bleed `ProjectCover` (`aspectRatio="full"`).
-  - No hover zoom/scale effects on cover images (removed per calm editorial design rules).
+  - Standard public catalog card for `/projects` and the landing page showcase (`/+page.svelte`).
+  - **16:9 Artwork Ratio:** Uses a strict 16:9 aspect container (`aspect-[16/9]`) with `ProjectCover` (`aspectRatio="full"`).
+  - **Corner-Flush Minimalist Status Badge:** Positioned flush in the top-right corner of the image (`top-0 right-0`) with subtle `rounded-bl-md` curvature. Uses theme-adaptive neutral surface backdrop (`bg-(--bg-surface)/90 dark:bg-neutral-900/90 backdrop-blur-xs`) and hairline borders (`border-b border-l border-(--border-hairline)`). Renders direct semantic colored text (`{projectStatus.label}`) **without** pill shapes, colored borders, or dot circles.
+  - **Strict 2-Line Description Clamp:** Implements `line-clamp-2 min-h-[2.5rem] sm:min-h-[2.85rem] leading-relaxed font-normal`. Guarantees exactly 2 lines maximum without clipping font descenders ('y', 'p', 'g', 'q') and preserves vertical alignment across cards.
+  - **Grid & Dimension Parity:** Standardized in a 2-column grid (`grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8`) inside a `max-w-5xl` container. The landing page showcases up to 4 items in a clean 2x2 grid, perfectly matching the catalog card dimensions 1:1.
   - Displays title, concise summary, creator/owner, and technology stack (separated by `·`).
   - Supports direct external visit link connected to `/go/{slug}` tracking route.
-  - Clean typographic hierarchy without pill chip spam.
 - **`linkDetector` (`$lib/utils/linkDetector.ts`)**:
   - Automated URL domain detector for project resource links:
     - `github.com` $\rightarrow$ `GithubLogo` icon, label "GitHub"

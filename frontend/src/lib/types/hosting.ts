@@ -7,6 +7,7 @@ export interface HostingRequest {
 	subdomain?: string;
 	description: string;
 	readme?: string;
+	cover_image_url?: string;
 	repository_url?: string;
 	documentation_url?: string;
 	demo_url?: string;
@@ -34,6 +35,7 @@ export interface CreateHostingRequestInput {
 	subdomain?: string;
 	description: string;
 	readme?: string;
+	cover_image_url?: string;
 	repository_url?: string;
 	documentation_url?: string;
 	demo_url?: string;

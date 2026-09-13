@@ -32,7 +32,7 @@
 </script>
 
 <div
-	class="relative w-full h-full {cleanAspect} overflow-hidden rounded-[6px] select-none {className}"
+	class="relative w-full {isFull ? 'h-full' : cleanAspect} overflow-hidden rounded-[6px] select-none {className}"
 	style={inlineAspect}
 >
 	{#if src && !imageError}

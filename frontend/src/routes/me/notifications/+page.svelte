@@ -10,7 +10,6 @@
 	import {
 		Bell,
 		Check,
-		CheckCircle,
 		Checks
 	} from 'phosphor-svelte';
 
@@ -148,13 +147,11 @@
 					class="p-4 sm:p-5 flex items-start justify-between gap-4 transition-colors {notif.is_read ? 'opacity-85 hover:bg-(--bg-muted)/30' : 'bg-(--accent-sky)/5 hover:bg-(--accent-sky)/10 border-l-2 border-l-(--accent-sky)'}"
 				>
 					<div class="flex items-start gap-3.5 min-w-0">
-						<div class="mt-0.5 shrink-0">
-							{#if notif.is_read}
-								<CheckCircle size={18} class="text-(--text-muted)" />
-							{:else}
-								<span class="w-2.5 h-2.5 rounded-full bg-(--accent-sky) block mt-1"></span>
-							{/if}
-						</div>
+						{#if !notif.is_read}
+							<div class="mt-1 shrink-0">
+								<span class="w-2 h-2 rounded-full bg-(--accent-sky) block"></span>
+							</div>
+						{/if}
 
 						<div class="flex flex-col gap-1 min-w-0">
 							<h3 class="font-sans font-semibold text-xs sm:text-sm text-(--text-main) leading-snug">

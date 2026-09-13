@@ -15,6 +15,9 @@ export interface Project {
 	hosting_type: string;
 	public_url?: string;
 	status: string;
+	lifecycle_status?: string;
+	availability?: string;
+	availability_reason?: string;
 	visibility: string;
 	created_at: string;
 	updated_at: string;

@@ -118,8 +118,8 @@ flowchart TD
 When a client requests `/api/status?range=30d`, `CalculateAvailability()` in `internal/availability/calculator.go` computes the metrics.
 
 ### 5.1. Range Parameters
-- **`1d` (24 Hours):** 24 hourly buckets ($N = 24$, duration = 1 hour each).
-- **`7d` (7 Days):** 7 daily buckets ($N = 7$, duration = 24 hours each).
+- **`1d` (24 Hours):** 48 30-minute buckets ($N = 48$, duration = 30 minutes each). High-resolution intraday telemetry balancing granularity and mobile readability.
+- **`7d` (7 Days):** 56 3-hour buckets ($N = 56$, duration = 3 hours each). Golden sweet spot balancing high intraday resolution with readability across mobile and desktop.
 - **`30d` (30 Days):** 30 daily buckets ($N = 30$, duration = 24 hours each).
 
 ### 5.2. Mathematical Formulas
@@ -183,6 +183,11 @@ In addition to physical host kernel availability, Ngumpul Host includes an autom
 3. **Failure & Recovery Thresholds:**
    - **Offline Transition:** A project requires **2 consecutive failed probes** before its status transitions to `'OFFLINE'`, preventing transient network blips from creating false outage alarms.
    - **Instant Recovery:** A single successful probe immediately transitions an offline project back to `'ONLINE'`.
-4. **Telemetry Logging:** Each check records execution latency in milliseconds and HTTP status code into `project_availability_checks`.
-5. **Project 30-Day Stats:** Project showcase and owner management views call `GetProjectAvailabilityStats` to compute the real 30-day percentage uptime and average response latency.
+5. **Project Multi-Range Availability Engine:** Project showcase and owner management views call `GetProjectAvailabilityStats` to compute data-driven availability across 3 discrete observation windows:
+   - **`1d` (24 Hours):** 24 hourly buckets ($N = 24$, 1 hour each).
+   - **`7d` (7 Days):** 56 3-hour buckets ($N = 56$, 3 hours each).
+   - **`30d` (30 Days):** 30 daily buckets ($N = 30$, 24 hours each).
+6. **Pre-Deployment Non-Penalization Rule:** Buckets ending prior to `projects.created_at` are mathematically classified as `no_data` (`uptimePercent = nil`, "No recorded telemetry"). True percentage availability is strictly calculated over actual recorded checks, preventing newly deployed projects from being falsely penalized with synthetic outage days.
+7. **Unified Vertical Bar Presentation:** Shared across platform status (`AvailabilityGrid.svelte`) and project health cards (`UptimeHistory.svelte`), rendering slim vertical bars (`rounded-[1.5px]`) with semantic ping latency color thresholds ($<150\text{ms}$ green, $150-400\text{ms}$ amber, $>400\text{ms}$ red).
+
 

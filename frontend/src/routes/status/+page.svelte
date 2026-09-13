@@ -15,10 +15,10 @@
 
 	$: timeUnitLabel =
 		$selectedRange === '1d'
-			? '24 cells · 1 cell / hour'
+			? '24 bars · 1 bar / hour'
 			: $selectedRange === '7d'
-			? '7 cells · 1 cell / day'
-			: '30 cells · 1 cell / day';
+			? '56 bars · 3 hrs / bar'
+			: '30 bars · 1 bar / day';
 
 	function handleRangeChange(range: '1d' | '7d' | '30d') {
 		$selectedRange = range;
@@ -118,7 +118,7 @@
 				<p class="max-w-2xl">
 					Telemetry data is sourced directly from Linux kernel sessions (<code class="font-mono text-xs">/proc/uptime</code> and <code class="font-mono text-xs">boot_id</code>). Availability percentages reflect real recorded observation periods only.
 				</p>
-				<span class="shrink-0 text-right">Ngumpul Host · Bare Metal</span>
+				<span class="shrink-0 text-right">Ngumpul Host · Self-Hosted Node</span>
 			</footer>
 		{/if}
 

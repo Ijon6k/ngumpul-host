@@ -22,13 +22,16 @@ type Project struct {
 	Readme           string           `json:"readme"`
 	TechnologyStack  []string         `json:"technology_stack"`
 	HostingType      string           `json:"hosting_type"`
-	PublicURL        string           `json:"public_url"`
-	Status           string           `json:"status"`
-	Visibility       string           `json:"visibility"`
-	CreatedAt        time.Time        `json:"created_at"`
-	UpdatedAt        time.Time        `json:"updated_at"`
-	PublishedAt      *time.Time       `json:"published_at"`
-	Owner            *auth.PublicUser `json:"owner,omitempty"`
+	PublicURL          string           `json:"public_url"`
+	Status             string           `json:"status"`
+	LifecycleStatus    string           `json:"lifecycle_status"`
+	Availability       string           `json:"availability"`
+	AvailabilityReason string           `json:"availability_reason"`
+	Visibility         string           `json:"visibility"`
+	CreatedAt          time.Time        `json:"created_at"`
+	UpdatedAt          time.Time        `json:"updated_at"`
+	PublishedAt        *time.Time       `json:"published_at"`
+	Owner              *auth.PublicUser `json:"owner,omitempty"`
 }
 
 // UpdateMetadataRequest payload for updating personal project metadata.
@@ -57,25 +60,30 @@ type AdminCreateProjectRequest struct {
 	HostingType      string   `json:"hosting_type"`
 	PublicURL        string   `json:"public_url"`
 	Status           string   `json:"status"`
+	LifecycleStatus  string   `json:"lifecycle_status"`
+	Availability     string   `json:"availability"`
 	Visibility       string   `json:"visibility"`
 }
 
 // AdminUpdateProjectRequest payload for updating a project by administrator.
 type AdminUpdateProjectRequest struct {
-	Name             *string  `json:"name"`
-	Slug             *string  `json:"slug"`
-	Description      *string  `json:"description"`
-	Readme           *string  `json:"readme"`
-	CoverImageURL    *string  `json:"cover_image_url"`
-	RepositoryURL    *string  `json:"repository_url"`
-	DocumentationURL *string  `json:"documentation_url"`
-	DemoURL          *string  `json:"demo_url"`
-	TechnologyStack  []string `json:"technology_stack"`
-	HostingType      *string  `json:"hosting_type"`
-	PublicURL        *string  `json:"public_url"`
-	Status           *string  `json:"status"`
-	Visibility       *string  `json:"visibility"`
-	OwnerID          *string  `json:"owner_id"`
+	Name               *string  `json:"name"`
+	Slug               *string  `json:"slug"`
+	Description        *string  `json:"description"`
+	Readme             *string  `json:"readme"`
+	CoverImageURL      *string  `json:"cover_image_url"`
+	RepositoryURL      *string  `json:"repository_url"`
+	DocumentationURL   *string  `json:"documentation_url"`
+	DemoURL            *string  `json:"demo_url"`
+	TechnologyStack    []string `json:"technology_stack"`
+	HostingType        *string  `json:"hosting_type"`
+	PublicURL          *string  `json:"public_url"`
+	Status             *string  `json:"status"`
+	LifecycleStatus    *string  `json:"lifecycle_status"`
+	Availability       *string  `json:"availability"`
+	AvailabilityReason *string  `json:"availability_reason"`
+	Visibility         *string  `json:"visibility"`
+	OwnerID            *string  `json:"owner_id"`
 }
 
 var (

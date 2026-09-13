@@ -2,7 +2,9 @@ package activity
 
 import (
 	"encoding/json"
+	"math"
 	"net/http"
+	"strconv"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"ngumpul-host/backend/internal/auth"
@@ -19,8 +21,29 @@ func NewHandler(db *pgxpool.Pool) *Handler {
 	return &Handler{db: db}
 }
 
+func parsePagination(r *http.Request, defaultLimit, maxLimit int) (page, limit, offset int) {
+	page = 1
+	limit = defaultLimit
+	if p, err := strconv.Atoi(r.URL.Query().Get("page")); err == nil && p > 0 {
+		page = p
+	}
+	if l, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil && l > 0 {
+		limit = l
+		if limit > maxLimit {
+			limit = maxLimit
+		}
+	}
+	offset = (page - 1) * limit
+	return page, limit, offset
+}
+
 // ListPublic handles GET /api/activity
 func (h *Handler) ListPublic(w http.ResponseWriter, r *http.Request) {
+	page, limit, offset := parsePagination(r, 20, 100)
+
+	var total int
+	_ = h.db.QueryRow(r.Context(), `SELECT COUNT(*) FROM activities WHERE visibility = 'PUBLIC'`).Scan(&total)
+
 	rows, err := h.db.Query(r.Context(), `
 		SELECT a.id, a.actor_id, a.project_id, a.type, a.metadata, a.visibility, a.created_at,
 		       u.display_name, u.username, p.name, p.slug
@@ -29,8 +52,8 @@ func (h *Handler) ListPublic(w http.ResponseWriter, r *http.Request) {
 		LEFT JOIN projects p ON p.id = a.project_id
 		WHERE a.visibility = 'PUBLIC'
 		ORDER BY a.created_at DESC
-		LIMIT 50
-	`)
+		LIMIT $1 OFFSET $2
+	`, limit, offset)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, "Failed to fetch activities")
 		return
@@ -50,7 +73,18 @@ func (h *Handler) ListPublic(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	response.JSON(w, http.StatusOK, map[string]any{"activities": list})
+	totalPages := 1
+	if total > 0 {
+		totalPages = int(math.Ceil(float64(total) / float64(limit)))
+	}
+
+	response.JSON(w, http.StatusOK, map[string]any{
+		"activities":  list,
+		"total":       total,
+		"page":        page,
+		"limit":       limit,
+		"total_pages": totalPages,
+	})
 }
 
 // ListAdmin handles GET /api/admin/activity
@@ -94,6 +128,16 @@ func (h *Handler) ListMyActivity(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	page, limit, offset := parsePagination(r, 15, 100)
+
+	var total int
+	_ = h.db.QueryRow(r.Context(), `
+		SELECT COUNT(*)
+		FROM activities a
+		LEFT JOIN projects p ON p.id = a.project_id
+		WHERE a.actor_id = $1 OR p.owner_id = $1
+	`, usr.ID).Scan(&total)
+
 	rows, err := h.db.Query(r.Context(), `
 		SELECT a.id, a.actor_id, a.project_id, a.type, a.metadata, a.visibility, a.created_at,
 		       u.display_name, u.username, p.name, p.slug
@@ -102,8 +146,8 @@ func (h *Handler) ListMyActivity(w http.ResponseWriter, r *http.Request) {
 		LEFT JOIN projects p ON p.id = a.project_id
 		WHERE a.actor_id = $1 OR p.owner_id = $1
 		ORDER BY a.created_at DESC
-		LIMIT 50
-	`, usr.ID)
+		LIMIT $2 OFFSET $3
+	`, usr.ID, limit, offset)
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, "Failed to fetch activities")
 		return
@@ -123,6 +167,17 @@ func (h *Handler) ListMyActivity(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	response.JSON(w, http.StatusOK, map[string]any{"activities": list})
+	totalPages := 1
+	if total > 0 {
+		totalPages = int(math.Ceil(float64(total) / float64(limit)))
+	}
+
+	response.JSON(w, http.StatusOK, map[string]any{
+		"activities":  list,
+		"total":       total,
+		"page":        page,
+		"limit":       limit,
+		"total_pages": totalPages,
+	})
 }
 

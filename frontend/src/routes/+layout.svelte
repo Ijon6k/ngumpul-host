@@ -5,6 +5,11 @@
 	import { initAuth } from '$lib/stores/auth';
 	import { page } from '$app/stores';
 	import { Header, Footer } from '$lib/components/layout';
+	import { setupApi } from '$lib/api/setup';
+	import { goto } from '$app/navigation';
+	import { browser } from '$app/environment';
+
+	import { nodeDomain } from '$lib/stores/node';
 
 	const queryClient = new QueryClient({
 		defaultOptions: {
@@ -15,17 +20,60 @@
 		}
 	});
 
+	let setupChecked = false;
+	let isInitialized = true;
+
+	async function checkSetupState() {
+		if (!browser) return;
+		try {
+			const res = await setupApi.getStatus();
+			isInitialized = res.initialized;
+			if (res.domain) {
+				const clean = res.domain
+					.replace(/^https?:\/\//, '')
+					.replace(/:\d+$/, '')
+					.trim();
+				if (clean) {
+					nodeDomain.set(clean);
+				}
+			}
+			if (!res.initialized && $page.url.pathname !== '/setup') {
+				goto('/setup');
+			} else if (res.initialized && $page.url.pathname === '/setup') {
+				goto('/');
+			}
+		} catch (_) {
+			// In case of unexpected connection error, do not block
+		} finally {
+			setupChecked = true;
+		}
+	}
+
 	onMount(() => {
 		initAuth();
+		checkSetupState();
 	});
+
+	$: if (browser && setupChecked) {
+		if (!isInitialized && $page.url.pathname !== '/setup') {
+			goto('/setup');
+		} else if (isInitialized && $page.url.pathname === '/setup') {
+			goto('/');
+		}
+	}
 
 	$: isHome = $page.url.pathname === '/';
 	$: isAdminRoute = $page.url.pathname.startsWith('/admin');
 	$: isWorkspaceRoute = $page.url.pathname.startsWith('/me');
+	$: isAuthOrSetupRoute = $page.url.pathname === '/login' || $page.url.pathname === '/setup' || $page.url.pathname === '/register';
 </script>
 
 <QueryClientProvider client={queryClient}>
-	{#if isAdminRoute || isWorkspaceRoute}
+	{#if !setupChecked && !isInitialized && $page.url.pathname !== '/setup'}
+		<div class="min-h-screen flex items-center justify-center bg-(--bg-canvas)">
+			<div class="w-5 h-5 border-2 border-(--text-muted) border-t-transparent rounded-full animate-spin"></div>
+		</div>
+	{:else if isAdminRoute || isWorkspaceRoute || isAuthOrSetupRoute}
 		<slot />
 	{:else}
 		<div class="min-h-screen flex flex-col bg-(--bg-canvas)">
