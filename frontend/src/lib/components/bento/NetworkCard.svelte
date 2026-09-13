@@ -3,7 +3,7 @@
 	export let latencyMs: number = 29;
 </script>
 
-<div class="h-full w-full bg-(--bg-surface) rounded-3xl p-5 sm:p-6 border border-(--border-hairline) flex flex-col justify-between shadow-xs min-h-[175px] transition-colors duration-300">
+<div class="h-full w-full bg-(--bg-surface) rounded-xl p-5 sm:p-6 border border-(--border-hairline) flex flex-col justify-between shadow-xs min-h-[175px] transition-colors duration-300">
 	<div>
 		<div class="flex items-center justify-between">
 			<div class="text-base font-normal text-(--text-main)">Network</div>

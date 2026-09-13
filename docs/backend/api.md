@@ -270,7 +270,7 @@ Requests must possess `role == 'ADMIN'`.
 - **`GET /api/admin/settings`**: Retrieves instance settings (e.g. `{ "registration_mode": "INVITE_ONLY" }`).
 - **`PATCH /api/admin/settings`**: Updates instance settings (`{ "registration_mode": "OPEN" | "INVITE_ONLY" | "CLOSED" }`).
 - **`GET /api/admin/invitations`**: Lists all generated invitations with usage counts, email restrictions, and expiration timestamps.
-- **`POST /api/admin/invitations`**: Generates a new invitation token (`{ "invited_email": "friend@example.com", "max_uses": 1, "expires_in_days": 7 }`). Returns one-time view of `raw_token` and `invite_url`.
+- **`POST /api/admin/invitations`**: Generates a new invitation token (`{ "invited_email": "friend@example.com", "max_uses": 1, "expires_in_days": 7 }`). Returns one-time view of `raw_token` and `invite_url`. `invite_url` is built from the stored node domain (`instance_settings`), e.g. `https://«your-domain»/invite/{token}`.
 - **`POST /api/admin/invitations/{id}/revoke`**: Revokes an active invitation token immediately.
 - **`GET /api/admin/stats`**: Aggregate counts for total members, active projects, pending requests, and `open_reports`.
 - **`GET /api/admin/reports`**: Lists community moderation reports (`?status=OPEN|REVIEWED|RESOLVED|DISMISSED`).

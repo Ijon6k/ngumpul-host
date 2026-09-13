@@ -9,10 +9,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"ngumpul-host/backend/internal/auth"
 	"ngumpul-host/backend/internal/config"
+	"ngumpul-host/backend/internal/instance"
 )
 
 var (
@@ -56,15 +56,20 @@ func (s *Service) IsInitialized(ctx context.Context) (bool, error) {
 
 // GetDomain retrieves the stored node domain or falls back to AppURL hostname.
 func (s *Service) GetDomain(ctx context.Context) (string, error) {
-	var domain string
-	err := s.db.QueryRow(ctx, "SELECT value FROM instance_settings WHERE key = 'domain'").Scan(&domain)
+	domain, err := instance.GetDomain(ctx, s.db)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return "", nil
-		}
 		return "", fmt.Errorf("failed to load domain setting: %w", err)
 	}
 	return domain, nil
+}
+
+// GetAppURL retrieves the canonical stored app URL (app_url key, or scheme + domain).
+func (s *Service) GetAppURL(ctx context.Context) (string, error) {
+	appURL, err := instance.GetAppURL(ctx, s.db)
+	if err != nil {
+		return "", fmt.Errorf("failed to load app URL setting: %w", err)
+	}
+	return appURL, nil
 }
 
 // ExecuteSetup performs initial node provisioning by creating the first admin user and recording the domain.

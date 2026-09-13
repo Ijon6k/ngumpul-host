@@ -12,7 +12,7 @@
 	$: displaySubtext = summary ? summary : `${model ? model + ' · ' : ''}${linuxTotalGB || totalGB} GB Linux Environment`;
 </script>
 
-<div class="h-full w-full bg-(--bg-surface) rounded-3xl p-5 sm:p-6 border border-(--border-hairline) flex flex-col justify-between shadow-xs min-h-[175px] transition-colors duration-300">
+<div class="h-full w-full bg-(--bg-surface) rounded-xl p-5 sm:p-6 border border-(--border-hairline) flex flex-col justify-between shadow-xs min-h-[175px] transition-colors duration-300">
 	<div>
 		<div class="flex items-center justify-between">
 			<div class="text-base font-normal text-(--text-main)">Storage</div>
@@ -28,12 +28,12 @@
 
 	<!-- Metric Row -->
 	<div class="my-auto py-1">
-		<div class="flex items-baseline justify-between">
+		<div class="flex flex-col xs:flex-row items-start xs:items-baseline justify-between gap-1">
 			<div class="text-3xl sm:text-4xl font-normal text-(--text-main) tracking-tight">
 				{displayCapacity} <span class="text-lg text-(--text-muted) font-light">GB</span>
 			</div>
 			<div class="text-xs text-(--text-secondary) font-normal">
-				{availableGB} GB available for projects
+				{availableGB} GB available
 			</div>
 		</div>
 

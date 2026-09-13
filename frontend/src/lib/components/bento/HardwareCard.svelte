@@ -8,7 +8,7 @@
 	$: cleanCpuName = cpu.replace(/Intel\(R\)\s+/g, '').replace(/Core\(TM\)\s+/g, 'Core ');
 </script>
 
-<div class="h-full w-full bg-(--bg-surface) rounded-3xl p-5 sm:p-6 border border-(--border-hairline) flex flex-col justify-between shadow-xs min-h-[240px] transition-colors duration-300">
+<div class="h-full w-full bg-(--bg-surface) rounded-xl p-5 sm:p-6 border border-(--border-hairline) flex flex-col justify-between shadow-xs min-h-[240px] transition-colors duration-300">
 	<!-- Header: Clean typography matching screenshot 2 -->
 	<div>
 		<div class="text-base font-normal text-(--text-main)">Core</div>

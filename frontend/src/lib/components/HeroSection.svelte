@@ -62,7 +62,7 @@
 
 	<!-- Bottom Dynamic Metric Pillars (Direct Host Data) -->
 	<div class="relative z-10 border-t border-white/10 bg-[#070A0E]/80 backdrop-blur-md">
-		<div class="container mx-auto px-6 max-w-6xl py-6 grid grid-cols-2 md:grid-cols-4 gap-6 divide-y md:divide-y-0 md:divide-x divide-white/10">
+		<div class="container mx-auto px-4 sm:px-6 max-w-6xl py-6 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 divide-y md:divide-y-0 md:divide-x divide-white/10">
 			<!-- Pillar 1: CPU Cores -->
 			<div class="pt-4 md:pt-0 md:pr-6">
 				<MetricPillar

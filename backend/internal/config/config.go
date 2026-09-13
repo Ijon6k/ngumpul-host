@@ -47,7 +47,9 @@ func Load() *Config {
 
 	return &Config{
 		AppEnv:        getEnv("APP_ENV", "development"),
-		AppURL:        getEnv("APP_URL", "http://localhost"),
+		// Canonical URL is sourced from instance_settings at runtime. This is
+		// only a pre-setup fallback and is intentionally NOT read from env.
+		AppURL:        "http://localhost",
 		Port:          port,
 		DatabaseURL:   dbURL,
 		SessionSecret: sessionSecret,

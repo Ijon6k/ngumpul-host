@@ -482,7 +482,7 @@
 			<div class="flex flex-col gap-1.5">
 				<label for="p-subdomain" class="text-xs font-medium text-(--text-main) flex items-center justify-between">
 					<span>Preferred subdomain <span class="text-(--accent-orange)">*</span></span>
-					<span class="text-xs text-(--text-muted) font-mono">https://&lt;subdomain&gt;{domainSuffix}</span>
+					<span class="text-xs text-(--text-muted) font-mono">https://&lt;subdomain&gt;$domainSuffix</span>
 				</label>
 				<div class="flex items-stretch">
 					<input
@@ -495,7 +495,7 @@
 						on:input={handleSubdomainInput}
 					/>
 					<div class="px-3.5 py-2 bg-(--bg-muted)/60 border border-l-0 border-(--border-hairline) rounded-r-sm text-xs font-mono text-(--text-muted) flex items-center select-none">
-						{domainSuffix}
+						$domainSuffix
 					</div>
 				</div>
 
@@ -585,7 +585,7 @@
 								{#if req.subdomain}
 									<span class="text-xs font-mono text-(--text-muted) flex items-center gap-1">
 										<Globe size={13} />
-										<span>{req.subdomain}{domainSuffix}</span>
+										<span>{req.subdomain}$domainSuffix</span>
 									</span>
 								{/if}
 							</div>

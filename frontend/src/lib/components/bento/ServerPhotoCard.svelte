@@ -5,7 +5,7 @@
 	export let status: string = 'online';
 </script>
 
-<div class="h-full w-full bg-[#0E1013] text-white rounded-3xl p-6 sm:p-7 flex flex-col justify-between relative overflow-hidden shadow-xs border border-transparent dark:border-(--border-hairline) group min-h-[240px] transition-colors duration-300">
+<div class="h-full w-full bg-[#0E1013] text-white rounded-xl p-6 sm:p-7 flex flex-col justify-between relative overflow-hidden shadow-xs border border-transparent dark:border-(--border-hairline) group min-h-[240px] transition-colors duration-300">
 	<!-- User-specified bentoserver.webp photograph -->
 	<img
 		src="/assets/bentoserver.webp"

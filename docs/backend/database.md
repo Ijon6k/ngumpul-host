@@ -303,7 +303,7 @@ Tracks member submissions requesting homelab server provisioning for their proje
 | `project_id` | `UUID` | `REFERENCES projects(id) ON DELETE SET NULL` | `NULL` | Optional reference to existing project (for subdomain change requests). |
 | `request_type` | `VARCHAR(32)` | `NOT NULL` | `'NEW_PROJECT'` | Request category: `'NEW_PROJECT'` or `'SUBDOMAIN_CHANGE'`. |
 | `project_name` | `VARCHAR(128)` | `NOT NULL` | — | Proposed application name. |
-| `subdomain` | `VARCHAR(64)` | `NOT NULL` | `''` | Requested or assigned unique subdomain prefix (`.ngumpul.local`). |
+| `subdomain` | `VARCHAR(64)` | `NOT NULL` | `''` | Requested or assigned unique subdomain prefix. Resolved against the stored node domain (e.g. `acme.…«your-domain»`). |
 | `description` | `TEXT` | `NOT NULL` | `''` | Short description (max 280 characters) or change reason. |
 | `readme` | `TEXT` | `NOT NULL` | `''` | Submitted Markdown documentation or uploaded `.md` README. |
 | `cover_image_url` | `TEXT` | `NOT NULL` | `''` | Uploaded project cover artwork URL (WebP compressed). Propagated to project catalog upon approval. |

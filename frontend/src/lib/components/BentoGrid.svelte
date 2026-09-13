@@ -62,7 +62,7 @@
 
 <!-- Bento Grid Section: Calm editorial typography with genuine host telemetry -->
 <section class="py-12 sm:py-16 md:py-20 border-b border-(--border-hairline) bg-(--bg-muted) transition-colors duration-300">
-	<div class="container mx-auto px-6 max-w-6xl flex flex-col gap-6">
+	<div class="container mx-auto px-4 sm:px-6 max-w-6xl flex flex-col gap-6">
 
 		<!-- ══════════════════════════════════════════════════════════
 		     ROW 1: Editorial Typography (Left) + Server Photo Card (Right)
@@ -97,7 +97,7 @@
 		<!-- ══════════════════════════════════════════════════════════
 		     ROW 2: Hardware Core, Memory & Storage (3 Cards)
 		     ══════════════════════════════════════════════════════════ -->
-		<div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+		<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 items-stretch">
 			<!-- 1. Core Hardware Card -->
 			<div>
 				<HardwareCard
@@ -134,7 +134,7 @@
 		<!-- ══════════════════════════════════════════════════════════
 		     ROW 3: Availability, Network & Ideas Accent (3 Cards)
 		     ══════════════════════════════════════════════════════════ -->
-		<div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+		<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 items-stretch">
 			<!-- 4. Availability Card (Dark, Calculated 30-day Uptime) -->
 			<div>
 				<AvailabilityCard

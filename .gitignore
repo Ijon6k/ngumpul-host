@@ -16,6 +16,7 @@ frontend/build/
 frontend/.output/
 backend/bin/
 backend/dist/
+backend/server
 *.exe
 *.exe~
 *.dll

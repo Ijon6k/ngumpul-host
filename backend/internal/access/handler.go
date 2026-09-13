@@ -3,6 +3,7 @@ package access
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"ngumpul-host/backend/internal/auth"
 	"ngumpul-host/backend/internal/config"
+	"ngumpul-host/backend/internal/instance"
 	"ngumpul-host/backend/internal/response"
 )
 
@@ -131,7 +133,14 @@ func (h *Handler) CreateInvitation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Prefer the canonical domain stored in instance_settings (set on the setup
+	// page). Fall back to cfg.AppURL only when no instance domain is configured.
 	baseURL := strings.TrimRight(h.cfg.AppURL, "/")
+	if appURL, appErr := instance.GetAppURL(r.Context(), h.svc.db); appErr != nil {
+		log.Printf("failed to read stored app_url for invite link: %v", appErr)
+	} else if appURL != "" {
+		baseURL = strings.TrimRight(appURL, "/")
+	}
 	if baseURL == "" {
 		baseURL = "http://localhost:5173"
 	}

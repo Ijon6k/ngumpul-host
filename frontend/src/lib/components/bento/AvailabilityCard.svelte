@@ -36,7 +36,7 @@
 
 <a
 	href="/status"
-	class="group block h-full w-full bg-[#0E1013] dark:bg-(--bg-surface) text-white rounded-3xl p-5 sm:p-6 flex flex-col justify-between relative shadow-xs min-h-[175px] border border-neutral-800/80 dark:border-(--border-hairline) hover:border-neutral-700 dark:hover:border-neutral-500 transition-colors duration-300"
+	class="group block h-full w-full bg-[#0E1013] dark:bg-(--bg-surface) text-white rounded-xl p-5 sm:p-6 flex flex-col justify-between relative shadow-xs min-h-[175px] border border-neutral-800/80 dark:border-(--border-hairline) hover:border-neutral-700 dark:hover:border-neutral-500 transition-colors duration-300"
 >
 	<div>
 		<div class="flex items-center justify-between">
@@ -66,7 +66,7 @@
 		</div>
 
 		<!-- 30-day compact GitHub-style daily blocks -->
-		<div class="grid grid-cols-15 sm:grid-cols-30 gap-1 py-1">
+		<div class="grid gap-[3px] py-1" style="grid-template-columns: repeat(30, minmax(0, 1fr))">
 			{#each displayBlocks as item (item.index)}
 				<div
 					class="h-2 rounded-xs {getBlockClass(item)} transition-all"

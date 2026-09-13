@@ -220,9 +220,9 @@
 		</header>
 
 		<!-- Desktop Side-by-Side Composition (Cover & Tabs on Left, Sticky Context Column on Right) -->
-		<div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start mt-8">
+		<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start mt-8">
 			<!-- Left Column: 16:9 Cover + Main Tabs (Overview | Comments | Activity) -->
-			<div class="lg:col-span-8 flex flex-col gap-8">
+			<div class="lg:col-span-8 order-2 lg:order-1 flex flex-col gap-8">
 				<!-- Project Cover Artwork (16:9 Ratio) -->
 				<div class="w-full aspect-[16/9] max-h-[460px] rounded-md overflow-hidden border border-(--border-hairline) bg-(--bg-muted) shadow-xs flex">
 					<ProjectCover
@@ -338,8 +338,8 @@
 				</div>
 			</div>
 
-			<!-- Right Column: Sticky Project Context Column (Desktop lg+) -->
-			<aside class="lg:col-span-4 lg:sticky lg:top-24 self-start flex flex-col gap-6 pt-2 lg:pt-0">
+			<!-- Right Column: Sticky Project Context Column (shows above tabs on mobile, sticky on desktop) -->
+			<aside class="lg:col-span-4 order-1 lg:order-2 lg:sticky lg:top-24 self-start flex flex-col gap-6 pt-2 lg:pt-0 border border-(--border-hairline) lg:border-0 rounded-md lg:rounded-none p-4 lg:p-0 bg-(--bg-surface) lg:bg-transparent">
 				<!-- Availability & Health -->
 				<div class="flex flex-col gap-3">
 					<div class="flex items-center justify-between">

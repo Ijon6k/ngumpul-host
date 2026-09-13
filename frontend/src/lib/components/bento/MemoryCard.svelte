@@ -7,7 +7,7 @@
 	const barThresholds = [20, 35, 50, 60, 70, 80, 90, 95];
 </script>
 
-<div class="h-full w-full bg-[#0E1013] dark:bg-(--bg-surface) text-white rounded-3xl p-5 sm:p-6 flex flex-col justify-between relative shadow-xs min-h-[240px] border border-neutral-800/80 dark:border-(--border-hairline) transition-colors duration-300">
+<div class="h-full w-full bg-[#0E1013] dark:bg-(--bg-surface) text-white rounded-xl p-5 sm:p-6 flex flex-col justify-between relative shadow-xs min-h-[240px] border border-neutral-800/80 dark:border-(--border-hairline) transition-colors duration-300">
 	<!-- Top: Title & Equalizer Bars -->
 	<div class="flex items-start justify-between">
 		<div>

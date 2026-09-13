@@ -108,24 +108,24 @@
 		</div>
 
 		<!-- Clean Segmented Text Filter Tabs -->
-		<div class="flex items-center gap-6 text-xs font-medium">
+		<div class="flex items-center gap-5 sm:gap-6 text-xs font-medium overflow-x-auto shrink-0 pb-0.5">
 			<button
 				type="button"
-				class="pb-1 transition-colors cursor-pointer {selectedFilter === 'ALL' ? 'text-(--text-main) border-b-2 border-(--text-main) font-semibold' : 'text-(--text-muted) hover:text-(--text-main)'}"
+				class="pb-1 transition-colors cursor-pointer shrink-0 {selectedFilter === 'ALL' ? 'text-(--text-main) border-b-2 border-(--text-main) font-semibold' : 'text-(--text-muted) hover:text-(--text-main)'}"
 				on:click={() => handleFilterChange('ALL')}
 			>
 				All ({totalProjects})
 			</button>
 			<button
 				type="button"
-				class="pb-1 transition-colors cursor-pointer {selectedFilter === 'HOSTED' ? 'text-(--text-main) border-b-2 border-(--text-main) font-semibold' : 'text-(--text-muted) hover:text-(--text-main)'}"
+				class="pb-1 transition-colors cursor-pointer shrink-0 {selectedFilter === 'HOSTED' ? 'text-(--text-main) border-b-2 border-(--text-main) font-semibold' : 'text-(--text-muted) hover:text-(--text-main)'}"
 				on:click={() => handleFilterChange('HOSTED')}
 			>
 				Hosted Here
 			</button>
 			<button
 				type="button"
-				class="pb-1 transition-colors cursor-pointer {selectedFilter === 'EXTERNAL' ? 'text-(--text-main) border-b-2 border-(--text-main) font-semibold' : 'text-(--text-muted) hover:text-(--text-main)'}"
+				class="pb-1 transition-colors cursor-pointer shrink-0 {selectedFilter === 'EXTERNAL' ? 'text-(--text-main) border-b-2 border-(--text-main) font-semibold' : 'text-(--text-muted) hover:text-(--text-main)'}"
 				on:click={() => handleFilterChange('EXTERNAL')}
 			>
 				External

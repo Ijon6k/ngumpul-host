@@ -86,7 +86,7 @@
 	<title>Notifications · Ngumpul Host</title>
 </svelte:head>
 
-<div class="p-6 sm:p-8 lg:p-10 max-w-4xl w-full flex flex-col gap-8">
+<div class="w-full max-w-4xl flex flex-col gap-8">
 	<!-- Page Header -->
 	<header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-(--border-hairline)">
 		<div class="flex flex-col gap-1">

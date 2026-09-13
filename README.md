@@ -14,12 +14,11 @@ cd ngumpul-host
 cp .env.example .env
 ```
 
-Edit `.env` — at minimum change these three:
+Edit `.env` — at minimum change these two:
 
 ```env
 POSTGRES_PASSWORD=your_secure_password
 SESSION_SECRET=a_random_32_character_secret_here
-ADMIN_PASSWORD=your_admin_password
 ```
 
 Then pull images and run:
@@ -28,9 +27,9 @@ Then pull images and run:
 docker compose up -d
 ```
 
-Open `http://localhost:1111` — done.
-
-> First boot auto-creates the admin account from `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env`.
+Open `http://localhost:1111` — on first boot you'll be guided through the
+`/setup` page to configure the canonical node domain and create the primary
+administrator account.
 
 ---
 
@@ -61,15 +60,15 @@ Copy `.env.example` to `.env` and set:
 
 | Variable | Required | Description |
 |---|---|---|
-| `APP_URL` | ✓ | Public URL of your instance e.g. `https://yourdomain.com` |
 | `NGINX_PORT` | — | Port to expose. Default `1111` |
 | `POSTGRES_PASSWORD` | ✓ | PostgreSQL password |
 | `SESSION_SECRET` | ✓ | Random string ≥ 32 chars |
-| `ADMIN_EMAIL` | ✓ | Initial admin email |
-| `ADMIN_USERNAME` | ✓ | Initial admin username |
-| `ADMIN_PASSWORD` | ✓ | Initial admin password — change after first login |
 | `SESSION_SECURE` | — | Set `true` when behind HTTPS |
 | `SMTP_HOST` | — | Outbound email host (optional) |
+
+> The canonical node domain and the first administrator account are configured
+> through the `/setup` page (stored in the `instance_settings` table), not via
+> environment variables.
 
 ---
 

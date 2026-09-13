@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS hosting_requests (
     project_name VARCHAR(128) NOT NULL,
     subdomain VARCHAR(64) NOT NULL DEFAULT '',
     description TEXT NOT NULL DEFAULT '',
+    cover_image_url TEXT NOT NULL DEFAULT '',
     readme TEXT NOT NULL DEFAULT '',
     repository_url TEXT NOT NULL DEFAULT '',
     documentation_url TEXT NOT NULL DEFAULT '',
@@ -292,6 +293,7 @@ CREATE INDEX IF NOT EXISTS idx_proj_avail_project_checked ON project_availabilit
 
 -- Progressive migrations
 ALTER TABLE hosting_requests ADD COLUMN IF NOT EXISTS subdomain VARCHAR(64) NOT NULL DEFAULT '';
+ALTER TABLE hosting_requests ADD COLUMN IF NOT EXISTS cover_image_url TEXT NOT NULL DEFAULT '';
 ALTER TABLE hosting_requests ADD COLUMN IF NOT EXISTS readme TEXT NOT NULL DEFAULT '';
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS readme TEXT NOT NULL DEFAULT '';
 

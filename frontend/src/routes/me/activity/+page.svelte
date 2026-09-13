@@ -298,7 +298,7 @@
 									{#if req.subdomain}
 										<span class="text-xs font-mono text-(--text-muted) flex items-center gap-1">
 											<Globe size={13} />
-											<span>{req.subdomain}{domainSuffix}</span>
+											<span>{req.subdomain}$domainSuffix</span>
 										</span>
 									{/if}
 								</div>
@@ -366,7 +366,7 @@
 						{#if req.status === 'COMPLETED'}
 							<div class="flex items-center gap-3 pt-1">
 								<a
-									href="https://{req.subdomain}{domainSuffix}"
+									href="https://{req.subdomain}$domainSuffix"
 									target="_blank"
 									rel="noreferrer"
 									class="inline-flex items-center gap-1.5 text-xs text-(--accent-sky) hover:underline font-medium"

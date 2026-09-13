@@ -5,7 +5,7 @@
 	export let projectsTotal: number = 3;
 </script>
 
-<div class="h-full w-full bg-[#406882] dark:bg-[#1E3A4C] text-white rounded-3xl p-5 sm:p-6 flex flex-col justify-between relative overflow-hidden shadow-xs border border-white/10 dark:border-(--border-hairline) min-h-[175px] transition-colors duration-300">
+<div class="h-full w-full bg-[#406882] dark:bg-[#1E3A4C] text-white rounded-xl p-5 sm:p-6 flex flex-col justify-between relative overflow-hidden shadow-xs border border-white/10 dark:border-(--border-hairline) min-h-[175px] transition-colors duration-300">
 	<!-- Background subtle decorative circles -->
 	<div class="absolute -right-6 -bottom-6 w-32 h-32 rounded-full border border-white/10 pointer-events-none"></div>
 

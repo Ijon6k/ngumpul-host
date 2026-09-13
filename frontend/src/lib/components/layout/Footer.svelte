@@ -2,7 +2,7 @@
 	import StatusDot from '$lib/components/StatusDot.svelte';
 </script>
 
-<footer class="mt-auto border-t border-(--border-hairline) py-12 px-6">
+<footer class="mt-auto border-t border-(--border-hairline) py-10 sm:py-12 px-4 sm:px-6">
 	<div class="container mx-auto max-w-6xl flex flex-col gap-6">
 		<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
 			<div>

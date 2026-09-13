@@ -5,12 +5,16 @@
 	import { unreadNotificationsCount, refreshUnreadNotifications } from '$lib/stores/notifications';
 	import { adminPendingCount, adminOpenReportsCount, refreshAdminStats } from '$lib/stores/adminStats';
 	import ThemeToggle from './ThemeToggle.svelte';
-	import { ArrowSquareOut } from 'phosphor-svelte';
+	import { ArrowSquareOut, List } from 'phosphor-svelte';
 
 	let scrollY = 0;
+	let mobileNavOpen = false;
 
 	$: isHome = $page.url.pathname === '/';
 	$: isTransparent = isHome && scrollY < 60;
+
+	// Close mobile nav on route change
+	$: $page.url.pathname, (mobileNavOpen = false);
 
 	onMount(() => {
 		if ($user) {
@@ -36,11 +40,11 @@
 		? 'bg-transparent border-b border-transparent text-white'
 		: 'bg-(--bg-canvas)/90 backdrop-blur-xl border-b border-(--border-hairline) text-(--text-main)'}"
 >
-	<div class="container mx-auto px-6 max-w-6xl flex items-center justify-between h-[60px] gap-6">
+	<div class="container mx-auto px-4 sm:px-6 max-w-6xl flex items-center justify-between h-[60px] gap-4">
 
 		<!-- Brand -->
-		<div class="flex items-center gap-8">
-			<a href="/" class="flex items-center gap-2 hover:opacity-85 transition-opacity" title="Ngumpul Host">
+		<div class="flex items-center gap-6 sm:gap-8">
+			<a href="/" class="flex items-center gap-2 hover:opacity-85 transition-opacity shrink-0" title="Ngumpul Host">
 				<img src="/logo.webp" alt="" class="h-6 w-6 object-contain" />
 				<span class="font-display font-bold text-sm tracking-tight {isTransparent ? 'text-white' : 'text-(--text-main)'}">
 					ngumpul<span class="font-normal {isTransparent ? 'text-neutral-300' : 'text-(--text-secondary)'}">host</span><span class="text-(--accent-orange)">.</span>
@@ -75,7 +79,7 @@
 				{#if $user.role === 'ADMIN'}
 					<a
 						href="/admin"
-						class="btn btn-sm text-xs inline-flex items-center gap-1.5 relative {isTransparent ? 'bg-white/10 text-white hover:bg-white/20 border-white/20' : 'btn-secondary'}"
+						class="hidden sm:inline-flex btn btn-sm text-xs items-center gap-1.5 relative {isTransparent ? 'bg-white/10 text-white hover:bg-white/20 border-white/20' : 'btn-secondary'}"
 					>
 						<span>Console</span>
 						{#if ($adminPendingCount + $adminOpenReportsCount) > 0}
@@ -95,7 +99,7 @@
 							{($user.display_name || 'U').slice(0, 1)}
 						</span>
 					{/if}
-					<span>Workspace</span>
+					<span class="hidden sm:inline">Workspace</span>
 					{#if $unreadNotificationsCount > 0}
 						<span class="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" title="You have unread notifications"></span>
 					{/if}
@@ -106,6 +110,31 @@
 					class="btn btn-sm text-xs {isTransparent ? 'bg-white text-neutral-950 hover:bg-neutral-100' : 'btn-primary'}"
 				>Sign in</a>
 			{/if}
+
+			<!-- Mobile hamburger (visible < md) -->
+			<button
+				type="button"
+				class="md:hidden p-1.5 rounded-sm border {isTransparent ? 'border-white/20 text-white hover:bg-white/10' : 'border-(--border-hairline) text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted)'} transition-colors cursor-pointer"
+				aria-label={mobileNavOpen ? 'Close navigation' : 'Open navigation'}
+				aria-expanded={mobileNavOpen}
+				on:click={() => (mobileNavOpen = !mobileNavOpen)}
+			>
+				<List size={18} weight="bold" />
+			</button>
 		</div>
 	</div>
+
+	<!-- Mobile Nav Drawer (slide-down, visible < md) -->
+	{#if mobileNavOpen}
+		<div class="md:hidden bg-(--bg-canvas)/98 backdrop-blur-xl border-t border-(--border-hairline) px-4 py-3 flex flex-col gap-0.5 shadow-lg">
+			<a href="/projects" on:click={() => (mobileNavOpen = false)} class="px-3 py-2.5 text-sm text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted) rounded-sm transition-colors">Projects</a>
+			<a href="/people" on:click={() => (mobileNavOpen = false)} class="px-3 py-2.5 text-sm text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted) rounded-sm transition-colors">People</a>
+			<a href="/activity" on:click={() => (mobileNavOpen = false)} class="px-3 py-2.5 text-sm text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted) rounded-sm transition-colors">Activity</a>
+			<a href="/status" on:click={() => (mobileNavOpen = false)} class="px-3 py-2.5 text-sm text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted) rounded-sm transition-colors">Status</a>
+			{#if !$user}
+				<div class="h-px bg-(--border-hairline) my-1"></div>
+				<a href="/login" on:click={() => (mobileNavOpen = false)} class="px-3 py-2.5 text-sm font-medium text-(--text-main) hover:bg-(--bg-muted) rounded-sm transition-colors">Sign in →</a>
+			{/if}
+		</div>
+	{/if}
 </header>

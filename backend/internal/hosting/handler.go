@@ -3,6 +3,7 @@ package hosting
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"ngumpul-host/backend/internal/auth"
+	"ngumpul-host/backend/internal/instance"
 	"ngumpul-host/backend/internal/project"
 	"ngumpul-host/backend/internal/response"
 )
@@ -445,7 +447,18 @@ func (h *Handler) AdminApprove(w http.ResponseWriter, r *http.Request) {
 
 	// If this is a SUBDOMAIN_CHANGE request for an existing project, approve and immediately apply
 	if reqType == "SUBDOMAIN_CHANGE" && projID != nil {
-		newURL := "https://" + subdomainToUse + ".ngumpul.local"
+		scheme := "https"
+		domain, domainErr := instance.GetDomain(r.Context(), h.db)
+		if domainErr != nil {
+			log.Printf("failed to read stored domain for subdomain change: %v", domainErr)
+		}
+		if domain == "" {
+			domain = "ngumpul.local"
+		}
+		if strings.Contains(domain, "localhost") || strings.Contains(domain, "127.0.0.1") {
+			scheme = "http"
+		}
+		newURL := scheme + "://" + subdomainToUse + "." + domain
 		_, err = h.db.Exec(r.Context(), `
 			UPDATE projects
 			SET slug = $1, public_url = $2, updated_at = NOW()
