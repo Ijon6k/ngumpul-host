@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { valibotClient } from 'sveltekit-superforms/adapters';
 	import { loginSchema } from '$lib/schemas/auth';
@@ -10,12 +11,9 @@
 
 	let { data }: { data: PageData } = $props();
 
-	const formState = $derived(data.form);
-
-	// svelte-ignore state_referenced_locally — superform reads the initial form payload at setup
 	const { form, errors, constraints, message, submitting, enhance } = superForm(
-		formState,
-		{ validators: valibotClient(loginSchema), resetForm: false }
+		untrack(() => data.form),
+		{ validators: valibotClient(loginSchema), resetForm: false, onResult: handleResult }
 	);
 
 	function handleResult({ result }: { result: { type: string; data?: any } }) {
@@ -50,6 +48,7 @@
 	<form method="POST" use:enhance class="flex flex-col gap-4">
 		<Input
 			id="login-id"
+			name="emailOrUsername"
 			label="Email or Username"
 			type="text"
 			placeholder="operator or handle"
@@ -62,6 +61,7 @@
 
 		<Input
 			id="login-pass"
+			name="password"
 			label="Password"
 			type="password"
 			placeholder="••••••••"

@@ -24,7 +24,7 @@
 	<div class="h-20 shrink-0"></div>
 
 	<!-- Center / Hero Content -->
-	<div class="relative z-10 container mx-auto px-6 max-w-6xl py-12 md:py-16 my-auto">
+	<div class="relative z-10 container mx-auto px-4 sm:px-6 max-w-6xl py-12 md:py-16 my-auto">
 		<div class="max-w-3xl flex flex-col gap-6">
 
 			<!-- Headline: Minimalist Apple/Samsung editorial typography, non-bold, brand sky blue highlight -->

@@ -153,17 +153,24 @@ Uploads are one of the most abused surfaces on any server. Ngumpul Host applies 
 
 ---
 
-## 6. CORS Configuration (`cnoscmd/server/main.go`)
-- **Method whitelist:** `GET, POST, PUT, PATCH, DELETE, OPTIONS`.
-- **Header whitelist:** `Accept, Authorization, Content-Type, X-CSRF-Token`.
-- **Origin policy:** exact-match `AllowOriginFunc` — no wildcards. Allowed origins are:
-  1. Hardcoded dev origins (`localhost`/`127.0.0.1` on 5173/3000/8080).
-  2. The configured `APP_URL`.
-  3. The instance domain read from the database (both `http://` and `https://` variants).
-- **Credentials:** `AllowCredentials: true` but only when the origin is verified against the list above.
-- **Preflight cache:** `MaxAge: 300` (5 minutes).
+## 6. CORS Configuration
+
+**Intentionally disabled.** nginx serves the SvelteKit frontend and the `/api` upstream from the **same origin** (`localhost:1111` in dev, the VPS domain/IP in prod). Browser requests to `/api` are always same-origin, so the browser never enforces cross-origin checks and no `Access-Control-Allow-*` headers are needed. No `cors.Handler` middleware is mounted in `backend/cmd/server/main.go`.
+
+- Preflight (`OPTIONS`) requests to the API are **not** answered with CORS headers — browsers only preflight when an actual cross-origin request occurs, which never happens through the single-origin reverse proxy.
+- If a separate API origin were introduced later (e.g. `api.domain` for a mobile app), a strict origin allowlist must be added — never `*` with credentials.
 
 > ⚠️ `X-CSRF-Token` is an allowed header but **no CSRF token is currently generated or validated**. SameSite=Lax mitigates external-origin CSRF; there is no same-origin CSRF scenario in a cookie session unless a stored XSS exists. Document known-gap.
+
+### Nginx ↔ SvelteKit CSRF Requirements
+
+SvelteKit's built-in CSRF protection compares the browser's `Origin` header against the origin the server computes from incoming headers. nginx strips the port when forwarding `Host $host`, causing a mismatch. Both compose files enforce:
+
+1. **`proxy_set_header Host $http_host;`** — forwards `host:port` without stripping the port (covers dev ports, LAN IPs, and VPS with non-standard ports).
+2. **`proxy_set_header X-Forwarded-Proto $forwarded_proto;`** — protocol via a `map` that trusts `X-Forwarded-Proto` when a TLS-terminating proxy sits in front of nginx, falling back to `$scheme`. See §8 "Trusted protocol detection".
+3. **Frontend env `PROTOCOL_HEADER=x-forwarded-proto`** — tells adapter-node to read protocol from `X-Forwarded-Proto` instead of defaulting to `https`.
+
+Omitting any of these causes SvelteKit to reject every form POST (server action) with `403 Cross-site POST form submissions are forbidden`.
 
 ---
 
@@ -181,14 +188,29 @@ add_header X-Frame-Options "SAMEORIGIN" always;
 add_header X-Content-Type-Options "nosniff" always;
 add_header X-XSS-Protection "1; mode=block" always;
 add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+server_tokens off;
 ```
+- `server_tokens off` hides the nginx version from `Server` headers.
 
 ### Proxy rules
 - `/api/`, `/uploads/`, `/go/`, `/health` → Go backend (`backend:8080`).
-- `/` → SvelteKit SSR (`frontend:3000`), with WebSocket upgrade support.
-- `/uploads/` gets a 30-day cache header.
+- `/` → SvelteKit SSR (`frontend:3000`).
+- Upstream HTTP/1.1 keepalive is hoisted at `server` level: `proxy_set_header Connection "";` + `keepalive 32` on both upstreams. No WebSocket `Upgrade` headers — the app uses no WebSockets, and `Connection: upgrade` on every request would defeat upstream keepalive.
 - `client_max_body_size 10M` (matches backend upload cap).
 - `/api/` upstream read timeout 90s (backend itself enforces 15s read / 30s write / 60s idle + chi `Timeout(60s)`).
+- Uploads are cached by the **backend** (`Cache-Control: public, max-age=2592000, no-transform`); nginx no longer sets `expires`/`Cache-Control` to avoid duplicate headers.
+
+### Trusted protocol detection
+`X-Forwarded-Proto` is resolved through a `map` instead of raw `$scheme`:
+```nginx
+map $http_x_forwarded_proto $forwarded_proto {
+    default $scheme;
+    https   https;
+    http    http;
+}
+proxy_set_header X-Forwarded-Proto $forwarded_proto;
+```
+When a TLS-terminating proxy (Cloudflare, Caddy, HAProxy) sits in front of nginx, `$scheme` reports `http` and SvelteKit would generate `http://` absolute URLs and drop the cookie `Secure` flag. The `map` trusts only `https`/`http` values from the upstream client and falls back to `$scheme` for anything else.
 
 ### Missing headers (gap)
 - ❌ **`Content-Security-Policy`** — no CSP anywhere. XSS payloads that survive escaping would execute unrestricted.

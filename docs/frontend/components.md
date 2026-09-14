@@ -412,6 +412,42 @@ Centralized project artwork cover uploader conforming to the **16:9 standard rat
 
 ---
 
+### `Skeleton`
+
+Dependency-free loading primitive that mirrors the **exact visual structure** of the real UI. Built with the `--bg-muted` token and `animate-pulse`; never use it in isolation, always compose it inside the same containers the loaded state uses so there is **zero layout shift**.
+
+#### Props
+| Prop | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `variant` | `'block' \| 'line' \| 'avatar' \| 'badge' \| 'button'` | `'block'` | Shape: `line` = single text row (`h-3.5`), `avatar` = circle, `badge` = pill, `button` = action stub |
+| `animate` | `boolean` | `true` | Disable the pulse animation (e.g. inside already-animated parents) |
+| `ariaLabel` | `string` | `''` | When set, switched to `role="status"` for screen readers |
+| `class` | `string` | `''` | Size/width overrides via `cn()` (tailwind-merge resolves conflicts) |
+
+#### Usage Example — Card content skeleton
+```svelte
+<script>
+  import { Skeleton } from '$lib/components/ui';
+</script>
+
+<div class="flex items-center gap-3" role="status" aria-live="polite">
+  <Skeleton variant="avatar" />
+  <div class="flex flex-col gap-2 flex-1">
+    <Skeleton variant="line" class="w-1/2" />
+    <Skeleton variant="line" class="w-2/3" />
+  </div>
+</div>
+<span class="sr-only">Loading...</span>
+```
+
+#### Rules
+1. **Mirror the real layout:** use the same card/grid/padding classes as the loaded state; only swap data elements for `<Skeleton>`.
+2. **Never plain text loaders:** `Loading...` text alone is forbidden; keep a `sr-only` message for a11y, always set `role="status"` on the scaffold.
+3. **Wide variety via `line` widths:** vary width (`w-1/2`, `w-2/3`, `w-full`) to mimic natural text lengths; never equal-width stripes everywhere.
+4. **Composed helpers:** `SkeletonProjectCard` (`$lib/components/SkeletonProjectCard.svelte`) mirrors `ProjectCard` and is the canonical catalog/landing loader.
+
+---
+
 ### `PageContainer` & `PageHeader`
 
 Standardized layout containers for sub-views to eliminate layout shifts and inconsistent padding.

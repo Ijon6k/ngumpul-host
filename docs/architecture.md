@@ -11,7 +11,7 @@
 Ngumpul Host is designed as an independent, single-instance multi-user server application. It bridges low-overhead physical infrastructure with an editorial, human-scale web interface.
 
 The infrastructure consists of five primary runtime components orchestrated via Docker Compose:
-1. **Edge Ingress (`ngumpul_nginx_dev`):** Single public ingress handling SSL/TLS termination, HTTP/2 multiplexing, static asset caching, and upstream routing.
+1. **Edge Ingress (`ngumpul_nginx_dev`):** Single public ingress handling HTTP routing, gzip compression, security headers, and upstream keepalive proxying.
 2. **Web Frontend (`ngumpul_frontend_dev`):** SvelteKit 2 running in Node.js mode (`@sveltejs/adapter-node`) on port `3000`.
 3. **Application Backend (`ngumpul_backend_dev`):** High-concurrency Go modular monolith listening on port `8080`.
 4. **Data Persistence (`ngumpul_postgres_dev`):** PostgreSQL 16 database listening on port `5432` with volume persistence.

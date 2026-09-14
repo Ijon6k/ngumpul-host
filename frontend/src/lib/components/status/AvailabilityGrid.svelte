@@ -70,9 +70,9 @@
 
 	<!-- Time Bounds & Resolution Indicator -->
 	{#if blocks.length > 0}
-		<div class="flex items-center justify-between text-xs {dark ? 'text-neutral-400' : 'text-(--text-muted)'} font-normal select-none">
+		<div class="flex items-center justify-between text-xs {dark ? 'text-neutral-400' : 'text-(--text-muted)'} font-normal select-none gap-2 flex-wrap">
 			<span>{blocks[0]?.label || ''}</span>
-			<span class="text-xs tracking-wider uppercase opacity-75">{timeUnitLabel}</span>
+			<span class="text-xs opacity-75">{timeUnitLabel}</span>
 			<span>{blocks[blocks.length - 1]?.label || ''}</span>
 		</div>
 	{/if}

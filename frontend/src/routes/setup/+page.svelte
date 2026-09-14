@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { superForm } from 'sveltekit-superforms';
 	import { valibotClient } from 'sveltekit-superforms/adapters';
 	import { setupSchema } from '$lib/schemas/auth';
@@ -10,12 +11,13 @@
 
 	let { data }: { data: PageData } = $props();
 
-	const formState = $derived(data.form);
-
-	// svelte-ignore state_referenced_locally — superform reads the initial form payload at setup
 	const { form, errors, constraints, message, submitting, enhance } = superForm(
-		formState,
-		{ validators: valibotClient(setupSchema), resetForm: false }
+		untrack(() => data.form),
+		{
+			validators: valibotClient(setupSchema),
+			resetForm: false,
+			onResult: handleResult
+		}
 	);
 
 	function handleResult({ result }: { result: { type: string; data?: any } }) {
@@ -50,6 +52,7 @@
 	<form method="POST" use:enhance class="flex flex-col gap-4">
 		<Input
 			id="setup-domain"
+			name="domain"
 			label="Node Domain"
 			type="text"
 			placeholder="ngumpul.example.com"
@@ -68,6 +71,7 @@
 
 		<Input
 			id="setup-name"
+			name="name"
 			label="Operator Name"
 			type="text"
 			placeholder="Site Operator"
@@ -80,6 +84,7 @@
 		<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 			<Input
 				id="setup-username"
+				name="username"
 				label="Username"
 				type="text"
 				placeholder="admin"
@@ -92,6 +97,7 @@
 
 			<Input
 				id="setup-email"
+				name="email"
 				label="Email"
 				type="email"
 				placeholder="admin@example.com"
@@ -106,6 +112,7 @@
 		<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 			<Input
 				id="setup-password"
+				name="password"
 				label="Password"
 				type="password"
 				placeholder="••••••••"
@@ -118,6 +125,7 @@
 
 			<Input
 				id="setup-confirm-password"
+				name="confirmPassword"
 				label="Confirm"
 				type="password"
 				placeholder="••••••••"

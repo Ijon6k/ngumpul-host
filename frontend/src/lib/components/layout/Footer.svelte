@@ -21,13 +21,13 @@
 		</div>
 
 		<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pt-6 border-t border-(--border-subtle) text-xs text-(--text-muted)">
-			<div class="flex items-center gap-4">
+			<div class="flex items-center flex-wrap gap-x-3 gap-y-1">
 				<a href="/projects" class="hover:text-(--text-main) transition-colors">Projects</a>
-				<span>/</span>
+				<span class="text-(--border-subtle)">/</span>
 				<a href="/people" class="hover:text-(--text-main) transition-colors">Members</a>
-				<span>/</span>
+				<span class="text-(--border-subtle)">/</span>
 				<a href="/activity" class="hover:text-(--text-main) transition-colors">Activity</a>
-				<span>/</span>
+				<span class="text-(--border-subtle)">/</span>
 				<a href="/status" class="hover:text-(--text-main) transition-colors">Status</a>
 			</div>
 

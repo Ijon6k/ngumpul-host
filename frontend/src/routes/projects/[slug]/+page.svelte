@@ -139,7 +139,7 @@
 		<!-- Public Project Header (Editorial Showcase) -->
 		<header class="flex flex-col gap-3">
 			<!-- Project Title -->
-			<h1 class="font-sans font-normal text-3xl sm:text-4xl lg:text-5xl text-(--text-main) tracking-[-0.02em] leading-tight">
+			<h1 class="font-sans font-normal text-2xl sm:text-3xl lg:text-4xl text-(--text-main) tracking-[-0.03em] leading-tight text-balance">
 				{project.name}
 			</h1>
 

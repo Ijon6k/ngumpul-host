@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { superForm } from 'sveltekit-superforms';
@@ -18,12 +18,9 @@
 	let validatingToken = $state(false);
 	let tokenStatus: { valid: boolean; message?: string; invitedEmail?: string } | null = $state(null);
 
-	const formState = $derived(data.form);
-
-	// svelte-ignore state_referenced_locally — superform reads the initial form payload at setup
 	const { form, errors, constraints, message, submitting, enhance } = superForm(
-		formState,
-		{ validators: valibotClient(registerSchema), resetForm: false }
+		untrack(() => data.form),
+		{ validators: valibotClient(registerSchema), resetForm: false, onResult: handleResult }
 	);
 
 	async function validateToken(raw: string) {
@@ -132,18 +129,19 @@
 
 		<form method="POST" use:enhance class="flex flex-col gap-4">
 			{#if registrationMode === 'INVITE_ONLY'}
-				<Input
-					id="reg-token"
-					label="Invitation Token"
-					type="text"
-					placeholder="Paste invite token"
-					inputClass="h-10 px-3.5 bg-(--bg-muted) font-mono"
-					error={fieldError($errors, 'invitationToken') ||
-						(tokenStatus && !tokenStatus.valid ? tokenStatus.message : '')}
-					bind:value={$form.invitationToken}
-					onblur={() => validateToken($form.invitationToken)}
-					{...$constraints.invitationToken}
-				>
+<Input
+				id="reg-token"
+				name="invitationToken"
+				label="Invitation Token"
+				type="text"
+				placeholder="Paste invite token"
+				inputClass="h-10 px-3.5 bg-(--bg-muted) font-mono"
+				error={fieldError($errors, 'invitationToken') ||
+					(tokenStatus && !tokenStatus.valid ? tokenStatus.message : '')}
+				bind:value={$form.invitationToken}
+				onblur={() => validateToken($form.invitationToken)}
+				{...$constraints.invitationToken}
+			>
 					<svelte:fragment slot="label-extra">
 						{#if validatingToken}
 							<span class="text-xs text-(--text-muted)">Validating...</span>
@@ -162,6 +160,7 @@
 
 			<Input
 				id="reg-name"
+				name="displayName"
 				label="Display Name"
 				type="text"
 				placeholder="Alex Rivera"
@@ -174,6 +173,7 @@
 			<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 				<Input
 					id="reg-username"
+					name="username"
 					label="Username"
 					type="text"
 					placeholder="alex"
@@ -186,6 +186,7 @@
 
 				<Input
 					id="reg-email"
+					name="email"
 					label="Email"
 					type="email"
 					placeholder="alex@example.com"
@@ -200,6 +201,7 @@
 			<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 				<Input
 					id="reg-pass"
+					name="password"
 					label="Password"
 					type="password"
 					placeholder="•••••••• (min 8 characters)"
@@ -212,6 +214,7 @@
 
 				<Input
 					id="reg-confirm-pass"
+					name="confirmPassword"
 					label="Confirm Password"
 					type="password"
 					placeholder="••••••••"

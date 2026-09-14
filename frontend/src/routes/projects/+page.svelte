@@ -5,6 +5,7 @@
 	import { projectsApi } from '$lib/api';
 	import type { Project } from '$lib/types/project';
 	import ProjectCard from '$lib/components/ProjectCard.svelte';
+	import SkeletonProjectCard from '$lib/components/SkeletonProjectCard.svelte';
 	import Pagination from '$lib/components/ui/Pagination.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import { MagnifyingGlass, FolderSimpleDashed } from 'phosphor-svelte';
@@ -135,10 +136,12 @@
 
 	<!-- Main Project Grid: 2-column desktop, 1-column mobile -->
 	{#if loading}
-		<div class="py-24 text-center text-(--text-muted) text-xs flex flex-col items-center justify-center gap-3">
-			<div class="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-			<p>Loading project catalog...</p>
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8" role="status" aria-live="polite">
+			{#each Array(4) as _}
+				<SkeletonProjectCard />
+			{/each}
 		</div>
+		<span class="sr-only">Loading project catalog...</span>
 	{:else if projects.length === 0}
 		<EmptyState
 			title={searchQuery ? 'No Matching Projects' : 'No Projects Published Yet'}

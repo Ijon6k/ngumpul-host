@@ -82,9 +82,9 @@
 				</div>
 
 				{#if invitedEmail}
-					<div class="flex items-center justify-between pt-2.5 border-t border-(--border-hairline)/60">
+					<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 pt-2.5 border-t border-(--border-hairline)/60">
 						<span class="text-(--text-muted)">Restricted to Email</span>
-						<span class="font-medium text-(--text-main)">{invitedEmail}</span>
+						<span class="font-medium text-(--text-main) min-w-0 break-all">{invitedEmail}</span>
 					</div>
 				{/if}
 

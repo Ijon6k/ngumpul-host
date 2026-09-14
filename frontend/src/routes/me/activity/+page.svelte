@@ -4,12 +4,12 @@
 	import type { ActivityEvent } from '$lib/types/activity';
 	import type { HostingRequest } from '$lib/types/hosting';
 	import { Timeline, TimelineItem, Pagination } from '$lib/components/ui';
+	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 	import { formatDate } from '$lib/utils/format';
 	import { domainSuffix } from '$lib/stores/node';
 	import {
 		Globe,
 		ArrowSquareOut,
-		Spinner,
 		Tray,
 		ClockCounterClockwise,
 		CheckCircle,
@@ -243,10 +243,19 @@
 
 	<!-- Content based on active view -->
 	{#if loading}
-		<div class="py-20 text-center text-xs text-(--text-muted) flex flex-col items-center justify-center gap-3">
-			<Spinner size={20} class="animate-spin text-(--text-muted)" />
-			<span>Loading records...</span>
+		<div class="flex flex-col gap-6 py-4" role="status" aria-live="polite">
+			{#each Array(5) as _}
+				<div class="flex items-start gap-4" aria-hidden="true">
+					<Skeleton variant="avatar" class="!h-6 !w-6" />
+					<div class="flex flex-col gap-2 flex-1 min-w-0">
+						<Skeleton variant="line" class="w-1/2" />
+						<Skeleton variant="line" class="w-2/3" />
+					</div>
+					<Skeleton variant="line" class="w-20 shrink-0" />
+				</div>
+			{/each}
 		</div>
+		<span class="sr-only">Loading records...</span>
 	{:else if error}
 		<div class="p-3 rounded-sm bg-rose-500/10 text-rose-700 dark:text-rose-400 text-xs border border-rose-500/20">
 			{error}

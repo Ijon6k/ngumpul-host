@@ -1,4 +1,4 @@
-import { superValidate, setError } from 'sveltekit-superforms';
+import { superValidate, setError, message } from 'sveltekit-superforms';
 import { valibot } from 'sveltekit-superforms/adapters';
 import { fail } from '@sveltejs/kit';
 import { registerSchema } from '$lib/schemas/auth';
@@ -16,9 +16,7 @@ export const actions: Actions = {
 		if (!form.valid) return fail(400, { form });
 
 		if (form.data.password !== form.data.confirmPassword) {
-			return fail(400, {
-				form: setError(form, 'confirmPassword', 'Passwords do not match.')
-			});
+			return setError(form, 'confirmPassword', 'Passwords do not match.');
 		}
 
 		const res = await fetch('/api/auth/register', {
@@ -35,8 +33,8 @@ export const actions: Actions = {
 
 		const body = await res.json().catch(() => null);
 		if (!res.ok) {
-			return fail(res.status, {
-				form: setError(form, '', body?.error ?? 'Registration failed.')
+			return message(form, body?.error ?? 'Registration failed.', {
+				status: res.status as NonNullable<Parameters<typeof message>[2]>["status"]
 			});
 		}
 

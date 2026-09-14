@@ -4,6 +4,7 @@
 	import type { ActivityEvent } from '$lib/types/activity';
 	import ActivityTimeline from '$lib/components/ActivityTimeline.svelte';
 	import { Pagination } from '$lib/components/ui';
+	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 
 	let activities: ActivityEvent[] = [];
 	let loading = true;
@@ -42,9 +43,19 @@
 	</header>
 
 	{#if loading}
-		<div class="py-20 text-center text-(--text-muted) text-xs">
-			<p>Retrieving activity feed...</p>
+		<div class="p-8 sm:p-10 bg-(--bg-surface) border border-(--border-hairline) rounded-md flex flex-col gap-6" role="status" aria-live="polite">
+			{#each Array(6) as _}
+				<div class="flex items-start gap-4" aria-hidden="true">
+					<Skeleton variant="avatar" class="!h-6 !w-6" />
+					<div class="flex flex-col gap-2 flex-1 min-w-0">
+						<Skeleton variant="line" class="w-1/2" />
+						<Skeleton variant="line" class="w-2/3" />
+						<Skeleton variant="line" class="w-1/4" />
+					</div>
+				</div>
+			{/each}
 		</div>
+		<span class="sr-only">Retrieving activity feed...</span>
 	{:else}
 		<div class="p-8 sm:p-10 bg-(--bg-surface) border border-(--border-hairline) rounded-md flex flex-col gap-6">
 			<ActivityTimeline {activities} />

@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { usersApi } from '$lib/api';
 	import type { PublicMember } from '$lib/api/users';
+	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 
 	let members: PublicMember[] = [];
 	let loading = true;
@@ -41,9 +42,25 @@
 	</header>
 
 	{#if loading}
-		<div class="py-20 text-center text-(--text-muted) text-xs">
-			<p>Loading member directory...</p>
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-6" role="status" aria-live="polite">
+			{#each Array(4) as _}
+				<div class="p-6 bg-(--bg-surface) border border-(--border-hairline) rounded-md flex flex-col gap-4" aria-hidden="true">
+					<div class="flex items-start gap-4">
+						<Skeleton variant="avatar" class="!h-12 !w-12" />
+						<div class="flex flex-col gap-2 min-w-0 flex-1 pt-1">
+							<Skeleton variant="line" class="w-2/3" />
+							<Skeleton variant="line" class="w-1/3" />
+							<Skeleton variant="line" class="w-full mt-1" />
+						</div>
+					</div>
+					<div class="flex items-center justify-between pt-3 border-t border-(--border-hairline)">
+						<Skeleton variant="line" class="w-20" />
+						<Skeleton variant="line" class="w-24" />
+					</div>
+				</div>
+			{/each}
 		</div>
+		<span class="sr-only">Loading member directory...</span>
 	{:else if members.length === 0}
 		<div class="py-16 px-4 text-center border border-dashed border-(--border-hairline) rounded-md text-(--text-muted)">
 			<p class="text-sm">No members registered yet.</p>

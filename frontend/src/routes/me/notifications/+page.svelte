@@ -12,6 +12,7 @@
 		Check,
 		Checks
 	} from 'phosphor-svelte';
+	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 
 	let notifications: AppNotification[] = [];
 	let loading = true;
@@ -120,10 +121,19 @@
 
 	<!-- Notifications List -->
 	{#if loading}
-		<div class="py-24 text-center text-xs text-(--text-muted) flex flex-col items-center justify-center gap-3">
-			<div class="w-6 h-6 border-2 border-(--text-muted) border-t-transparent rounded-full animate-spin"></div>
-			<span>Loading notifications...</span>
+		<div class="flex flex-col bg-(--bg-surface) border border-(--border-hairline) rounded-md divide-y divide-(--border-hairline) overflow-hidden shadow-xs" role="status" aria-live="polite">
+			{#each Array(5) as _}
+				<div class="p-4 sm:p-5 flex items-start gap-4" aria-hidden="true">
+					<Skeleton variant="avatar" class="!h-2.5 !w-2.5 !mt-1" />
+					<div class="flex flex-col gap-2 flex-1 min-w-0">
+						<Skeleton variant="line" class="w-1/2" />
+						<Skeleton variant="line" class="w-2/3" />
+						<Skeleton variant="line" class="w-16 mt-1" />
+					</div>
+				</div>
+			{/each}
 		</div>
+		<span class="sr-only">Loading notifications...</span>
 	{:else if error}
 		<div class="p-4 rounded-md bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-400 text-xs">
 			{error}

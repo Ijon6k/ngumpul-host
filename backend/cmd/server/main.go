@@ -8,13 +8,11 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/cors"
 
 	"ngumpul-host/backend/internal/access"
 	"ngumpul-host/backend/internal/activity"
@@ -25,7 +23,6 @@ import (
 	"ngumpul-host/backend/internal/config"
 	"ngumpul-host/backend/internal/database"
 	"ngumpul-host/backend/internal/hosting"
-	"ngumpul-host/backend/internal/instance"
 	"ngumpul-host/backend/internal/notification"
 	"ngumpul-host/backend/internal/project"
 	"ngumpul-host/backend/internal/ratelimit"
@@ -110,39 +107,9 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(60 * time.Second))
 
-	// Strict CORS configuration with exact origin verification
-	devOrigins := map[string]bool{
-		"http://localhost:5173": true,
-		"http://localhost:3000": true,
-		"http://localhost:8080": true,
-		"http://localhost":      true,
-		"http://127.0.0.1:5173": true,
-		"http://127.0.0.1:3000": true,
-		"http://127.0.0.1:8080": true,
-		"http://127.0.0.1":      true,
-	}
-
-	r.Use(cors.Handler(cors.Options{
-		AllowOriginFunc: func(r *http.Request, origin string) bool {
-			if devOrigins[origin] {
-				return true
-			}
-			if cfg.AppURL != "" && (origin == cfg.AppURL || strings.TrimSuffix(origin, "/") == strings.TrimSuffix(cfg.AppURL, "/")) {
-				return true
-			}
-			if domain, err := instance.GetDomain(r.Context(), pool); err == nil && domain != "" {
-				if origin == "http://"+domain || origin == "https://"+domain {
-					return true
-				}
-			}
-			return false
-		},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: true,
-		MaxAge:           300,
-	}))
+	// No CORS middleware here. nginx serves the frontend and /api from the same
+	// origin, so browsers never trigger cross-origin checks. CORS would only be
+	// needed if a separate API origin (e.g. `api.domain`) is introduced later.
 
 	// Session extraction middleware
 	r.Use(auth.Middleware(sessionManager))

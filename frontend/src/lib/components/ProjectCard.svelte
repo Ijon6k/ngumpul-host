@@ -71,7 +71,7 @@
 		</div>
 
 		<!-- Creator & Tech Stack (Consistent vertical slot, clean typographic hierarchy) -->
-		<div class="flex items-center gap-x-2 text-xs text-(--text-muted) truncate h-5">
+		<div class="flex items-center gap-x-2 text-xs text-(--text-muted) min-h-[1.35rem]">
 			{#if project.owner}
 				<a href="/people/{project.owner.username}" class="font-medium text-(--text-main) hover:underline shrink-0">
 					{project.owner.display_name}

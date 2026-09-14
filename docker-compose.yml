@@ -18,58 +18,59 @@ services:
       - -c
       - |
         cat <<'EOF' > /etc/nginx/conf.d/default.conf
-            resolver 127.0.0.11 valid=10s ipv6=off;
-            client_max_body_size 10M;
-            large_client_header_buffers 4 16k;
+        server_tokens off;
+        resolver 127.0.0.11 valid=10s ipv6=off;
+        client_max_body_size 10M;
+        large_client_header_buffers 4 16k;
+
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+        map $$http_x_forwarded_proto $$forwarded_proto {
+            default $$scheme;
+            https   https;
+            http    http;
+        }
+
+        gzip on;
+        gzip_disable "msie6";
+        gzip_vary on;
+        gzip_proxied any;
+        gzip_comp_level 6;
+        gzip_min_length 1024;
+        gzip_types text/plain text/css text/xml application/json application/javascript application/rss+xml application/atom+xml image/svg+xml;
 
         server {
             listen 80;
             server_name _;
 
-            add_header X-Frame-Options "SAMEORIGIN" always;
-            add_header X-Content-Type-Options "nosniff" always;
-            add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+            set $$backend http://backend:8080;
+            set $$frontend http://frontend:3000;
+
+            proxy_http_version 1.1;
+            proxy_set_header Connection "";
+            proxy_set_header Host $$http_host;
+            proxy_set_header X-Real-IP $$remote_addr;
+            proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $$forwarded_proto;
 
             location /api/ {
-                set $$backend http://backend:8080;
                 proxy_pass $$backend;
-                proxy_http_version 1.1;
-                proxy_set_header Connection "";
-                proxy_set_header Host $$host;
-                proxy_set_header X-Real-IP $$remote_addr;
-                proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto $$scheme;
                 proxy_read_timeout 90s;
             }
 
             location /uploads/ {
-                set $$backend http://backend:8080;
                 proxy_pass $$backend;
-                proxy_http_version 1.1;
-                proxy_set_header Connection "";
-                proxy_set_header Host $$host;
-                proxy_set_header X-Real-IP $$remote_addr;
-                proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
-                expires 30d;
-                add_header Cache-Control "public, no-transform";
             }
 
             location = /health {
-                set $$backend http://backend:8080;
                 proxy_pass $$backend/health;
-                proxy_set_header Host $$host;
             }
 
             location / {
-                set $$frontend http://frontend:3000;
                 proxy_pass $$frontend;
-                proxy_http_version 1.1;
-                proxy_set_header Upgrade $$http_upgrade;
-                proxy_set_header Connection "upgrade";
-                proxy_set_header Host $$host;
-                proxy_set_header X-Real-IP $$remote_addr;
-                proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto $$scheme;
                 proxy_buffer_size 128k;
                 proxy_buffers 8 128k;
                 proxy_busy_buffers_size 256k;
@@ -78,6 +79,11 @@ services:
         }
         EOF
         exec nginx -g "daemon off;"
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
     depends_on:
       - frontend
       - backend
@@ -93,6 +99,7 @@ services:
       PORT: 3000
       NODE_ENV: production
       BACKEND_URL: http://backend:8080
+      PROTOCOL_HEADER: x-forwarded-proto
     depends_on:
       backend:
         condition: service_started

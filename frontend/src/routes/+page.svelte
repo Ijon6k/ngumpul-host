@@ -4,6 +4,7 @@
 	import HeroSection from '$lib/components/HeroSection.svelte';
 	import BentoGrid from '$lib/components/BentoGrid.svelte';
 	import ProjectCard from '$lib/components/ProjectCard.svelte';
+	import SkeletonProjectCard from '$lib/components/SkeletonProjectCard.svelte';
 	import ActivityTimeline from '$lib/components/ActivityTimeline.svelte';
 	import { ArrowRight } from 'phosphor-svelte';
 
@@ -54,7 +55,13 @@
 				</p>
 			</div>
 
-			{#if projects.length === 0 && !loading}
+			{#if loading}
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8" role="status" aria-live="polite">
+					{#each Array(4) as _}
+						<SkeletonProjectCard />
+					{/each}
+				</div>
+			{:else if projects.length === 0}
 				<div class="text-center py-16 px-4 text-(--text-secondary) border border-dashed border-(--border-hairline) rounded-md">
 					<p class="text-sm">No projects registered yet.</p>
 				</div>
@@ -77,7 +84,7 @@
 
 	<!-- 4. Recent Activity Stream (3 recent items) -->
 	<section class="py-16 sm:py-20 bg-(--bg-canvas)">
-		<div class="container mx-auto px-6 max-w-6xl flex flex-col gap-8">
+		<div class="container mx-auto px-4 sm:px-6 max-w-6xl flex flex-col gap-8">
 			<div>
 				<h2 class="font-sans font-normal text-2xl sm:text-3xl text-(--text-main) tracking-[-0.02em]">
 					Recent activity

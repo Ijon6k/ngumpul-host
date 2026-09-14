@@ -368,9 +368,9 @@
 			</div>
 
 			<div class="flex flex-col gap-1.5">
-				<label for="p-subdomain" class="text-xs font-medium text-(--text-main) flex items-center justify-between">
+				<label for="p-subdomain" class="text-xs font-medium text-(--text-main) flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
 					<span>Preferred subdomain <span class="text-(--accent-orange)">*</span></span>
-					<span class="text-xs text-(--text-muted) font-mono">https://&lt;subdomain&gt;{$domainSuffix}</span>
+					<span class="text-xs text-(--text-muted) font-mono sm:text-right">https://&lt;subdomain&gt;{$domainSuffix}</span>
 				</label>
 				<div class="flex items-stretch">
 					<input

@@ -71,10 +71,11 @@ graph LR
     RealIP --> Logger["middleware.Logger"]
     Logger --> Recoverer["middleware.Recoverer"]
     Recoverer --> Timeout["middleware.Timeout(60s)"]
-    Timeout --> CORS["cors.Handler"]
-    CORS --> AuthMid["auth.Middleware(sessionManager)"]
+    Timeout --> AuthMid["auth.Middleware(sessionManager)"]
     AuthMid --> Router{"Chi Router"}
 ```
+
+> **No CORS middleware.** nginx serves the frontend and `/api` from the same origin, so browsers never perform cross-origin checks. See [`docs/security.md`](../security.md#6-cors-configuration).
 
 - **`middleware.Recoverer`:** Catches any unexpected panics, logs the stack trace, and sends a safe HTTP 500 JSON response without crashing the backend process.
 - **`middleware.Timeout(60s)`:** Enforces a hard deadline on hanging requests, canceling database queries when the context expires.

@@ -8,7 +8,7 @@
 	import StatusDot from '$lib/components/StatusDot.svelte';
 	import ProjectCover from '$lib/components/ui/ProjectCover.svelte';
 	import { resolveProjectStatus } from '$lib/utils/projectStatus';
-	import { Timeline, TimelineItem } from '$lib/components/ui';
+	import { Timeline, TimelineItem, Skeleton } from '$lib/components/ui';
 	import { Plus, ArrowRight, ArrowUpRight } from 'phosphor-svelte';
 
 	let myProjects: Project[] = [];
@@ -86,7 +86,7 @@
 <div class="w-full flex flex-col">
 	<!-- Editorial Introduction Header (Typography-first, zero metric card clutter) -->
 	<header class="flex flex-col gap-1 pb-6">
-		<div class="flex items-start justify-between gap-4 flex-wrap">
+		<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
 			<div class="flex flex-col">
 				<h1 class="font-sans font-normal text-2xl sm:text-3xl text-(--text-main) tracking-tight">
 					{getGreeting()}, {$user?.display_name || 'Site Administrator'}.
@@ -129,9 +129,23 @@
 		</div>
 
 		{#if loading}
-			<div class="py-12 text-center text-xs text-(--text-muted)">
-				Loading projects...
+			<div class="flex flex-col divide-y divide-(--border-hairline)" role="status" aria-live="polite">
+				{#each Array(3) as _}
+					<div class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4" aria-hidden="true">
+						<div class="flex items-center gap-3.5 min-w-0">
+							<div class="w-40 rounded-sm overflow-hidden shrink-0 border border-(--border-hairline) bg-(--bg-muted)" style="aspect-ratio: 16/9;">
+								<Skeleton variant="block" />
+							</div>
+							<div class="flex flex-col gap-2 min-w-0 flex-1">
+								<Skeleton variant="line" class="w-1/2" />
+								<Skeleton variant="line" class="w-2/3" />
+							</div>
+						</div>
+						<Skeleton variant="line" class="w-24 self-end sm:self-center" />
+					</div>
+				{/each}
 			</div>
+			<span class="sr-only">Loading projects...</span>
 		{:else if myProjects.length === 0}
 			<div class="py-10 px-6 border border-dashed border-(--border-hairline) rounded-md text-center flex flex-col items-center gap-2">
 				<p class="text-xs font-medium text-(--text-main)">No hosted projects yet</p>
@@ -212,9 +226,18 @@
 		</div>
 
 		{#if loading}
-			<div class="py-8 text-center text-xs text-(--text-muted)">
-				Loading activity...
+			<div class="flex flex-col gap-5 pt-2" role="status" aria-live="polite">
+				{#each Array(4) as _}
+					<div class="flex items-start gap-3" aria-hidden="true">
+						<Skeleton variant="avatar" class="!h-5 !w-5" />
+						<div class="flex flex-col gap-2 flex-1 min-w-0">
+							<Skeleton variant="line" class="w-1/2" />
+							<Skeleton variant="line" class="w-1/3" />
+						</div>
+					</div>
+				{/each}
 			</div>
+			<span class="sr-only">Loading activity...</span>
 		{:else if myActivities.length === 0}
 			<p class="text-xs text-(--text-muted) py-4">No recent activity recorded.</p>
 		{:else}

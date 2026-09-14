@@ -205,9 +205,9 @@
 			</div>
 
 			<!-- Time Bounds Footer -->
-			<div class="flex items-center justify-between text-xs text-(--text-muted) font-mono pt-0.5">
+			<div class="flex items-center justify-between text-xs text-(--text-muted) font-mono pt-0.5 gap-2 flex-wrap">
 				<span>{startLabel}</span>
-				<span class="tracking-wider uppercase opacity-75">{effectiveUnitLabel}</span>
+				<span class="opacity-75">{effectiveUnitLabel}</span>
 				<span>{endLabel}</span>
 			</div>
 		{/if}

@@ -89,6 +89,22 @@ $$\text{Radius}_{\text{inner}} = \text{Radius}_{\text{outer}} - \text{Padding}$$
 * **Catalog Grid & Card Parity:** Both the `/projects` catalog and the landing page showcase (`/+page.svelte`) share identical card sizing via `max-w-5xl` containers and 2-column grids (`grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8`). The landing page renders a balanced 2x2 grid (max 4 projects).
 * **Card Description Line-Clamp:** Card descriptions are clamped to strictly 2 lines (`line-clamp-2 min-h-[2.5rem] sm:min-h-[2.85rem] leading-relaxed`) to prevent 2nd line letter clipping and maintain horizontal alignment across grid rows.
 
+### §4.1 Mobile Text Layout Rules (Android / Small Viewport)
+Container wrappers (`container mx-auto px-4 sm:px-6 max-w-*`) are already responsive. The text itself must also be. Mandatory rules:
+1. **Responsive heading scale:** Page titles use `text-2xl sm:text-3xl lg:text-4xl`; section titles `text-lg sm:text-xl`. Never ship a mobile-first size above `text-2xl` without an `sm:` step-up.
+2. **No cramped `justify-between` rows:** Any flex row containing a long-ish label + value or label + action must use `flex-col sm:flex-row ... gap-*`. At 360px the available content width is ~328px; compute before shipping.
+3. **Long unbreakable strings:** URLs, emails, subdomains, and mono prefixed strings get `min-w-0 break-all` (or `truncate` only where truncation is safe) inside flex children, plus `flex-wrap` on the container as a safety valve.
+4. **Avoid `tracking-wider uppercase` on unit labels** inside narrow status grids; it inflates width ~40% and breaks the 3-column time bounds row. Prefer plain `text-xs opacity-75`.
+5. **No descender clipping:** Never fix `h-5`/`h-6` on text rows; use `min-h-[1.35rem]` (matches the `text-xs` line-height) or line-driven height.
+6. **Footer/nav link rows:** apply `flex-wrap gap-x-3 gap-y-1` so link chains degrade gracefully instead of overflowing.
+7. **Headlines:** add `text-balance` on project/detail titles to avoid orphaned single words on narrow screens.
+
+### §4.2 Skeleton / Loading Screens
+Loading UI must **mirror the real layout** — same containers, spacing, and proportions as the loaded state — to eliminate layout shift.
+- Use the `Skeleton` primitive (`$lib/components/ui/Skeleton.svelte`) with `variant="line|block|avatar|badge|button"` and width-override classes; it renders `--bg-muted` + `animate-pulse`.
+- Scaffold containers get `role="status" aria-live="polite"` and a `sr-only` message; real layout text is replaced, not appended.
+- Composed mirrors live beside their targets: `SkeletonProjectCard.svelte` ↔ `ProjectCard.svelte`. Shared table loaders render skeleton rows inside the `Table` component (`skeletonRows` prop).
+
 
 ---
 
