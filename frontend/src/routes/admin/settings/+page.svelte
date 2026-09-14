@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { adminApi, extractError } from '$lib/api';
+	import { refreshNodeDomain } from '$lib/stores/node';
 	import {
 		Gear,
 		Ticket,
@@ -10,6 +11,7 @@
 		Check,
 		CheckCircle,
 		Clock,
+		Globe,
 		WarningCircle
 	} from 'phosphor-svelte';
 	import { Table, TableRow, TableCell, type TableColumn, ConfirmModal } from '$lib/components/ui';
@@ -26,6 +28,8 @@
 
 	let registrationMode = 'INVITE_ONLY';
 	let savedRegistrationMode = 'INVITE_ONLY';
+	let serverDomain = '';
+	let savedServerDomain = '';
 	let loadingSettings = true;
 	let savingSettings = false;
 	let settingsError: string | null = null;
@@ -70,6 +74,8 @@
 			const res = await adminApi.settings.getSettings();
 			registrationMode = res.registration_mode || 'INVITE_ONLY';
 			savedRegistrationMode = registrationMode;
+			serverDomain = res.domain || '';
+			savedServerDomain = serverDomain;
 		} catch (err) {
 			settingsError = extractError(err);
 		} finally {
@@ -92,10 +98,13 @@
 		settingsSuccess = null;
 		try {
 			await adminApi.settings.updateSettings({
-				registration_mode: registrationMode
+				registration_mode: registrationMode,
+				domain: serverDomain.trim()
 			});
 			savedRegistrationMode = registrationMode;
-			settingsSuccess = `Server registration policy updated to ${registrationMode}.`;
+			savedServerDomain = serverDomain.trim();
+			await refreshNodeDomain();
+			settingsSuccess = 'Server configuration updated successfully.';
 		} catch (err) {
 			settingsError = extractError(err);
 		} finally {
@@ -245,13 +254,13 @@
 		{#if loadingSettings}
 			<p class="text-sm text-(--text-muted)">Loading server registration policy...</p>
 		{:else}
-			{#if registrationMode !== savedRegistrationMode}
+			{#if registrationMode !== savedRegistrationMode || serverDomain !== savedServerDomain}
 				<div class="p-3.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-md text-sm flex items-center justify-between">
 					<div class="flex items-center gap-2">
 						<WarningCircle size={18} weight="bold" />
-						<span>You have unsaved changes (Current: <strong>{savedRegistrationMode}</strong> &rarr; New: <strong>{registrationMode}</strong>).</span>
+						<span>You have unsaved changes in server settings.</span>
 					</div>
-					<span class="text-xs underline font-medium">Click "Save Policy" below</span>
+					<span class="text-xs underline font-medium">Click "Save Configuration" below</span>
 				</div>
 			{/if}
 
@@ -291,16 +300,37 @@
 					</label>
 				</div>
 
+				<!-- Canonical Node Domain -->
+				<div class="flex flex-col gap-1.5 pt-3 border-t border-(--border-hairline)">
+					<label for="server-domain" class="text-sm font-semibold text-(--text-main) flex items-center justify-between">
+						<span class="flex items-center gap-1.5">
+							<Globe size={16} class="text-(--accent-sky)" />
+							<span>Canonical Node Domain</span>
+						</span>
+						<span class="text-xs text-(--text-muted) font-mono">e.g. ngumpul.example.com</span>
+					</label>
+					<input
+						id="server-domain"
+						type="text"
+						bind:value={serverDomain}
+						placeholder="ngumpul.local"
+						class="w-full px-3.5 py-2 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-xs sm:text-sm text-(--text-main) outline-none focus:border-(--accent-sky) font-mono transition-colors"
+					/>
+					<p class="text-xs text-(--text-muted)">
+						Canonical host address used for project subdomain routing, invite links, and telemetry display.
+					</p>
+				</div>
+
 				<div class="flex items-center justify-between pt-2">
 					<span class="text-xs text-(--text-muted)">
 						Changes take effect immediately across all public interfaces and auth endpoints.
 					</span>
 					<button
 						type="submit"
-						class="btn btn-primary btn-sm text-sm px-4 py-2 {registrationMode !== savedRegistrationMode ? 'ring-2 ring-(--accent-sky)' : ''}"
+						class="btn btn-primary btn-sm text-sm px-4 py-2 {registrationMode !== savedRegistrationMode || serverDomain !== savedServerDomain ? 'ring-2 ring-(--accent-sky)' : ''}"
 						disabled={savingSettings}
 					>
-						{savingSettings ? 'Saving...' : 'Save Policy'}
+						{savingSettings ? 'Saving...' : 'Save Configuration'}
 					</button>
 				</div>
 			</form>

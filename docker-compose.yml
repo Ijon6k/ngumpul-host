@@ -86,12 +86,12 @@ services:
 
   # 2. Frontend — SvelteKit SSR
   frontend:
-    image: ${IMAGE_FRONTEND:-ghcr.io/ijon6k/ngumpul-host/frontend}:${IMAGE_TAG:-latest}
+    image: ghcr.io/ijon6k/ngumpul-host/frontend:${IMAGE_TAG:-latest}
     container_name: ngumpul_frontend
     restart: always
     environment:
-      PORT:        3000
-      NODE_ENV:    production
+      PORT: 3000
+      NODE_ENV: production
       BACKEND_URL: http://backend:8080
     depends_on:
       backend:
@@ -101,27 +101,28 @@ services:
 
   # 3. Backend — Go API
   backend:
-    image: ${IMAGE_BACKEND:-ghcr.io/ijon6k/ngumpul-host/backend}:${IMAGE_TAG:-latest}
+    image: ghcr.io/ijon6k/ngumpul-host/backend:${IMAGE_TAG:-latest}
     container_name: ngumpul_backend
     restart: always
     environment:
-      APP_ENV:         ${APP_ENV:-production}
-      PORT:            8080
-      DATABASE_URL:    postgres://${POSTGRES_USER:-ngumpul}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-ngumpul_db}?sslmode=disable
-      SESSION_SECRET:  ${SESSION_SECRET:?Set SESSION_SECRET in .env}
-      STORAGE_DRIVER:  ${STORAGE_DRIVER:-s3}
-      STORAGE_PATH:    /data/uploads
-      S3_ENDPOINT:     ${S3_ENDPOINT:-http://seaweedfs:8333}
-      S3_REGION:       ${S3_REGION:-us-east-1}
-      S3_BUCKET:       ${S3_BUCKET:-ngumpul-uploads}
-      S3_ACCESS_KEY:   ${S3_ACCESS_KEY:-}
-      S3_SECRET_KEY:   ${S3_SECRET_KEY:-}
-      S3_PUBLIC_URL:   ${S3_PUBLIC_URL:-/uploads}
-      SMTP_HOST:       ${SMTP_HOST:-}
-      SMTP_PORT:       ${SMTP_PORT:-587}
-      SMTP_USERNAME:   ${SMTP_USERNAME:-}
-      SMTP_PASSWORD:   ${SMTP_PASSWORD:-}
-      SMTP_FROM:       ${SMTP_FROM:-Ngumpul Host <no-reply@example.com>}
+      APP_ENV: ${APP_ENV:-production}
+      PORT: 8080
+      DATABASE_URL: postgres://${POSTGRES_USER:-ngumpul}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-ngumpul_db}?sslmode=disable
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in .env}
+      SESSION_SECURE: ${SESSION_SECURE:-false}
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-s3}
+      STORAGE_PATH: /data/uploads
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://seaweedfs:8333}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_BUCKET: ${S3_BUCKET:-ngumpul-uploads}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-}
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL:-/uploads}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-Ngumpul Host <no-reply@example.com>}
     volumes:
       - uploads_data:/data/uploads
     depends_on:
@@ -136,13 +137,13 @@ services:
     container_name: ngumpul_postgres
     restart: always
     environment:
-      POSTGRES_USER:     ${POSTGRES_USER:-ngumpul}
+      POSTGRES_USER: ${POSTGRES_USER:-ngumpul}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
-      POSTGRES_DB:       ${POSTGRES_DB:-ngumpul_db}
+      POSTGRES_DB: ${POSTGRES_DB:-ngumpul_db}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ngumpul} -d ${POSTGRES_DB:-ngumpul_db}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ngumpul} -d ${POSTGRES_DB:-ngumpul_db}" ]
       interval: 5s
       timeout: 5s
       retries: 10

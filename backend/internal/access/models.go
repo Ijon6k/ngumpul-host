@@ -45,9 +45,11 @@ type ValidateInvitationResponse struct {
 
 type UpdateSettingsRequest struct {
 	RegistrationMode string `json:"registration_mode"`
+	Domain           string `json:"domain"`
 }
 
 type InstanceSettingsResponse struct {
 	RegistrationMode string    `json:"registration_mode"`
+	Domain           string    `json:"domain"`
 	UpdatedAt        time.Time `json:"updated_at"`
 }

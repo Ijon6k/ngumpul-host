@@ -64,8 +64,11 @@ func (h *Handler) GetSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	domain, _ := instance.GetDomain(r.Context(), h.svc.db)
+
 	response.JSON(w, http.StatusOK, InstanceSettingsResponse{
 		RegistrationMode: mode,
+		Domain:           domain,
 		UpdatedAt:        time.Now(),
 	})
 }
@@ -84,19 +87,51 @@ func (h *Handler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req.RegistrationMode = strings.ToUpper(strings.TrimSpace(req.RegistrationMode))
-	if err := h.svc.SetRegistrationMode(r.Context(), req.RegistrationMode, user.ID); err != nil {
-		if err == ErrInvalidMode {
-			response.Error(w, http.StatusBadRequest, "Invalid registration mode. Valid modes: OPEN, INVITE_ONLY, CLOSED")
+	if req.RegistrationMode != "" {
+		req.RegistrationMode = strings.ToUpper(strings.TrimSpace(req.RegistrationMode))
+		if err := h.svc.SetRegistrationMode(r.Context(), req.RegistrationMode, user.ID); err != nil {
+			if err == ErrInvalidMode {
+				response.Error(w, http.StatusBadRequest, "Invalid registration mode. Valid modes: OPEN, INVITE_ONLY, CLOSED")
+				return
+			}
+			response.Error(w, http.StatusInternalServerError, "Failed to update instance settings")
 			return
 		}
-		response.Error(w, http.StatusInternalServerError, "Failed to update instance settings")
-		return
 	}
+
+	cleanDomain := strings.TrimSpace(req.Domain)
+	if cleanDomain != "" {
+		cleanDomain = strings.TrimPrefix(cleanDomain, "http://")
+		cleanDomain = strings.TrimPrefix(cleanDomain, "https://")
+		cleanDomain = strings.TrimRight(cleanDomain, "/")
+
+		_, err := h.svc.db.Exec(r.Context(), `
+			INSERT INTO instance_settings (key, value, updated_at)
+			VALUES ('domain', $1, NOW())
+			ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = NOW()
+		`, cleanDomain)
+		if err != nil {
+			response.Error(w, http.StatusInternalServerError, "Failed to update domain setting")
+			return
+		}
+
+		appURL := fmt.Sprintf("https://%s", cleanDomain)
+		if strings.Contains(cleanDomain, "localhost") || strings.Contains(cleanDomain, "127.0.0.1") {
+			appURL = fmt.Sprintf("http://%s", cleanDomain)
+		}
+		_, _ = h.svc.db.Exec(r.Context(), `
+			INSERT INTO instance_settings (key, value, updated_at)
+			VALUES ('app_url', $1, NOW())
+			ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = NOW()
+		`, appURL)
+	}
+
+	currentDomain, _ := instance.GetDomain(r.Context(), h.svc.db)
 
 	response.JSON(w, http.StatusOK, map[string]any{
 		"message":           "Settings updated successfully",
 		"registration_mode": req.RegistrationMode,
+		"domain":            currentDomain,
 	})
 }
 

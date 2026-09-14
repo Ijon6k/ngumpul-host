@@ -2,6 +2,7 @@
 	import { authApi, extractError } from '$lib/api';
 	import { user } from '$lib/stores/auth';
 	import { AuthSplitLayout } from '$lib/components/layout';
+	import { goto } from '$app/navigation';
 
 	let emailOrUsername = '';
 	let password = '';
@@ -18,7 +19,7 @@
 			});
 			if (res?.user) {
 				user.set(res.user);
-				window.location.href = res.user.role === 'ADMIN' ? '/admin' : '/me';
+				await goto(res.user.role === 'ADMIN' ? '/admin' : '/me');
 			}
 		} catch (err) {
 			error = extractError(err);

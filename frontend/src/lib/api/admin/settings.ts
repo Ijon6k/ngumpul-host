@@ -2,6 +2,7 @@ import { http } from '../client';
 
 export interface RegistrationSettings {
 	registration_mode: 'OPEN' | 'INVITE_ONLY' | 'CLOSED';
+	domain?: string;
 }
 
 export interface Invitation {
@@ -19,7 +20,7 @@ export const adminSettingsApi = {
 	getSettings: () =>
 		http.get<RegistrationSettings>('/admin/settings'),
 
-	updateSettings: (body: { registration_mode: string }) =>
+	updateSettings: (body: { registration_mode?: string; domain?: string }) =>
 		http.patch<RegistrationSettings>('/admin/settings', body),
 
 	listInvitations: () =>

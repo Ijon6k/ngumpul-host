@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { user, logout } from '$lib/stores/auth';
+	import { user, logout, authLoading } from '$lib/stores/auth';
+	import { goto } from '$app/navigation';
+	import { browser } from '$app/environment';
 	import {
 		SquaresFour,
 		Tray,
@@ -56,6 +58,10 @@
 	$: if ($page.url.pathname !== prevPath) {
 		prevPath = $page.url.pathname;
 		adminBreadcrumb.set(null);
+	}
+
+	$: if (browser && !$authLoading && !$user) {
+		goto('/login');
 	}
 
 	function toggleTheme() {
@@ -435,9 +441,9 @@
 
 {:else if $user && $user.role !== 'ADMIN'}
 	<div class="min-h-screen flex items-center justify-center bg-(--bg-canvas) px-4">
-		<div class="max-w-md w-full p-8 bg-(--bg-surface) border border-(--border-hairline) rounded-2xl flex flex-col gap-4 text-center">
+		<div class="max-w-md w-full p-8 bg-(--bg-surface) border border-(--border-hairline) rounded-md flex flex-col gap-4 text-center shadow-xs">
 			<div class="w-10 h-10 rounded-full bg-(--color-danger)/10 text-(--color-danger) flex items-center justify-center mx-auto text-base font-bold">!</div>
-			<h1 class="font-display font-bold text-xl text-(--text-main)">Access Restricted</h1>
+			<h1 class="font-sans font-semibold text-xl text-(--text-main)">Access Restricted</h1>
 			<p class="text-sm text-(--text-secondary) leading-relaxed">
 				Your account <strong class="text-(--text-main)">@{$user.username}</strong> does not have administrator privileges to access the operational console.
 			</p>
@@ -448,13 +454,8 @@
 		</div>
 	</div>
 
-{:else}
-	<div class="min-h-screen flex items-center justify-center bg-(--bg-canvas) px-4">
-		<div class="max-w-md w-full p-8 bg-(--bg-surface) border border-(--border-hairline) rounded-2xl flex flex-col gap-4 text-center">
-			<div class="w-2.5 h-2.5 rounded-full bg-(--accent-sky) animate-ping mx-auto"></div>
-			<h1 class="font-display font-bold text-lg text-(--text-main)">Authenticating...</h1>
-			<p class="text-xs text-(--text-muted)">Checking session credentials...</p>
-			<a href="/login" class="btn btn-secondary btn-sm mt-2">Sign in to console</a>
-		</div>
+{:else if $authLoading}
+	<div class="min-h-screen bg-(--bg-canvas) flex items-center justify-center">
+		<div class="w-5 h-5 border-2 border-(--text-muted) border-t-transparent rounded-full animate-spin"></div>
 	</div>
 {/if}

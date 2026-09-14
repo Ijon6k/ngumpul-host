@@ -2,6 +2,7 @@
 	import { setupApi, extractError } from '$lib/api';
 	import { user } from '$lib/stores/auth';
 	import { AuthSplitLayout } from '$lib/components/layout';
+	import { goto } from '$app/navigation';
 
 	let domain = '';
 	let name = '';
@@ -38,7 +39,7 @@
 
 			if (res?.user) {
 				user.set(res.user);
-				window.location.href = '/admin';
+				await goto('/admin');
 			}
 		} catch (err) {
 			error = extractError(err);

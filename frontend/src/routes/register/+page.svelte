@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 	import { authApi, extractError } from '$lib/api';
 	import { user } from '$lib/stores/auth';
 	import { AuthSplitLayout } from '$lib/components/layout';
@@ -92,7 +93,7 @@
 			});
 			if (res?.user) {
 				user.set(res.user);
-				window.location.href = '/me';
+				await goto('/me');
 			}
 		} catch (err) {
 			error = extractError(err);
