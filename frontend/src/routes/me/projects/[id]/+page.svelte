@@ -7,7 +7,8 @@
 	import StatusDot from '$lib/components/StatusDot.svelte';
 	import ProjectCover from '$lib/components/ui/ProjectCover.svelte';
 	import ProjectAvailability from '$lib/components/ProjectAvailability.svelte';
-	import { Tabs, Timeline, TimelineItem, Breadcrumb, BreadcrumbItem, BreadcrumbDropdown, MarkdownView, UptimeHistory } from '$lib/components/ui';
+	import { Tabs, Timeline, TimelineItem, Breadcrumb, BreadcrumbItem, BreadcrumbDropdown, MarkdownView, UptimeHistory, Alert } from '$lib/components/ui';
+	import { toast } from 'svelte-sonner';
 	import {
 		ArrowUpRight,
 		UploadSimple,
@@ -192,6 +193,7 @@
 			});
 
 			saveSuccess = 'Project settings saved successfully.';
+			toast.success('Project settings saved successfully.');
 			if (project) {
 				project.name = formName;
 				project.description = formDesc;
@@ -203,6 +205,7 @@
 			}
 		} catch (err) {
 			saveError = extractError(err);
+			toast.error(saveError);
 		} finally {
 			saving = false;
 		}
@@ -650,16 +653,11 @@
 		{:else if activeTab === 'settings'}
 			<form on:submit|preventDefault={handleSaveSettings} class="flex flex-col gap-8 max-w-xl">
 				{#if saveSuccess}
-					<div class="p-3 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs rounded-sm flex items-center gap-2">
-						<Check size={14} weight="bold" />
-						<span>{saveSuccess}</span>
-					</div>
+					<Alert variant="success">{saveSuccess}</Alert>
 				{/if}
 
 				{#if saveError}
-					<div class="p-3 bg-rose-500/10 text-rose-700 dark:text-rose-400 text-xs rounded-sm">
-						{saveError}
-					</div>
+					<Alert variant="danger">{saveError}</Alert>
 				{/if}
 
 				<!-- Section: Project Details -->

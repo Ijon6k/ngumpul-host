@@ -14,7 +14,8 @@
 		Globe,
 		WarningCircle
 	} from 'phosphor-svelte';
-	import { Table, TableRow, TableCell, type TableColumn, ConfirmModal } from '$lib/components/ui';
+	import { Table, TableRow, TableCell, type TableColumn, ConfirmModal, Alert, Input } from '$lib/components/ui';
+	import { toast } from 'svelte-sonner';
 
 	const columns: TableColumn[] = [
 		{ key: 'creator', label: 'Created By' },
@@ -60,6 +61,7 @@
 		if (navigator?.clipboard) {
 			navigator.clipboard.writeText(url);
 		}
+		toast.success('Invitation link copied to clipboard.');
 		copiedTokenId = inv.id;
 		setTimeout(() => {
 			if (copiedTokenId === inv.id) {
@@ -105,8 +107,10 @@
 			savedServerDomain = serverDomain.trim();
 			await refreshNodeDomain();
 			settingsSuccess = 'Server configuration updated successfully.';
+			toast.success('Server configuration updated successfully.');
 		} catch (err) {
 			settingsError = extractError(err);
+			toast.error(settingsError);
 		} finally {
 			savingSettings = false;
 		}
@@ -145,10 +149,12 @@
 				};
 				invitedEmail = '';
 				maxUses = 1;
+				toast.success('Invitation token created successfully.');
 				await loadInvitations();
 			}
 		} catch (err) {
 			invitationsError = extractError(err);
+			toast.error(invitationsError);
 		} finally {
 			creatingInvite = false;
 		}
@@ -166,6 +172,7 @@
 		try {
 			await adminApi.settings.revokeInvitation(revokeTargetId);
 			revokeTargetId = null;
+			toast.success('Invitation token revoked.');
 			await loadInvitations();
 		} catch (err) {
 			revokeError = extractError(err);
@@ -178,6 +185,7 @@
 		if (!navigator?.clipboard) return;
 		navigator.clipboard.writeText(text);
 		copied = true;
+		toast.success('Link copied to clipboard.');
 		setTimeout(() => {
 			copied = false;
 		}, 2000);
@@ -240,28 +248,26 @@
 		</div>
 
 		{#if settingsError}
-			<div class="p-3.5 bg-red-950/10 text-(--color-danger) border border-(--color-danger)/30 rounded-md text-sm">
+			<Alert variant="danger">
 				{settingsError}
-			</div>
+			</Alert>
 		{/if}
 		{#if settingsSuccess}
-			<div class="p-3.5 bg-(--accent-soft) text-(--accent-strong) border border-(--accent-sky)/30 rounded-md text-sm flex items-center gap-2">
-				<CheckCircle size={17} weight="bold" />
-				<span>{settingsSuccess}</span>
-			</div>
+			<Alert variant="success">
+				{settingsSuccess}
+			</Alert>
 		{/if}
 
 		{#if loadingSettings}
 			<p class="text-sm text-(--text-muted)">Loading server registration policy...</p>
 		{:else}
 			{#if registrationMode !== savedRegistrationMode || serverDomain !== savedServerDomain}
-				<div class="p-3.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-md text-sm flex items-center justify-between">
+				<Alert variant="warning" class="justify-between">
 					<div class="flex items-center gap-2">
-						<WarningCircle size={18} weight="bold" />
 						<span>You have unsaved changes in server settings.</span>
 					</div>
 					<span class="text-xs underline font-medium">Click "Save Configuration" below</span>
-				</div>
+				</Alert>
 			{/if}
 
 			<form on:submit|preventDefault={handleSaveSettingsRequest} class="flex flex-col gap-4">
@@ -301,24 +307,19 @@
 				</div>
 
 				<!-- Canonical Node Domain -->
-				<div class="flex flex-col gap-1.5 pt-3 border-t border-(--border-hairline)">
-					<label for="server-domain" class="text-sm font-semibold text-(--text-main) flex items-center justify-between">
-						<span class="flex items-center gap-1.5">
-							<Globe size={16} class="text-(--accent-sky)" />
-							<span>Canonical Node Domain</span>
-						</span>
-						<span class="text-xs text-(--text-muted) font-mono">e.g. ngumpul.example.com</span>
-					</label>
-					<input
+				<div class="pt-3 border-t border-(--border-hairline)">
+					<Input
 						id="server-domain"
-						type="text"
+						label="Canonical Node Domain"
 						bind:value={serverDomain}
 						placeholder="ngumpul.local"
-						class="w-full px-3.5 py-2 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-xs sm:text-sm text-(--text-main) outline-none focus:border-(--accent-sky) font-mono transition-colors"
-					/>
-					<p class="text-xs text-(--text-muted)">
-						Canonical host address used for project subdomain routing, invite links, and telemetry display.
-					</p>
+						class="font-mono text-xs sm:text-sm"
+						helperText="Canonical host address used for project subdomain routing, invite links, and telemetry display."
+					>
+						<svelte:fragment slot="label-extra">
+							<span class="text-xs text-(--text-muted) font-mono">e.g. ngumpul.example.com</span>
+						</svelte:fragment>
+					</Input>
 				</div>
 
 				<div class="flex items-center justify-between pt-2">
@@ -347,15 +348,14 @@
 		</div>
 
 		{#if savedRegistrationMode === 'CLOSED'}
-			<div class="p-4 bg-amber-500/10 border border-amber-500/30 rounded-md flex items-start gap-2.5 text-sm text-amber-600 dark:text-amber-400">
-				<WarningCircle size={20} weight="bold" class="shrink-0 mt-0.5" />
+			<Alert variant="warning">
 				<div class="flex flex-col gap-1">
 					<strong class="font-semibold">Notice: Server registration is currently CLOSED</strong>
 					<span class="text-xs sm:text-sm leading-relaxed">
 						While registration is closed, newly generated invitations cannot be used to create accounts. You must switch registration policy to "Invite Only" or "Open" before recipients can redeem invitations.
 					</span>
 				</div>
-			</div>
+			</Alert>
 		{/if}
 
 		{#if inviteSuccessToken}
@@ -391,50 +391,41 @@
 			</div>
 		{/if}
 
+		{#if invitationsError}
+			<Alert variant="danger">
+				{invitationsError}
+			</Alert>
+		{/if}
+
 		<form on:submit|preventDefault={handleCreateInvitation} class="flex flex-col gap-4">
 			<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-				<div class="flex flex-col gap-1.5">
-					<label for="inv-email" class="text-sm font-medium text-(--text-main)">
-						Restrict to Email (Optional)
-					</label>
-					<input
-						id="inv-email"
-						type="email"
-						placeholder="friend@example.com"
-						class="w-full px-3.5 py-2.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-sm text-(--text-main) outline-none focus:border-(--text-main)"
-						bind:value={invitedEmail}
-					/>
-				</div>
+				<Input
+					id="inv-email"
+					type="email"
+					label="Restrict to Email (Optional)"
+					placeholder="friend@example.com"
+					bind:value={invitedEmail}
+				/>
 
-				<div class="flex flex-col gap-1.5">
-					<label for="inv-uses" class="text-sm font-medium text-(--text-main)">
-						Max Usage Limit
-					</label>
-					<input
-						id="inv-uses"
-						type="number"
-						min="1"
-						max="100"
-						class="w-full px-3.5 py-2.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-sm text-(--text-main) outline-none focus:border-(--text-main)"
-						bind:value={maxUses}
-						required
-					/>
-				</div>
+				<Input
+					id="inv-uses"
+					type="number"
+					label="Max Usage Limit"
+					min="1"
+					max="100"
+					bind:value={maxUses}
+					required
+				/>
 
-				<div class="flex flex-col gap-1.5">
-					<label for="inv-expiry" class="text-sm font-medium text-(--text-main)">
-						Expiration (Days)
-					</label>
-					<input
-						id="inv-expiry"
-						type="number"
-						min="1"
-						max="365"
-						class="w-full px-3.5 py-2.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-sm text-(--text-main) outline-none focus:border-(--text-main)"
-						bind:value={expiresInDays}
-						required
-					/>
-				</div>
+				<Input
+					id="inv-expiry"
+					type="number"
+					label="Expiration (Days)"
+					min="1"
+					max="365"
+					bind:value={expiresInDays}
+					required
+				/>
 			</div>
 
 			<div class="flex justify-end pt-1">

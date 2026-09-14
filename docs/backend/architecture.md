@@ -21,7 +21,7 @@ backend/
 │   ├── access/              # Registration policy & invite token verification
 │   ├── activity/            # Public & admin chronological event streams
 │   ├── admin/               # Metrics, operator audit trail & user management
-│   ├── auth/                # Session manager, bcrypt hashing, login/register & RBAC
+│   ├── auth/                # Session manager, argon2id hashing, login/register & RBAC
 │   ├── availability/        # Kernel uptime calculation, gap detection & incidents
 │   ├── comment/             # Project discussion comments & author/operator deletion
 │   ├── config/              # Environment variable loading & validation

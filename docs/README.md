@@ -11,6 +11,7 @@ Welcome to the technical, architectural, and operational documentation for **Ngu
 | :--- | :--- |
 | [**System Overview & Product Vision**](./overview.md) | High-level product thesis, user mental model, and core capabilities. |
 | [**System Architecture & Topology**](./architecture.md) | Network ingress, reverse proxying, single-instance tenancy, security boundaries, and container topology. |
+| [**Security & Hardening Reference**](./security.md) | Password hashing, session management, rate limiting, upload defenses, CORS, and the hardening checklist before public launch. |
 | [**End-to-End Operational Workflows**](./workflows.md) | Visual sequence diagrams for member onboarding, hosting requests, container provisioning, and reboot reconciliation. |
 
 ### 2. Frontend Engineering (`docs/frontend/`)

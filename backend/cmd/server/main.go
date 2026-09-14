@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -24,8 +25,10 @@ import (
 	"ngumpul-host/backend/internal/config"
 	"ngumpul-host/backend/internal/database"
 	"ngumpul-host/backend/internal/hosting"
+	"ngumpul-host/backend/internal/instance"
 	"ngumpul-host/backend/internal/notification"
 	"ngumpul-host/backend/internal/project"
+	"ngumpul-host/backend/internal/ratelimit"
 	"ngumpul-host/backend/internal/report"
 	"ngumpul-host/backend/internal/setup"
 	"ngumpul-host/backend/internal/storage"
@@ -83,6 +86,21 @@ func main() {
 	notificationHandler := notification.NewHandler(pool)
 	adminHandler := admin.NewHandler(pool)
 
+	loginLimiter := ratelimit.New(10, time.Minute)
+	defer loginLimiter.Stop()
+
+	registerLimiter := ratelimit.New(5, time.Minute)
+	defer registerLimiter.Stop()
+
+	setupLimiter := ratelimit.New(5, time.Minute)
+	defer setupLimiter.Stop()
+
+	inviteLimiter := ratelimit.New(15, time.Minute)
+	defer inviteLimiter.Stop()
+
+	uploadLimiter := ratelimit.New(20, time.Minute)
+	defer uploadLimiter.Stop()
+
 	r := chi.NewRouter()
 
 	// Standard middlewares
@@ -92,9 +110,33 @@ func main() {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(60 * time.Second))
 
-	// CORS configuration for local development / reverse proxy
+	// Strict CORS configuration with exact origin verification
+	devOrigins := map[string]bool{
+		"http://localhost:5173": true,
+		"http://localhost:3000": true,
+		"http://localhost:8080": true,
+		"http://localhost":      true,
+		"http://127.0.0.1:5173": true,
+		"http://127.0.0.1:3000": true,
+		"http://127.0.0.1:8080": true,
+		"http://127.0.0.1":      true,
+	}
+
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost*", "http://127.0.0.1*", cfg.AppURL},
+		AllowOriginFunc: func(r *http.Request, origin string) bool {
+			if devOrigins[origin] {
+				return true
+			}
+			if cfg.AppURL != "" && (origin == cfg.AppURL || strings.TrimSuffix(origin, "/") == strings.TrimSuffix(cfg.AppURL, "/")) {
+				return true
+			}
+			if domain, err := instance.GetDomain(r.Context(), pool); err == nil && domain != "" {
+				if origin == "http://"+domain || origin == "https://"+domain {
+					return true
+				}
+			}
+			return false
+		},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
@@ -127,13 +169,13 @@ func main() {
 	apiRouter := chi.NewRouter()
 	apiRouter.Get("/health", healthHandler)
 
-	// Public Auth & Access
+	// Public Auth & Access with strict rate limiting
 	apiRouter.Get("/setup/status", setupHandler.GetStatus)
-	apiRouter.Post("/setup", setupHandler.Setup)
+	apiRouter.With(setupLimiter.Middleware("Too many setup attempts. Please try again shortly.")).Post("/setup", setupHandler.Setup)
 	apiRouter.Get("/auth/mode", accessHandler.GetRegistrationMode)
-	apiRouter.Get("/invitations/validate", accessHandler.ValidateInvitation)
-	apiRouter.Post("/auth/register", authHandler.Register)
-	apiRouter.Post("/auth/login", authHandler.Login)
+	apiRouter.With(inviteLimiter.Middleware("Too many invitation validations. Please try again shortly.")).Get("/invitations/validate", accessHandler.ValidateInvitation)
+	apiRouter.With(registerLimiter.Middleware("Too many registration attempts. Please try again shortly.")).Post("/auth/register", authHandler.Register)
+	apiRouter.With(loginLimiter.Middleware("Too many login attempts. Please try again in a minute.")).Post("/auth/login", authHandler.Login)
 	apiRouter.Post("/auth/logout", authHandler.Logout)
 	apiRouter.Get("/me", authHandler.Me)
 
@@ -178,8 +220,8 @@ func main() {
 		// Activity
 		userRouter.Get("/me/activity", activityHandler.ListMyActivity)
 
-		// File upload (avatars, covers)
-		userRouter.Post("/upload", storageService.UploadHandler)
+		// File upload (avatars, covers) with rate limiting
+		userRouter.With(uploadLimiter.Middleware("Upload rate limit reached. Please wait a moment.")).Post("/upload", storageService.UploadHandler)
 	})
 
 	// Administrator Routes

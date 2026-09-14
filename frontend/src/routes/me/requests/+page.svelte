@@ -5,8 +5,8 @@
 	import type { HostingRequest } from '$lib/types/hosting';
 	import { detectLinkInfo } from '$lib/utils/linkDetector';
 	import { formatDate } from '$lib/utils/format';
-	import { compressImageToWebP } from '$lib/utils/imageCompressor';
-	import { ProjectCover } from '$lib/components/ui';
+	import { Alert, Textarea, ImageUpload } from '$lib/components/ui';
+	import { toast } from 'svelte-sonner';
 	import {
 		UploadSimple,
 		CheckCircle,
@@ -16,9 +16,7 @@
 		Spinner,
 		Globe,
 		BookOpen,
-		Code,
-		Image,
-		Trash
+		Code
 	} from 'phosphor-svelte';
 
 	let requests: HostingRequest[] = [];
@@ -32,8 +30,6 @@
 	let description = '';
 	let readme = '';
 	let coverImageUrl = '';
-	let uploadingCover = false;
-	let coverError: string | null = null;
 	let repositoryUrl = '';
 	let documentationUrl = '';
 	let deploymentNotes = '';
@@ -125,49 +121,6 @@
 		reader.readAsText(file);
 	}
 
-	async function handleCoverUpload(event: Event) {
-		const target = event.target as HTMLInputElement;
-		if (!target.files || target.files.length === 0) return;
-		const file = target.files[0];
-		target.value = '';
-
-		if (!file.type.startsWith('image/')) {
-			coverError = 'Please choose a valid image file (JPG, PNG, or WebP).';
-			return;
-		}
-
-		if (file.size > 10 * 1024 * 1024) {
-			coverError = 'Original file size exceeds maximum limit of 10 MB.';
-			return;
-		}
-
-		coverError = null;
-		uploadingCover = true;
-
-		try {
-			// Client-side WebP compression (1600x1200 max, 0.82 quality)
-			const result = await compressImageToWebP(file, {
-				maxWidth: 1600,
-				maxHeight: 1200,
-				quality: 0.82
-			});
-
-			const url = await projectsApi.uploadCover(result.file);
-			if (url) {
-				coverImageUrl = url;
-			}
-		} catch (err) {
-			coverError = extractError(err);
-		} finally {
-			uploadingCover = false;
-		}
-	}
-
-	function removeCover() {
-		coverImageUrl = '';
-		coverError = null;
-	}
-
 	async function handleSubmit() {
 		error = null;
 		successMsg = null;
@@ -198,6 +151,7 @@
 			});
 
 			successMsg = 'Hosting request submitted successfully. The host administrator will review your project.';
+			toast.success('Hosting request submitted successfully.');
 			projectName = '';
 			subdomain = '';
 			subdomainAvailable = null;
@@ -212,6 +166,7 @@
 			await loadRequests();
 		} catch (err) {
 			error = extractError(err);
+			toast.error(error);
 		} finally {
 			submitting = false;
 		}
@@ -267,10 +222,10 @@
 	</header>
 
 	{#if error}
-		<div class="p-3 bg-red-950/10 text-(--color-danger) border border-(--color-danger)/30 rounded-sm text-xs">{error}</div>
+		<Alert variant="danger">{error}</Alert>
 	{/if}
 	{#if successMsg}
-		<div class="p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-sm text-xs">{successMsg}</div>
+		<Alert variant="success">{successMsg}</Alert>
 	{/if}
 
 	<!-- Progressive 3-Section Form -->
@@ -295,92 +250,27 @@
 				/>
 			</div>
 
-			<div class="flex flex-col gap-1.5">
-				<div class="flex items-center justify-between">
-					<label for="p-desc" class="text-xs font-medium text-(--text-main)">Short description <span class="text-(--accent-orange)">*</span></label>
+			<Textarea
+				id="p-desc"
+				label="Short description *"
+				rows={2}
+				maxlength={280}
+				required
+				placeholder="A concise description of the project (shown on catalog cards)..."
+				bind:value={description}
+			>
+				<svelte:fragment slot="label-extra">
 					<span class="text-xs text-(--text-muted) font-mono">{description.length}/280</span>
-				</div>
-				<textarea
-					id="p-desc"
-					rows="2"
-					maxlength="280"
-					required
-					class="w-full px-3 py-2 bg-(--bg-muted) border border-(--border-hairline) rounded-sm text-xs text-(--text-main) outline-none focus:border-(--accent-sky) transition-colors resize-y"
-					placeholder="A concise description of the project (shown on catalog cards)..."
-					bind:value={description}
-				></textarea>
-			</div>
+				</svelte:fragment>
+			</Textarea>
 
 			<!-- Cover Photo Upload (16:9 Standard) -->
-			<div class="flex flex-col gap-2 pt-1">
-				<div class="flex items-center justify-between">
-					<label for="cover-file-input" class="text-xs font-medium text-(--text-main) flex items-center gap-1.5">
-						<Image size={14} class="text-(--text-muted)" />
-						<span>Project Cover</span>
-						<span class="text-xs text-(--text-muted) font-normal">(Optional · 16:9 standard)</span>
-					</label>
-					{#if coverImageUrl}
-						<button
-							type="button"
-							on:click={removeCover}
-							class="text-xs text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1 cursor-pointer"
-						>
-							<Trash size={13} />
-							<span>Remove cover</span>
-						</button>
-					{/if}
-				</div>
-
-				{#if coverImageUrl}
-					<div class="relative w-full aspect-[16/9] rounded-md overflow-hidden border border-(--border-hairline) bg-(--bg-muted) group">
-						<ProjectCover src={coverImageUrl} alt={projectName || 'Cover preview'} name={projectName || 'Project'} aspectRatio="16/9" />
-						<div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-							<label class="btn btn-secondary btn-sm text-xs px-3 py-1.5 cursor-pointer inline-flex items-center gap-1.5 shadow-sm">
-								<UploadSimple size={13} weight="bold" />
-								<span>Change image</span>
-								<input
-									type="file"
-									accept="image/jpeg,image/png,image/webp"
-									class="hidden"
-									on:change={handleCoverUpload}
-									disabled={uploadingCover}
-								/>
-							</label>
-						</div>
-					</div>
-				{:else}
-					<label
-						class="border border-dashed border-(--border-hairline) hover:border-(--accent-sky) bg-(--bg-muted)/30 hover:bg-(--bg-muted)/60 rounded-md p-6 flex flex-col items-center justify-center gap-2.5 transition-colors cursor-pointer text-center"
-					>
-						<input
-							id="cover-file-input"
-							type="file"
-							accept="image/jpeg,image/png,image/webp"
-							class="hidden"
-							on:change={handleCoverUpload}
-							disabled={uploadingCover}
-						/>
-						{#if uploadingCover}
-							<div class="flex items-center gap-2 text-xs text-(--accent-sky)">
-								<Spinner size={16} class="animate-spin" />
-								<span>Uploading cover photo...</span>
-							</div>
-						{:else}
-							<div class="w-10 h-10 rounded-full bg-(--bg-muted) flex items-center justify-center text-(--text-muted)">
-								<Image size={20} />
-							</div>
-							<div class="flex flex-col gap-0.5">
-								<span class="text-xs font-medium text-(--text-main)">Click to upload cover photo</span>
-								<span class="text-xs text-(--text-muted)">JPG, PNG, or WebP (16:9 standard)</span>
-							</div>
-						{/if}
-					</label>
-				{/if}
-
-				{#if coverError}
-					<span class="text-xs text-rose-600 dark:text-rose-400">{coverError}</span>
-				{/if}
-			</div>
+			<ImageUpload
+				bind:value={coverImageUrl}
+				projectName={projectName}
+				label="Project Cover"
+				helperText="(Optional · 16:9 standard)"
+			/>
 
 			<div class="flex flex-col gap-1.5 pt-1">
 				<div class="flex items-center justify-between">
@@ -399,16 +289,14 @@
 						/>
 					</label>
 				</div>
-				<textarea
+				<Textarea
 					id="p-readme"
-					rows="4"
-					class="w-full px-3 py-2 bg-(--bg-muted) border border-(--border-hairline) rounded-sm text-xs font-mono text-(--text-main) outline-none focus:border-(--accent-sky) transition-colors resize-y"
+					rows={4}
+					class="font-mono"
 					placeholder="# Architecture and Setup Notes&#10;&#10;Provide details on setup, technology requirements, or usage..."
 					bind:value={readme}
-				></textarea>
-				<span class="text-xs text-(--text-muted)">
-					Optional. Formatted markdown will be displayed on the project page.
-				</span>
+					helperText="Optional. Formatted markdown will be displayed on the project page."
+				/>
 			</div>
 		</section>
 
@@ -518,16 +406,13 @@
 				{/if}
 			</div>
 
-			<div class="flex flex-col gap-1.5">
-				<label for="p-deploy" class="text-xs font-medium text-(--text-main)">Deployment notes</label>
-				<textarea
-					id="p-deploy"
-					rows="2"
-					class="w-full px-3 py-2 bg-(--bg-muted) border border-(--border-hairline) rounded-sm text-xs text-(--text-main) outline-none focus:border-(--accent-sky) transition-colors resize-y"
-					placeholder="Port requirements, Dockerfile location, or environment dependencies..."
-					bind:value={deploymentNotes}
-				></textarea>
-			</div>
+			<Textarea
+				id="p-deploy"
+				label="Deployment notes"
+				rows={2}
+				placeholder="Port requirements, Dockerfile location, or environment dependencies..."
+				bind:value={deploymentNotes}
+			/>
 		</section>
 
 		<div class="h-px bg-(--border-hairline)"></div>

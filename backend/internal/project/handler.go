@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"ngumpul-host/backend/internal/auth"
 	"ngumpul-host/backend/internal/availability"
+	"ngumpul-host/backend/internal/pagination"
 	"ngumpul-host/backend/internal/response"
 )
 
@@ -118,18 +118,10 @@ func (h *Handler) ListPublic(w http.ResponseWriter, r *http.Request) {
 	page := 1
 	limit := 12
 	if pageStr != "" || limitStr != "" {
-		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
-			page = p
-		}
-		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
-			if l > 50 {
-				limit = 50
-			} else {
-				limit = l
-			}
-		}
-		offset := (page - 1) * limit
-		dataQuery += fmt.Sprintf(" LIMIT %d OFFSET %d", limit, offset)
+		p := pagination.Parse(r, 12, 50)
+		page = p.Page
+		limit = p.Limit
+		dataQuery += fmt.Sprintf(" LIMIT %d OFFSET %d", p.Limit, p.Offset)
 	}
 
 	rows, err := h.db.Query(r.Context(), dataQuery, args...)

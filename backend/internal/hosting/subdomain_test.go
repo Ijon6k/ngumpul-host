@@ -48,3 +48,21 @@ func TestSubdomainValidation(t *testing.T) {
 		}
 	}
 }
+
+func TestValidateSubdomain(t *testing.T) {
+	if err := ValidateSubdomain("my-project"); err != nil {
+		t.Errorf("expected my-project to be valid, got: %v", err)
+	}
+
+	if err := ValidateSubdomain("api"); err == nil {
+		t.Errorf("expected api to fail reserved check")
+	}
+
+	if err := ValidateSubdomain("a"); err == nil {
+		t.Errorf("expected single-letter subdomain to fail minimum length check")
+	}
+
+	if err := ValidateSubdomain("-invalid-"); err == nil {
+		t.Errorf("expected leading dash to fail regex check")
+	}
+}

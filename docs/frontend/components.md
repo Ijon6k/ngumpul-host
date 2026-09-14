@@ -20,6 +20,10 @@
    - [Badge](#badge)
    - [Card](#card)
    - [Input](#input)
+   - [Textarea](#textarea)
+   - [Select](#select)
+   - [Alert](#alert)
+   - [ImageUpload](#imageupload)
    - [PageContainer & PageHeader](#pagecontainer--pageheader)
    - [ProjectCover](#projectcover)
    - [Pagination](#pagination)
@@ -274,7 +278,7 @@ Structural content container with `radius-md` (`rounded-[8px]`) token.
 
 ### `Input`
 
-Form input element with `radius-sm` (`rounded-[4px]`) token, automated label handling, helper text, and error states.
+Form input element with `radius-sm` (`rounded-[4px]`) token, automated label handling, helper text, and error states. Passes through arbitrary attributes via `{...$$restProps}`, so Superforms `$constraints` (e.g. `minlength`, `maxlength`, `pattern`, `required`) and `aria-invalid` spread onto the underlying `<input>` work directly with zero component changes.
 
 #### Props
 | Prop | Type | Default | Description |
@@ -296,6 +300,113 @@ Form input element with `radius-sm` (`rounded-[4px]`) token, automated label han
   bind:value={repoUrl}
   error={formErrors.repoUrl}
   helperText="Public repository only."
+/>
+```
+
+---
+
+### `Textarea`
+
+Multi-line text entry primitive conforming to `radius-sm` (`rounded-[4px]`), supporting optional automated labels, character counter or extra metadata via `label-extra` slot, error states, and helper text.
+
+#### Props
+| Prop | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `value` | `string` | `''` | Textarea value (bindable) |
+| `label` | `string` | `''` | Header label above textarea |
+| `placeholder` | `string` | `''` | Placeholder guidance text |
+| `rows` | `number` | `3` | Visible text lines count |
+| `helperText` | `string` | `''` | Subtle text rendered beneath the field |
+| `error` | `string` | `''` | Validation error message |
+| `disabled` | `boolean` | `false` | Disables interaction |
+| `readonly` | `boolean` | `false` | Disallows text input |
+| *Slots* | `label-extra` | | Slot for right-aligned label extras (e.g. character counter) |
+
+#### Usage Example
+```svelte
+<Textarea
+  label="Project Description"
+  rows={3}
+  maxlength={280}
+  bind:value={desc}
+  placeholder="Short summary..."
+>
+  <svelte:fragment slot="label-extra">
+    <span class="text-xs font-mono text-(--text-muted)">{desc.length}/280</span>
+  </svelte:fragment>
+</Textarea>
+```
+
+---
+
+### `Select`
+
+Drop-down selection primitive styled with `radius-sm` (`rounded-[4px]`), custom Phosphor `CaretDown` adornment, and full dark-theme token adherence.
+
+#### Props
+| Prop | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `value` | `any` | `''` | Selected option value (bindable) |
+| `label` | `string` | `''` | Header label above dropdown |
+| `helperText` | `string` | `''` | Descriptive text below dropdown |
+| `error` | `string` | `''` | Validation error message |
+| `disabled` | `boolean` | `false` | Disables interaction |
+| *Slots* | `default` | | `<option>` elements |
+
+#### Usage Example
+```svelte
+<Select label="Hosting Runtime" bind:value={runtime}>
+  <option value="DOCKER">Docker Container</option>
+  <option value="STATIC">Static HTML / SPA</option>
+</Select>
+```
+
+---
+
+### `Alert`
+
+Contextual inline alert and notification banner with `radius-md` (`rounded-[8px]`), semantic border accents, and Phosphor icons (`CheckCircle`, `WarningCircle`, `XCircle`, `Info`).
+
+#### Props
+| Prop | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `variant` | `'danger' \| 'warning' \| 'success' \| 'info'` | `'info'` | Alert visual severity and coloring |
+| `title` | `string` | `''` | Optional bold header text |
+| `showIcon` | `boolean` | `true` | Controls whether leading Phosphor icon appears |
+
+#### Usage Example
+```svelte
+<Alert variant="danger">
+  Invalid credentials provided. Please try again.
+</Alert>
+
+<Alert variant="warning" title="Notice">
+  Registrations are currently closed on this host.
+</Alert>
+```
+
+---
+
+### `ImageUpload`
+
+Centralized project artwork cover uploader conforming to the **16:9 standard ratio**. Features client-side WebP compression (1600x1200 max, 0.82 quality), dashed dropzone, hover actions, and direct integration with `projectsApi.uploadCover`.
+
+#### Props
+| Prop | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `value` | `string` | `''` | Cover image URL (bindable) |
+| `label` | `string` | `'Cover Artwork'` | Header label |
+| `helperText` | `string` | `'(Optional · 16:9 standard)'` | Guidance text |
+| `projectName` | `string` | `''` | Fallback initials title for preview |
+| `aspectRatio` | `string` | `'16/9'` | Strict cover aspect ratio |
+| `disabled` | `boolean` | `false` | Disables file selection and upload |
+
+#### Usage Example
+```svelte
+<ImageUpload
+  bind:value={coverImageUrl}
+  projectName={projectName}
+  label="Project Cover"
 />
 ```
 

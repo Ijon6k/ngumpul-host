@@ -10,6 +10,7 @@
 	import { browser } from '$app/environment';
 
 	import { nodeDomain } from '$lib/stores/node';
+	import { Toaster } from 'svelte-sonner';
 
 	const queryClient = new QueryClient({
 		defaultOptions: {
@@ -87,4 +88,16 @@
 			<Footer />
 		</div>
 	{/if}
+
+	<Toaster
+		position="bottom-right"
+		toastOptions={{
+			classes: {
+				toast: 'bg-(--bg-surface) text-(--text-main) border border-(--border-hairline) shadow-md rounded-md text-sm',
+				description: 'text-(--text-muted) text-xs',
+				actionButton: 'bg-(--accent-sky) text-white rounded-sm text-xs font-medium',
+				cancelButton: 'bg-(--bg-muted) text-(--text-main) rounded-sm text-xs'
+			}
+		}}
+	/>
 </QueryClientProvider>

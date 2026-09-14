@@ -4,6 +4,7 @@
 > **Reactivity & Syntax:** Svelte 5  
 > **Styling:** Tailwind CSS v4 + Semantic CSS Variables  
 > **Data Fetching:** TanStack Svelte Query v5 (`@tanstack/svelte-query`)  
+> **Form Handling:** Superforms (`sveltekit-superforms`) + Valibot (`valibot`) via server actions  
 > **Icons:** Phosphor Icons (`phosphor-svelte`)  
 > **Location:** [`docs/frontend/architecture.md`](./architecture.md)
 
@@ -26,6 +27,8 @@ frontend/src/
 │   │   └── admin/                # Operator console shell & management views
 │   ├── stores/                   # Auth store & reactive session state
 │   ├── types/                    # Shared TypeScript domain contracts (project, user, comment, report, hosting, notification, activity)
+│   ├── schemas/                  # Shared Valibot form schemas (auth.ts: login/register/setup)
+│   ├── server/                   # Server-only helpers (session cookie forwarding)
 │   └── utils/                    # Date & duration formatting utilities
 └── routes/
     ├── +layout.svelte            # Root layout, TanStack Query provider & auth boot
@@ -36,8 +39,9 @@ frontend/src/
     ├── status/                   # Infrastructure availability & telemetry heatmap
     ├── me/                       # Authenticated member workspace & hosting intake
     ├── admin/                    # Operator console shell & management views
-    ├── login/                    # Member authentication
-    ├── register/                 # Account registration
+    ├── login/                    # Member authentication (superform + server action)
+    ├── register/                 # Account registration (superform + server action)
+    ├── setup/                    # Initial node provisioning (superform + server action)
     └── invite/[token]/           # Invitation acceptance flow
 ```
 
@@ -105,8 +109,17 @@ Domain models are strictly typed and centralized:
 To allow SvelteKit universal page data preloading (`+page.ts`) while running behind Docker internal networks:
 - `src/hooks.server.ts` implements `handleFetch` to automatically rewrite internal server-side requests targeting `/api/...` to the Go backend container (`BACKEND_URL` / `http://backend:8080`).
 - Prevents container network isolation failures during server-side rendering while keeping public browser requests transparently routed via Nginx.
+- Server actions that call `fetch('/api/...')` (e.g. auth form submissions) are routed through the same hook, so they transparently reach the Go backend.
 
-### 3.4. Reactive Stores & Real-Time Counter Synchronization
+### 3.4. Form Handling — Superforms + Server Actions (Auth Routes)
+Login, registration, and initial node setup use `sveltekit-superforms` with shared Valibot schemas:
+- **Shared schemas** live in `src/lib/schemas/auth.ts` (`loginSchema`, `registerSchema`, `setupSchema`) and are consumed both server-side (validation) and client-side (`valibotClient` for inline constraints/errors).
+- **Server actions** (`+page.server.ts` on `/login`, `/register`, `/setup`) validate the request with `superValidate(request, valibot(schema))`, proxy the payload to the Go backend via `event.fetch('/api/...')`, and return `{ form, user }` on success or `fail(status, { form, message })` / `setError(...)` on failure.
+- **Session cookie forwarding:** the Go backend issues the `ngumpul_session` cookie on its response. `src/lib/server/session.ts` exposes `forwardSessionCookie(cookies, response)` which re-sets that cookie on the browser via `cookies.set()`, honoring `Secure`/`SameSite`/`HttpOnly`/`expires`/`max-age` attributes.
+- **Cross-field validation** (`passwords match`) is intentionally performed in the server action with `setError(form, 'confirmPassword', ...)` rather than a schema-level `v.check`, keeping pathless issues out of the `_errors` bucket.
+- On successful submissions the client's `onResult` handler updates the `$user` store and redirects by role.
+
+### 3.5. Reactive Stores & Real-Time Counter Synchronization
 - **Session Authentication (`$lib/stores/auth.ts`)**: Initializes via `initAuth()` in `+layout.svelte`, storing `$user`.
 - **Member Notifications (`$lib/stores/notifications.ts`)**: `unreadNotificationsCount` store keeps the `/me` sidebar badge synchronized in real-time when notifications are opened or marked as read.
 - **Operator Metrics (`$lib/stores/adminStats.ts`)**: `adminPendingCount` and `adminOpenReportsCount` keep operator badges updated when requests or reports are reviewed.

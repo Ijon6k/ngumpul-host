@@ -86,6 +86,9 @@ graph TD
 
 ### Reverse Proxy Principles
 Nginx is strictly locked down:
-- Routes only explicitly defined upstreams: `/api/` (API endpoints), `/uploads/` (static user media), and `/` (SvelteKit SSR application).
+- Routes only explicitly defined upstreams: `/api/` (API endpoints), `/uploads/` (static user media), `/go/` (tracking redirects), `/health`, and `/` (SvelteKit SSR application).
 - Static assets under `/_app/immutable/` are sent with immutable long-lived cache headers (`Cache-Control: public, max-age=31536000, immutable`).
-- All external traffic arrives through the Nginx container to ensure unified access logs and rate-limiting enforcement.
+- All external traffic arrives through the Nginx container to ensure unified access logs and a single TLS-termination boundary.
+- Nginx also enforces `client_max_body_size 10M` (aligned with the backend upload cap) and sends core security headers (`X-Frame-Options`, `X-Content-Type-Options`, `X-XSS-Protection`, `Referrer-Policy`).
+
+> **Note:** Rate limiting is **not** enforced at the Nginx layer — all throttling lives in the Go backend (`internal/ratelimit`, IP sliding-window + per-user action limits). Full details: [`docs/security.md`](./security.md).

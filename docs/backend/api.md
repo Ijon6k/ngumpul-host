@@ -33,7 +33,30 @@
 - `UNAUTHORIZED`: Request missing a valid `ngumpul_session` cookie.
 - `FORBIDDEN`: User does not possess the necessary role (e.g. non-admin accessing `/api/admin/*`).
 - `NOT_FOUND`: Target resource (slug, username, or UUID) does not exist.
+- `TOO_MANY_REQUESTS`: Exceeded IP sliding-window rate limit (HTTP 429). Includes `Retry-After` header.
 - `INTERNAL_SERVER_ERROR`: Unhandled backend failure.
+
+### 1.1 Rate Limiting Architecture (Sliding Window)
+Sensitive authentication, cryptographic token redemption, setup, and file upload endpoints are protected by an in-memory IP sliding-window rate limiter with automated background leak prevention (`internal/ratelimit`):
+
+| Endpoint | Limit | Window |
+| :--- | :--- | :--- |
+| `POST /api/setup` | 5 requests | 1 minute |
+| `POST /api/auth/register` | 5 requests | 1 minute |
+| `POST /api/auth/login` | 10 requests | 1 minute |
+| `GET /api/invitations/validate` | 15 requests | 1 minute |
+| `POST /api/upload` | 20 requests | 1 minute |
+
+When exceeded, the server responds immediately with `429 Too Many Requests`, a `Retry-After: 60` header, and JSON error envelope.
+
+Per-user action limits (keyed on the authenticated user, not IP):
+| Endpoint | Limit | Window |
+| :--- | :--- | :--- |
+| `POST /api/projects/{slug}/comments` | 5 requests | 1 minute |
+| `POST /api/projects/{slug}/report` | 3 requests | 1 minute |
+| `POST /api/comments/{id}/report` | 3 requests | 1 minute |
+
+> **Note:** Read endpoints (`GET`) are not rate-limited. Nginx performs no `limit_req`; all throttling is application-level in the Go backend. Full defense-in-depth details: [`docs/security.md`](../security.md).
 
 ---
 
@@ -253,13 +276,13 @@ Requests must include a valid `ngumpul_session` cookie.
 - **`GET /api/me/notifications`**: Lists in-app member notifications (includes `is_read: boolean`).
 - **`PATCH /api/me/notifications/{id}/read`**: Marks a notification as read.
 - **`POST /api/me/notifications/read-all`**: Marks all member notifications as read.
-- **`POST /api/projects/{slug}/comments`**: Posts a comment on a project showcase (rate limit: 5/10m per user).
+- **`POST /api/projects/{slug}/comments`**: Posts a comment on a project showcase (rate limit: 5/min per user; content max 1000 chars, HTML-escaped on storage).
 - **`DELETE /api/comments/{id}`**: Soft-deletes a comment. Permitted for comment author, project owner, or operator.
-- **`POST /api/projects/{slug}/report`**: Submits a moderation report against a project (rate limit: 5/10m per user/IP).
+- **`POST /api/projects/{slug}/report`**: Submits a moderation report against a project (rate limit: 3/min per user).
+  - **Payload:** `{ "reason": "SPAM" | "ABUSE_HARASSMENT" | "INAPPROPRIATE" | "MALICIOUS_SUSPICIOUS" | "OTHER", "details": "..." }` (`details` truncated to 500 chars)
+- **`POST /api/comments/{id}/report`**: Submits a moderation report against a comment (rate limit: 3/min per user).
   - **Payload:** `{ "reason": "SPAM" | "ABUSE_HARASSMENT" | "INAPPROPRIATE" | "MALICIOUS_SUSPICIOUS" | "OTHER", "details": "..." }`
-- **`POST /api/comments/{id}/report`**: Submits a moderation report against a comment (rate limit: 5/10m per user/IP).
-  - **Payload:** `{ "reason": "SPAM" | "ABUSE_HARASSMENT" | "INAPPROPRIATE" | "MALICIOUS_SUSPICIOUS" | "OTHER", "details": "..." }`
-- **`POST /api/upload`**: Multipart file upload (`multipart/form-data`, file key: `file`, optional form field: `purpose` (`avatar` | `cover`)). Hard size limit: 10MB. Allowed MIME types: `image/jpeg`, `image/png`, `image/webp` (SVGs rejected). Enforces dimension sanity checks ($\le 4096\text{px}$). Returns `{ "url": "/uploads/covers/uuid.webp", "object_key": "covers/uuid.webp", "byte_size": 123456, "content_type": "image/webp", "width": 1200, "height": 900 }`.
+- **`POST /api/upload`**: Multipart file upload (`multipart/form-data`, file key: `file`, optional form field: `purpose` (`avatar` | `cover`)). Hard size limit: 10MB. Allowed MIME types: `image/jpeg`, `image/png`, `image/webp` (SVGs rejected, MIME sniffed from real content). Dimension limits: ≤ 4096px per side and ≤ 16 megapixels (anti decompression-bomb). Requires authentication. Returns `{ "url": "/uploads/covers/uuid.webp", "object_key": "covers/uuid.webp", "byte_size": 123456, "content_type": "image/webp", "width": 1200, "height": 900 }`.
 
 ---
 

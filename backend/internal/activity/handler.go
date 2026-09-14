@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"math"
 	"net/http"
-	"strconv"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"ngumpul-host/backend/internal/auth"
+	"ngumpul-host/backend/internal/pagination"
 	"ngumpul-host/backend/internal/response"
 )
 
@@ -21,25 +21,10 @@ func NewHandler(db *pgxpool.Pool) *Handler {
 	return &Handler{db: db}
 }
 
-func parsePagination(r *http.Request, defaultLimit, maxLimit int) (page, limit, offset int) {
-	page = 1
-	limit = defaultLimit
-	if p, err := strconv.Atoi(r.URL.Query().Get("page")); err == nil && p > 0 {
-		page = p
-	}
-	if l, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil && l > 0 {
-		limit = l
-		if limit > maxLimit {
-			limit = maxLimit
-		}
-	}
-	offset = (page - 1) * limit
-	return page, limit, offset
-}
-
 // ListPublic handles GET /api/activity
 func (h *Handler) ListPublic(w http.ResponseWriter, r *http.Request) {
-	page, limit, offset := parsePagination(r, 20, 100)
+	p := pagination.Parse(r, 20, 100)
+	page, limit, offset := p.Page, p.Limit, p.Offset
 
 	var total int
 	_ = h.db.QueryRow(r.Context(), `SELECT COUNT(*) FROM activities WHERE visibility = 'PUBLIC'`).Scan(&total)
@@ -128,7 +113,8 @@ func (h *Handler) ListMyActivity(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	page, limit, offset := parsePagination(r, 15, 100)
+	p := pagination.Parse(r, 15, 100)
+	page, limit, offset := p.Page, p.Limit, p.Offset
 
 	var total int
 	_ = h.db.QueryRow(r.Context(), `

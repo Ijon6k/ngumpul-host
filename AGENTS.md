@@ -31,6 +31,7 @@ Before generating code, modifying markup, or changing schemas, you **MUST** view
 | System telemetry, CPU/RAM/NVMe probes | [`docs/backend/telemetry.md`](./docs/backend/telemetry.md) |
 | Database migrations, tables, constraints | [`docs/backend/database.md`](./docs/backend/database.md) |
 | Architecture, tenancy, ingress routing | [`docs/architecture.md`](./docs/architecture.md) |
+| Security controls, rate limits, hardening | [`docs/security.md`](./docs/security.md) |
 | User/admin scenarios and operational flows | [`docs/workflows.md`](./docs/workflows.md) |
 
 ### 2.2. Post-Flight Rule: Synchronize Documentation
@@ -39,6 +40,7 @@ Code and documentation must never drift apart. Any task that alters an endpoint,
 - Modified table or migration $\rightarrow$ Update [`docs/backend/database.md`](./docs/backend/database.md).
 - Modified UI primitive, table, or radius $\rightarrow$ Update [`docs/frontend/design-system.md`](./docs/frontend/design-system.md) or [`docs/frontend/components.md`](./docs/frontend/components.md).
 - Added/altered host probe $\rightarrow$ Update [`docs/backend/telemetry.md`](./docs/backend/telemetry.md) or [`docs/backend/availability.md`](./docs/backend/availability.md).
+- Altered a security control, rate limit, hash parameter, or hardening rule $\rightarrow$ Update [`docs/security.md`](./docs/security.md).
 
 ---
 

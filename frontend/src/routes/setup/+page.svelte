@@ -1,51 +1,33 @@
 <script lang="ts">
-	import { setupApi, extractError } from '$lib/api';
+	import { superForm } from 'sveltekit-superforms';
+	import { valibotClient } from 'sveltekit-superforms/adapters';
+	import { setupSchema } from '$lib/schemas/auth';
 	import { user } from '$lib/stores/auth';
 	import { AuthSplitLayout } from '$lib/components/layout';
+	import { Alert, Input } from '$lib/components/ui';
 	import { goto } from '$app/navigation';
+	import type { PageData } from './$types';
 
-	let domain = '';
-	let name = '';
-	let username = '';
-	let email = '';
-	let password = '';
-	let confirmPassword = '';
+	let { data }: { data: PageData } = $props();
 
-	let loading = false;
-	let error: string | null = null;
+	const formState = $derived(data.form);
 
-	async function handleSetup() {
-		error = null;
+	// svelte-ignore state_referenced_locally — superform reads the initial form payload at setup
+	const { form, errors, constraints, message, submitting, enhance } = superForm(
+		formState,
+		{ validators: valibotClient(setupSchema), resetForm: false }
+	);
 
-		if (password.length < 8) {
-			error = 'Password must be at least 8 characters long.';
-			return;
+	function handleResult({ result }: { result: { type: string; data?: any } }) {
+		if (result.type === 'success' && result.data?.user) {
+			user.set(result.data.user);
+			goto('/admin');
 		}
+	}
 
-		if (password !== confirmPassword) {
-			error = 'Passwords do not match.';
-			return;
-		}
-
-		loading = true;
-		try {
-			const res = await setupApi.setup({
-				name: name.trim(),
-				username: username.trim().toLowerCase(),
-				email: email.trim().toLowerCase(),
-				password,
-				domain: domain.trim()
-			});
-
-			if (res?.user) {
-				user.set(res.user);
-				await goto('/admin');
-			}
-		} catch (err) {
-			error = extractError(err);
-		} finally {
-			loading = false;
-		}
+	function fieldError(errors: Record<string, any> | undefined, field: string): string {
+		const val = errors?.[field];
+		return Array.isArray(val) && val.length > 0 ? val[0] : '';
 	}
 </script>
 
@@ -57,107 +39,102 @@
 	title="Host Node Setup"
 	description="Configure the canonical node domain and initialize the primary administrator account."
 >
-	{#if error}
-		<div class="p-3.5 bg-red-950/10 text-(--color-danger) border border-(--color-danger)/30 rounded-md text-sm leading-relaxed">
-			{error}
-		</div>
+	{#if $message}
+		<Alert variant="danger">{$message}</Alert>
 	{/if}
 
-	<form on:submit|preventDefault={handleSetup} class="flex flex-col gap-4">
-		<!-- Domain Section -->
-		<div class="flex flex-col gap-1.5">
-			<label for="setup-domain" class="text-sm font-medium text-(--text-main) flex items-center justify-between">
-				<span>Node Domain</span>
+	{#if $errors._errors}
+		<Alert variant="danger">{$errors._errors[0]}</Alert>
+	{/if}
+
+	<form method="POST" use:enhance class="flex flex-col gap-4">
+		<Input
+			id="setup-domain"
+			label="Node Domain"
+			type="text"
+			placeholder="ngumpul.example.com"
+			helperText="Canonical host address used for system telemetry and hosted project subdomains."
+			inputClass="h-10 px-3.5 bg-(--bg-muted) font-mono"
+			error={fieldError($errors, 'domain')}
+			bind:value={$form.domain}
+			{...$constraints.domain}
+		>
+			<svelte:fragment slot="label-extra">
 				<span class="text-xs text-(--text-muted) font-mono">e.g. ngumpul.id</span>
-			</label>
-			<input
-				id="setup-domain"
-				type="text"
-				class="w-full px-3.5 py-2.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-sm text-(--text-main) outline-none focus:border-(--text-main) transition-colors placeholder:text-(--text-muted)/50 font-mono text-xs sm:text-sm"
-				placeholder="ngumpul.example.com"
-				required
-				bind:value={domain}
-			/>
-			<p class="text-xs text-(--text-muted)">Canonical host address used for system telemetry and hosted project subdomains.</p>
-		</div>
+			</svelte:fragment>
+		</Input>
 
 		<div class="h-px bg-(--border-hairline) my-0.5"></div>
 
-		<!-- Operator Section -->
-		<div class="flex flex-col gap-1.5">
-			<label for="setup-name" class="text-sm font-medium text-(--text-main)">Operator Name</label>
-			<input
-				id="setup-name"
+		<Input
+			id="setup-name"
+			label="Operator Name"
+			type="text"
+			placeholder="Site Operator"
+			inputClass="h-10 px-3.5 bg-(--bg-muted)"
+			error={fieldError($errors, 'name')}
+			bind:value={$form.name}
+			{...$constraints.name}
+		/>
+
+		<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+			<Input
+				id="setup-username"
+				label="Username"
 				type="text"
-				class="w-full px-3.5 py-2.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-sm text-(--text-main) outline-none focus:border-(--text-main) transition-colors placeholder:text-(--text-muted)/50"
-				placeholder="Site Operator"
-				required
-				bind:value={name}
+				placeholder="admin"
+				autocomplete="username"
+				inputClass="h-10 px-3.5 bg-(--bg-muted)"
+				error={fieldError($errors, 'username')}
+				bind:value={$form.username}
+				{...$constraints.username}
+			/>
+
+			<Input
+				id="setup-email"
+				label="Email"
+				type="email"
+				placeholder="admin@example.com"
+				autocomplete="email"
+				inputClass="h-10 px-3.5 bg-(--bg-muted)"
+				error={fieldError($errors, 'email')}
+				bind:value={$form.email}
+				{...$constraints.email}
 			/>
 		</div>
 
 		<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-			<div class="flex flex-col gap-1.5">
-				<label for="setup-username" class="text-sm font-medium text-(--text-main)">Username</label>
-				<input
-					id="setup-username"
-					type="text"
-					class="w-full px-3.5 py-2.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-sm text-(--text-main) outline-none focus:border-(--text-main) transition-colors placeholder:text-(--text-muted)/50"
-					placeholder="admin"
-					required
-					autocomplete="username"
-					bind:value={username}
-				/>
-			</div>
+			<Input
+				id="setup-password"
+				label="Password"
+				type="password"
+				placeholder="••••••••"
+				autocomplete="new-password"
+				inputClass="h-10 px-3.5 bg-(--bg-muted)"
+				error={fieldError($errors, 'password')}
+				bind:value={$form.password}
+				{...$constraints.password}
+			/>
 
-			<div class="flex flex-col gap-1.5">
-				<label for="setup-email" class="text-sm font-medium text-(--text-main)">Email</label>
-				<input
-					id="setup-email"
-					type="email"
-					class="w-full px-3.5 py-2.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-sm text-(--text-main) outline-none focus:border-(--text-main) transition-colors placeholder:text-(--text-muted)/50"
-					placeholder="admin@example.com"
-					required
-					autocomplete="email"
-					bind:value={email}
-				/>
-			</div>
-		</div>
-
-		<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-			<div class="flex flex-col gap-1.5">
-				<label for="setup-password" class="text-sm font-medium text-(--text-main)">Password</label>
-				<input
-					id="setup-password"
-					type="password"
-					class="w-full px-3.5 py-2.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-sm text-(--text-main) outline-none focus:border-(--text-main) transition-colors"
-					placeholder="••••••••"
-					required
-					autocomplete="new-password"
-					bind:value={password}
-				/>
-			</div>
-
-			<div class="flex flex-col gap-1.5">
-				<label for="setup-confirm-password" class="text-sm font-medium text-(--text-main)">Confirm</label>
-				<input
-					id="setup-confirm-password"
-					type="password"
-					class="w-full px-3.5 py-2.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-sm text-(--text-main) outline-none focus:border-(--text-main) transition-colors"
-					placeholder="••••••••"
-					required
-					autocomplete="new-password"
-					bind:value={confirmPassword}
-				/>
-			</div>
+			<Input
+				id="setup-confirm-password"
+				label="Confirm"
+				type="password"
+				placeholder="••••••••"
+				autocomplete="new-password"
+				inputClass="h-10 px-3.5 bg-(--bg-muted)"
+				error={fieldError($errors, 'confirmPassword')}
+				bind:value={$form.confirmPassword}
+				{...$constraints.confirmPassword}
+			/>
 		</div>
 
 		<button
 			type="submit"
 			class="btn btn-primary w-full py-2.5 mt-2 text-sm font-medium"
-			disabled={loading}
+			disabled={$submitting}
 		>
-			{loading ? 'Configuring node...' : 'Complete Node Setup'}
+			{$submitting ? 'Configuring node...' : 'Complete Node Setup'}
 		</button>
 	</form>
 

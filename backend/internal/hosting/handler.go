@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"regexp"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -15,15 +14,6 @@ import (
 	"ngumpul-host/backend/internal/instance"
 	"ngumpul-host/backend/internal/project"
 	"ngumpul-host/backend/internal/response"
-)
-
-var (
-	subdomainRegex     = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$`)
-	reservedSubdomains = map[string]bool{
-		"api": true, "admin": true, "www": true, "mail": true, "status": true,
-		"me": true, "console": true, "auth": true, "login": true, "register": true,
-		"static": true, "uploads": true, "assets": true, "internal": true, "public": true,
-	}
 )
 
 // Handler handles hosting request submission, listing, and administrative workflow.
@@ -38,35 +28,17 @@ func NewHandler(db *pgxpool.Pool) *Handler {
 
 // CheckSubdomain handles GET /api/hosting-requests/check-subdomain?subdomain=...
 func (h *Handler) CheckSubdomain(w http.ResponseWriter, r *http.Request) {
-	sub := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("subdomain")))
+	sub := NormalizeSubdomain(r.URL.Query().Get("subdomain"))
 	if sub == "" {
 		response.Error(w, http.StatusBadRequest, "Subdomain parameter is required")
 		return
 	}
 
-	if len(sub) < 2 {
+	if err := ValidateSubdomain(sub); err != nil {
 		response.JSON(w, http.StatusOK, map[string]any{
 			"available": false,
 			"subdomain": sub,
-			"message":   "Subdomain must be at least 2 characters",
-		})
-		return
-	}
-
-	if !subdomainRegex.MatchString(sub) {
-		response.JSON(w, http.StatusOK, map[string]any{
-			"available": false,
-			"subdomain": sub,
-			"message":   "Only lowercase letters, numbers, and hyphens allowed (cannot start or end with hyphen)",
-		})
-		return
-	}
-
-	if reservedSubdomains[sub] {
-		response.JSON(w, http.StatusOK, map[string]any{
-			"available": false,
-			"subdomain": sub,
-			"message":   "This subdomain is reserved for system services",
+			"message":   err.Error(),
 		})
 		return
 	}
@@ -324,13 +296,9 @@ func (h *Handler) RequestSubdomainChange(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	newSub := strings.ToLower(strings.TrimSpace(payload.NewSubdomain))
-	if len(newSub) < 2 || !subdomainRegex.MatchString(newSub) {
-		response.Error(w, http.StatusBadRequest, "Invalid subdomain format. Must be 2-63 lowercase alphanumeric characters or hyphens.")
-		return
-	}
-	if reservedSubdomains[newSub] {
-		response.Error(w, http.StatusBadRequest, "This subdomain is reserved for system services.")
+	newSub := NormalizeSubdomain(payload.NewSubdomain)
+	if err := ValidateSubdomain(newSub); err != nil {
+		response.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
 

@@ -1,31 +1,33 @@
 <script lang="ts">
-	import { authApi, extractError } from '$lib/api';
+	import { superForm } from 'sveltekit-superforms';
+	import { valibotClient } from 'sveltekit-superforms/adapters';
+	import { loginSchema } from '$lib/schemas/auth';
 	import { user } from '$lib/stores/auth';
 	import { AuthSplitLayout } from '$lib/components/layout';
+	import { Alert, Input } from '$lib/components/ui';
 	import { goto } from '$app/navigation';
+	import type { PageData } from './$types';
 
-	let emailOrUsername = '';
-	let password = '';
-	let loading = false;
-	let error: string | null = null;
+	let { data }: { data: PageData } = $props();
 
-	async function handleSubmit() {
-		error = null;
-		loading = true;
-		try {
-			const res = await authApi.login({
-				email_or_username: emailOrUsername,
-				password
-			});
-			if (res?.user) {
-				user.set(res.user);
-				await goto(res.user.role === 'ADMIN' ? '/admin' : '/me');
-			}
-		} catch (err) {
-			error = extractError(err);
-		} finally {
-			loading = false;
+	const formState = $derived(data.form);
+
+	// svelte-ignore state_referenced_locally — superform reads the initial form payload at setup
+	const { form, errors, constraints, message, submitting, enhance } = superForm(
+		formState,
+		{ validators: valibotClient(loginSchema), resetForm: false }
+	);
+
+	function handleResult({ result }: { result: { type: string; data?: any } }) {
+		if (result.type === 'success' && result.data?.user) {
+			user.set(result.data.user);
+			goto(result.data.user.role === 'ADMIN' ? '/admin' : '/me');
 		}
+	}
+
+	function fieldError(errors: Record<string, any> | undefined, field: string): string {
+		const val = errors?.[field];
+		return Array.isArray(val) && val.length > 0 ? val[0] : '';
 	}
 </script>
 
@@ -37,41 +39,45 @@
 	title="Sign in"
 	description="Authenticate to your personal workspace or operator console."
 >
-	{#if error}
-		<div class="p-3.5 bg-red-950/10 text-(--color-danger) border border-(--color-danger)/30 rounded-md text-sm leading-relaxed">
-			{error}
-		</div>
+	{#if $message}
+		<Alert variant="danger">{$message}</Alert>
 	{/if}
 
-	<form on:submit|preventDefault={handleSubmit} class="flex flex-col gap-4">
-		<div class="flex flex-col gap-1.5">
-			<label for="login-id" class="text-sm font-medium text-(--text-main)">Email or Username</label>
-			<input
-				id="login-id"
-				type="text"
-				class="w-full px-3.5 py-2.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-sm text-(--text-main) outline-none focus:border-(--text-main) transition-colors placeholder:text-(--text-muted)/50"
-				placeholder="operator or handle"
-				required
-				autocomplete="username"
-				bind:value={emailOrUsername}
-			/>
-		</div>
+	{#if $errors._errors}
+		<Alert variant="danger">{$errors._errors[0]}</Alert>
+	{/if}
 
-		<div class="flex flex-col gap-1.5">
-			<label for="login-pass" class="text-sm font-medium text-(--text-main)">Password</label>
-			<input
-				id="login-pass"
-				type="password"
-				class="w-full px-3.5 py-2.5 bg-(--bg-muted) border border-(--border-hairline) rounded-md text-sm text-(--text-main) outline-none focus:border-(--text-main) transition-colors"
-				placeholder="••••••••"
-				required
-				autocomplete="current-password"
-				bind:value={password}
-			/>
-		</div>
+	<form method="POST" use:enhance class="flex flex-col gap-4">
+		<Input
+			id="login-id"
+			label="Email or Username"
+			type="text"
+			placeholder="operator or handle"
+			autocomplete="username"
+			inputClass="h-10 px-3.5 bg-(--bg-muted)"
+			error={fieldError($errors, 'emailOrUsername')}
+			bind:value={$form.emailOrUsername}
+			{...$constraints.emailOrUsername}
+		/>
 
-		<button type="submit" class="btn btn-primary w-full py-2.5 mt-2 text-sm font-medium" disabled={loading}>
-			{loading ? 'Authenticating...' : 'Sign in'}
+		<Input
+			id="login-pass"
+			label="Password"
+			type="password"
+			placeholder="••••••••"
+			autocomplete="current-password"
+			inputClass="h-10 px-3.5 bg-(--bg-muted)"
+			error={fieldError($errors, 'password')}
+			bind:value={$form.password}
+			{...$constraints.password}
+		/>
+
+		<button
+			type="submit"
+			class="btn btn-primary w-full py-2.5 mt-2 text-sm font-medium"
+			disabled={$submitting}
+		>
+			{$submitting ? 'Authenticating...' : 'Sign in'}
 		</button>
 	</form>
 

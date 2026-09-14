@@ -21,3 +21,7 @@ export { default as TimelineItem } from './TimelineItem.svelte';
 export { default as Tabs } from './Tabs.svelte';
 export { default as MarkdownView } from './MarkdownView.svelte';
 export { default as UptimeHistory } from '../status/UptimeHistory.svelte';
+export { default as Alert } from './Alert.svelte';
+export { default as Textarea } from './Textarea.svelte';
+export { default as Select } from './Select.svelte';
+export { default as ImageUpload } from './ImageUpload.svelte';
