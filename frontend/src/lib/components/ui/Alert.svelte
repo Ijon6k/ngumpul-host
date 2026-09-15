@@ -1,13 +1,25 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import { WarningCircle, CheckCircle, Info, ShieldWarning } from 'phosphor-svelte';
 	import { cn } from '$lib/utils';
 
-	export let variant: 'danger' | 'warning' | 'success' | 'info' = 'danger';
-	export let title: string = '';
-	export let hideIcon: boolean = false;
+	interface Props {
+		variant?: 'danger' | 'warning' | 'success' | 'info';
+		title?: string;
+		hideIcon?: boolean;
+		class?: string;
+		children?: Snippet;
+		[key: string]: any;
+	}
 
-	let className: string = '';
-	export { className as class };
+	let {
+		variant = 'danger',
+		title = '',
+		hideIcon = false,
+		class: className = '',
+		children,
+		...restProps
+	}: Props = $props();
 
 	const variantStyles = {
 		danger: 'bg-red-950/10 text-(--color-danger) border border-(--color-danger)/30',
@@ -24,6 +36,7 @@
 		variantStyles[variant],
 		className
 	)}
+	{...restProps}
 >
 	{#if !hideIcon}
 		<div class="shrink-0 mt-0.5">
@@ -43,6 +56,6 @@
 		{#if title}
 			<p class="font-medium mb-0.5">{title}</p>
 		{/if}
-		<slot />
+		{@render children?.()}
 	</div>
 </div>

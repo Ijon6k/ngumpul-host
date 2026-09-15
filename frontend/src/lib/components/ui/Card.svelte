@@ -1,10 +1,23 @@
 <script lang="ts">
-	export let variant: 'surface' | 'muted' | 'interactive' = 'surface';
-	export let padding: 'none' | 'sm' | 'md' | 'lg' = 'md';
-	export let href: string | undefined = undefined;
+	import type { Snippet } from 'svelte';
 
-	let className: string = '';
-	export { className as class };
+	interface Props {
+		variant?: 'surface' | 'muted' | 'interactive';
+		padding?: 'none' | 'sm' | 'md' | 'lg';
+		href?: string;
+		class?: string;
+		children?: Snippet;
+		[key: string]: any;
+	}
+
+	let {
+		variant = 'surface',
+		padding = 'md',
+		href = undefined,
+		class: className = '',
+		children,
+		...restProps
+	}: Props = $props();
 
 	const variantStyles = {
 		surface: 'bg-(--bg-surface) border-(--border-hairline) shadow-xs',
@@ -19,15 +32,17 @@
 		lg: 'p-6 sm:p-8'
 	};
 
-	$: baseClass = `rounded-[8px] border transition-colors duration-200 ${variantStyles[variant]} ${paddingStyles[padding]} ${className}`;
+	let baseClass = $derived(
+		`rounded-[8px] border transition-colors duration-200 ${variantStyles[variant]} ${paddingStyles[padding]} ${className}`
+	);
 </script>
 
 {#if href}
-	<a {href} class="block {baseClass}" {...$$restProps}>
-		<slot />
+	<a {href} class="block {baseClass}" {...restProps}>
+		{@render children?.()}
 	</a>
 {:else}
-	<div class={baseClass} {...$$restProps}>
-		<slot />
+	<div class={baseClass} {...restProps}>
+		{@render children?.()}
 	</div>
 {/if}

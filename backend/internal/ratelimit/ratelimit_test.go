@@ -76,3 +76,26 @@ func TestIPRateLimiter_Middleware(t *testing.T) {
 		t.Fatalf("Expected status 429, got %d", rec3.Code)
 	}
 }
+
+func TestGetClientIP_XRealIPPriority(t *testing.T) {
+	// Attacker sends a spoofed X-Forwarded-For header, but Nginx sets trusted X-Real-IP
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("X-Forwarded-For", "1.2.3.4, 5.6.7.8")
+	req.Header.Set("X-Real-IP", "203.0.113.195")
+	req.RemoteAddr = "172.18.0.5:54321"
+
+	ip := GetClientIP(req)
+	if ip != "203.0.113.195" {
+		t.Fatalf("Expected GetClientIP to return trusted X-Real-IP '203.0.113.195', got %q", ip)
+	}
+
+	// Without X-Real-IP, fall back to X-Forwarded-For
+	reqNoRealIP := httptest.NewRequest(http.MethodGet, "/test", nil)
+	reqNoRealIP.Header.Set("X-Forwarded-For", "198.51.100.42, 10.0.0.1")
+	reqNoRealIP.RemoteAddr = "172.18.0.5:54321"
+
+	ipFallback := GetClientIP(reqNoRealIP)
+	if ipFallback != "198.51.100.42" {
+		t.Fatalf("Expected fallback to X-Forwarded-For '198.51.100.42', got %q", ipFallback)
+	}
+}

@@ -37,6 +37,7 @@ services:
       NODE_ENV:        production
       BACKEND_URL:     http://backend:8080
       PROTOCOL_HEADER: x-forwarded-proto
+      HOST_HEADER:     host
     depends_on:
       backend:
         condition: service_started

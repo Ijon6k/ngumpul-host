@@ -4,7 +4,7 @@
 > **Reactivity & Syntax:** Svelte 5  
 > **Styling:** Tailwind CSS v4 + Semantic CSS Variables  
 > **Data Fetching:** TanStack Svelte Query v5 (`@tanstack/svelte-query`)  
-> **Form Handling:** Superforms (`sveltekit-superforms`) + Valibot (`valibot`) via server actions  
+> **Form Handling:** Native Svelte 5 custom rune controller (`createForm`) + Zod (`zod`) via direct API calls  
 > **Icons:** Phosphor Icons (`phosphor-svelte`)  
 > **Location:** [`docs/frontend/architecture.md`](./architecture.md)
 
@@ -22,14 +22,15 @@ frontend/src/
 │   ├── components/
 │   │   ├── layout/               # Shell architecture (Header, Footer, ThemeToggle)
 │   │   ├── ui/                   # Reusable atomic design system primitives
+│   │   ├── project/              # Project cards, availability, and showcase items
+│   │   ├── activity/             # Chronological activity timeline components
 │   │   ├── bento/                # Host hardware telemetry & silicon visual cards
 │   │   ├── status/               # Availability heatmap, indicators & probes
 │   │   └── admin/                # Operator console shell & management views
 │   ├── stores/                   # Auth store & reactive session state
 │   ├── types/                    # Shared TypeScript domain contracts (project, user, comment, report, hosting, notification, activity)
-│   ├── schemas/                  # Shared Valibot form schemas (auth.ts: login/register/setup)
-│   ├── server/                   # Server-only helpers (session cookie forwarding)
-│   └── utils/                    # Date & duration formatting utilities
+│   ├── schemas/                  # Shared Zod form schemas (auth.ts: login/register/setup)
+│   └── utils/                    # Date formatting, class merging, and Svelte 5 form controller (form.svelte.ts)
 └── routes/
     ├── +layout.svelte            # Root layout, TanStack Query provider & auth boot
     ├── +page.svelte              # Editorial landing page & hardware bento showcase
@@ -39,9 +40,9 @@ frontend/src/
     ├── status/                   # Infrastructure availability & telemetry heatmap
     ├── me/                       # Authenticated member workspace & hosting intake
     ├── admin/                    # Operator console shell & management views
-    ├── login/                    # Member authentication (superform + server action)
-    ├── register/                 # Account registration (superform + server action)
-    ├── setup/                    # Initial node provisioning (superform + server action)
+    ├── login/                    # Member authentication (createForm + direct authApi.login)
+    ├── register/                 # Account registration (createForm + direct authApi.register)
+    ├── setup/                    # Initial node provisioning (createForm + direct setupApi.setup)
     └── invite/[token]/           # Invitation acceptance flow
 ```
 
@@ -111,13 +112,13 @@ To allow SvelteKit universal page data preloading (`+page.ts`) while running beh
 - Prevents container network isolation failures during server-side rendering while keeping public browser requests transparently routed via Nginx.
 - Server actions that call `fetch('/api/...')` (e.g. auth form submissions) are routed through the same hook, so they transparently reach the Go backend.
 
-### 3.4. Form Handling — Superforms + Server Actions (Auth Routes)
-Login, registration, and initial node setup use `sveltekit-superforms` with shared Valibot schemas:
-- **Shared schemas** live in `src/lib/schemas/auth.ts` (`loginSchema`, `registerSchema`, `setupSchema`) and are consumed both server-side (validation) and client-side (`valibotClient` for inline constraints/errors).
-- **Server actions** (`+page.server.ts` on `/login`, `/register`, `/setup`) validate the request with `superValidate(request, valibot(schema))`, proxy the payload to the Go backend via `event.fetch('/api/...')`, and return `{ form, user }` on success or `fail(status, { form, message })` / `setError(...)` on failure.
-- **Session cookie forwarding:** the Go backend issues the `ngumpul_session` cookie on its response. `src/lib/server/session.ts` exposes `forwardSessionCookie(cookies, response)` which re-sets that cookie on the browser via `cookies.set()`, honoring `Secure`/`SameSite`/`HttpOnly`/`expires`/`max-age` attributes.
-- **Cross-field validation** (`passwords match`) is intentionally performed in the server action with `setError(form, 'confirmPassword', ...)` rather than a schema-level `v.check`, keeping pathless issues out of the `_errors` bucket.
-- On successful submissions the client's `onResult` handler updates the `$user` store and redirects by role.
+### 3.4. Form Handling — Svelte 5 Custom Runes + Zod (Auth & Setup Routes)
+Authentication and setup forms use a lightweight, type-safe custom rune controller (`createForm` in `$lib/utils/form.svelte.ts`) with shared Zod schemas:
+- **Shared schemas** live in `src/lib/schemas/auth.ts` (`loginSchema`, `registerSchema`, `setupSchema`) using Zod. Password matching is enforced via `.refine()`.
+- **Direct API communication:** Forms submit directly to the Go REST API via client methods (`authApi.login`, `authApi.register`, `setupApi.setup`). Nginx reverse proxy routes these same-origin to the backend container.
+- **Native Cookie Handling:** The browser natively receives and stores the `ngumpul_session` cookie issued by the Go backend without requiring intermediate SvelteKit server action cookie parsing or forwarding.
+- **Zero CSRF 403 Friction:** Because forms no longer hit SvelteKit Form Actions, SvelteKit's cross-origin form rejection is avoided completely while maintaining full session security.
+- **Field-level validation:** `createForm` maps Zod issues into reactive field-level error messages (`error={form.errors.field}`) bound directly to UI primitives (`<Input>`, `<Button>`).
 
 ### 3.5. Reactive Stores & Real-Time Counter Synchronization
 - **Session Authentication (`$lib/stores/auth.ts`)**: Initializes via `initAuth()` in `+layout.svelte`, storing `$user`.

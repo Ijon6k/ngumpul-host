@@ -1,10 +1,23 @@
 <script lang="ts">
-	export let variant: 'success' | 'warning' | 'danger' | 'sky' | 'neutral' = 'neutral';
-	export let size: 'sm' | 'md' = 'sm';
-	export let dot: boolean = false;
+	import type { Snippet } from 'svelte';
 
-	let className: string = '';
-	export { className as class };
+	interface Props {
+		variant?: 'success' | 'warning' | 'danger' | 'sky' | 'neutral';
+		size?: 'sm' | 'md';
+		dot?: boolean;
+		class?: string;
+		children?: Snippet;
+		[key: string]: any;
+	}
+
+	let {
+		variant = 'neutral',
+		size = 'sm',
+		dot = false,
+		class: className = '',
+		children,
+		...restProps
+	}: Props = $props();
 
 	const variantStyles = {
 		success: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20',
@@ -27,12 +40,14 @@
 		md: 'px-2.5 py-1 text-xs gap-1.5'
 	};
 
-	$: baseClass = `inline-flex items-center font-normal rounded-full border ${variantStyles[variant]} ${sizeStyles[size]} ${className}`;
+	let baseClass = $derived(
+		`inline-flex items-center font-normal rounded-full border ${variantStyles[variant]} ${sizeStyles[size]} ${className}`
+	);
 </script>
 
-<span class={baseClass} {...$$restProps}>
+<span class={baseClass} {...restProps}>
 	{#if dot}
 		<span class="w-1.5 h-1.5 rounded-full {dotStyles[variant]} shrink-0"></span>
 	{/if}
-	<slot />
+	{@render children?.()}
 </span>

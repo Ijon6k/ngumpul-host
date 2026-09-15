@@ -26,3 +26,4 @@ export { default as Textarea } from './Textarea.svelte';
 export { default as Select } from './Select.svelte';
 export { default as ImageUpload } from './ImageUpload.svelte';
 export { default as Skeleton } from './Skeleton.svelte';
+export { default as StatusDot } from './StatusDot.svelte';

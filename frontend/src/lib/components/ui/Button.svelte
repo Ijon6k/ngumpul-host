@@ -1,16 +1,31 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import type { HTMLButtonAttributes, HTMLAnchorAttributes } from 'svelte/elements';
 
-	export let variant: 'primary' | 'secondary' | 'ghost' | 'danger' = 'secondary';
-	export let size: 'sm' | 'md' | 'lg' = 'sm';
-	export let href: string | undefined = undefined;
-	export let disabled: boolean = false;
-	export let loading: boolean = false;
-	export let type: 'button' | 'submit' | 'reset' = 'button';
+	interface Props {
+		variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+		size?: 'sm' | 'md' | 'lg';
+		href?: string;
+		disabled?: boolean;
+		loading?: boolean;
+		type?: 'button' | 'submit' | 'reset';
+		class?: string;
+		children?: Snippet;
+		onclick?: (e: MouseEvent) => void;
+		[key: string]: any;
+	}
 
-	let className: string = '';
-	export { className as class };
+	let {
+		variant = 'secondary',
+		size = 'sm',
+		href = undefined,
+		disabled = false,
+		loading = false,
+		type = 'button',
+		class: className = '',
+		children,
+		onclick,
+		...restProps
+	}: Props = $props();
 
 	// Variant styling strictly respecting design.md tokens and radius-sm (2px - 4px)
 	const variantStyles = {
@@ -26,21 +41,23 @@
 		lg: 'h-10 px-5 text-sm gap-2.5'
 	};
 
-	$: baseClass = `inline-flex items-center justify-center rounded-[4px] transition-all duration-150 select-none cursor-pointer border ${variantStyles[variant]} ${sizeStyles[size]} ${disabled || loading ? 'opacity-50 pointer-events-none' : ''} ${className}`;
+	let baseClass = $derived(
+		`inline-flex items-center justify-center rounded-[4px] transition-all duration-150 select-none cursor-pointer border ${variantStyles[variant]} ${sizeStyles[size]} ${disabled || loading ? 'opacity-50 pointer-events-none' : ''} ${className}`
+	);
 </script>
 
 {#if href && !disabled}
-	<a {href} class={baseClass} {...$$restProps}>
+	<a {href} class={baseClass} {...restProps}>
 		{#if loading}
 			<span class="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
 		{/if}
-		<slot />
+		{@render children?.()}
 	</a>
 {:else}
-	<button {type} {disabled} class={baseClass} on:click {...$$restProps}>
+	<button {type} {disabled} class={baseClass} {onclick} {...restProps}>
 		{#if loading}
 			<span class="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
 		{/if}
-		<slot />
+		{@render children?.()}
 	</button>
 {/if}

@@ -1,32 +1,26 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
-	import { superForm } from 'sveltekit-superforms';
-	import { valibotClient } from 'sveltekit-superforms/adapters';
+	import { createForm } from '$lib/utils/form.svelte';
 	import { loginSchema } from '$lib/schemas/auth';
+	import { authApi } from '$lib/api';
 	import { user } from '$lib/stores/auth';
-	import { AuthSplitLayout } from '$lib/components/layout';
-	import { Alert, Input } from '$lib/components/ui';
 	import { goto } from '$app/navigation';
-	import type { PageData } from './$types';
+	import { AuthSplitLayout } from '$lib/components/layout';
+	import { Alert, Input, Button } from '$lib/components/ui';
 
-	let { data }: { data: PageData } = $props();
-
-	const { form, errors, constraints, message, submitting, enhance } = superForm(
-		untrack(() => data.form),
-		{ validators: valibotClient(loginSchema), resetForm: false, onResult: handleResult }
-	);
-
-	function handleResult({ result }: { result: { type: string; data?: any } }) {
-		if (result.type === 'success' && result.data?.user) {
-			user.set(result.data.user);
-			goto(result.data.user.role === 'ADMIN' ? '/admin' : '/me');
+	const form = createForm({
+		schema: loginSchema,
+		initialValues: { emailOrUsername: '', password: '' },
+		onSubmit: async (values) => {
+			const res = await authApi.login({
+				email_or_username: values.emailOrUsername,
+				password: values.password
+			});
+			if (res?.user) {
+				user.set(res.user);
+				await goto(res.user.role === 'ADMIN' ? '/admin' : '/me');
+			}
 		}
-	}
-
-	function fieldError(errors: Record<string, any> | undefined, field: string): string {
-		const val = errors?.[field];
-		return Array.isArray(val) && val.length > 0 ? val[0] : '';
-	}
+	});
 </script>
 
 <svelte:head>
@@ -37,15 +31,11 @@
 	title="Sign in"
 	description="Authenticate to your personal workspace or operator console."
 >
-	{#if $message}
-		<Alert variant="danger">{$message}</Alert>
+	{#if form.serverError}
+		<Alert variant="danger">{form.serverError}</Alert>
 	{/if}
 
-	{#if $errors._errors}
-		<Alert variant="danger">{$errors._errors[0]}</Alert>
-	{/if}
-
-	<form method="POST" use:enhance class="flex flex-col gap-4">
+	<form onsubmit={form.handleSubmit} class="flex flex-col gap-4">
 		<Input
 			id="login-id"
 			name="emailOrUsername"
@@ -54,9 +44,8 @@
 			placeholder="operator or handle"
 			autocomplete="username"
 			inputClass="h-10 px-3.5 bg-(--bg-muted)"
-			error={fieldError($errors, 'emailOrUsername')}
-			bind:value={$form.emailOrUsername}
-			{...$constraints.emailOrUsername}
+			error={form.errors.emailOrUsername}
+			bind:value={form.values.emailOrUsername}
 		/>
 
 		<Input
@@ -67,18 +56,20 @@
 			placeholder="••••••••"
 			autocomplete="current-password"
 			inputClass="h-10 px-3.5 bg-(--bg-muted)"
-			error={fieldError($errors, 'password')}
-			bind:value={$form.password}
-			{...$constraints.password}
+			error={form.errors.password}
+			bind:value={form.values.password}
 		/>
 
-		<button
+		<Button
 			type="submit"
-			class="btn btn-primary w-full py-2.5 mt-2 text-sm font-medium"
-			disabled={$submitting}
+			variant="primary"
+			size="md"
+			class="w-full mt-2 font-medium"
+			loading={form.isSubmitting}
+			disabled={form.isSubmitting}
 		>
-			{$submitting ? 'Authenticating...' : 'Sign in'}
-		</button>
+			{form.isSubmitting ? 'Authenticating...' : 'Sign in'}
+		</Button>
 	</form>
 
 	<svelte:fragment slot="footer">

@@ -1,27 +1,43 @@
 <script lang="ts">
-	import { onMount, untrack } from 'svelte';
+	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { superForm } from 'sveltekit-superforms';
-	import { valibotClient } from 'sveltekit-superforms/adapters';
+	import { createForm } from '$lib/utils/form.svelte';
 	import { registerSchema } from '$lib/schemas/auth';
 	import { authApi, extractError } from '$lib/api';
 	import { user } from '$lib/stores/auth';
 	import { AuthSplitLayout } from '$lib/components/layout';
-	import { Alert, Input } from '$lib/components/ui';
+	import { Alert, Input, Button } from '$lib/components/ui';
 	import { CheckCircle, WarningCircle, Lock } from 'phosphor-svelte';
-	import type { PageData } from './$types';
-
-	let { data }: { data: PageData } = $props();
 
 	let registrationMode: 'OPEN' | 'INVITE_ONLY' | 'CLOSED' | 'LOADING' = $state('LOADING');
 	let validatingToken = $state(false);
 	let tokenStatus: { valid: boolean; message?: string; invitedEmail?: string } | null = $state(null);
 
-	const { form, errors, constraints, message, submitting, enhance } = superForm(
-		untrack(() => data.form),
-		{ validators: valibotClient(registerSchema), resetForm: false, onResult: handleResult }
-	);
+	const form = createForm({
+		schema: registerSchema,
+		initialValues: {
+			invitationToken: '',
+			displayName: '',
+			username: '',
+			email: '',
+			password: '',
+			confirmPassword: ''
+		},
+		onSubmit: async (values) => {
+			const res = await authApi.register({
+				username: values.username.trim().toLowerCase(),
+				email: values.email.trim().toLowerCase(),
+				password: values.password,
+				display_name: values.displayName.trim(),
+				invitation_token: values.invitationToken ? values.invitationToken.trim() : undefined
+			});
+			if (res?.user) {
+				user.set(res.user);
+				await goto('/me');
+			}
+		}
+	});
 
 	async function validateToken(raw: string) {
 		const clean = raw.trim();
@@ -37,8 +53,8 @@
 					valid: true,
 					invitedEmail: res.invited_email || undefined
 				};
-				if (res.invited_email && !$form.email) {
-					form.update(($f) => ({ ...$f, email: res.invited_email! }), { taint: false });
+				if (res.invited_email && !form.values.email) {
+					form.values.email = res.invited_email;
 				}
 			} else {
 				tokenStatus = {
@@ -59,7 +75,7 @@
 	onMount(async () => {
 		const queryToken = $page.url.searchParams.get('token');
 		if (queryToken) {
-			form.update(($f) => ({ ...$f, invitationToken: queryToken.trim() }), { taint: false });
+			form.values.invitationToken = queryToken.trim();
 		}
 
 		try {
@@ -73,18 +89,6 @@
 			await validateToken(queryToken);
 		}
 	});
-
-	function handleResult({ result }: { result: { type: string; data?: any } }) {
-		if (result.type === 'success' && result.data?.user) {
-			user.set(result.data.user);
-			goto('/me');
-		}
-	}
-
-	function fieldError(errors: Record<string, any> | undefined, field: string): string {
-		const val = errors?.[field];
-		return Array.isArray(val) && val.length > 0 ? val[0] : '';
-	}
 </script>
 
 <svelte:head>
@@ -119,30 +123,25 @@
 			Sign in
 		</a>
 	{:else}
-		{#if $message}
-			<Alert variant="danger">{$message}</Alert>
+		{#if form.serverError}
+			<Alert variant="danger">{form.serverError}</Alert>
 		{/if}
 
-		{#if $errors._errors}
-			<Alert variant="danger">{$errors._errors[0]}</Alert>
-		{/if}
-
-		<form method="POST" use:enhance class="flex flex-col gap-4">
+		<form onsubmit={form.handleSubmit} class="flex flex-col gap-4">
 			{#if registrationMode === 'INVITE_ONLY'}
-<Input
-				id="reg-token"
-				name="invitationToken"
-				label="Invitation Token"
-				type="text"
-				placeholder="Paste invite token"
-				inputClass="h-10 px-3.5 bg-(--bg-muted) font-mono"
-				error={fieldError($errors, 'invitationToken') ||
-					(tokenStatus && !tokenStatus.valid ? tokenStatus.message : '')}
-				bind:value={$form.invitationToken}
-				onblur={() => validateToken($form.invitationToken)}
-				{...$constraints.invitationToken}
-			>
-					<svelte:fragment slot="label-extra">
+				<Input
+					id="reg-token"
+					name="invitationToken"
+					label="Invitation Token"
+					type="text"
+					placeholder="Paste invite token"
+					inputClass="h-10 px-3.5 bg-(--bg-muted) font-mono"
+					error={form.errors.invitationToken ||
+						(tokenStatus && !tokenStatus.valid ? tokenStatus.message : '')}
+					bind:value={form.values.invitationToken}
+					onblur={() => validateToken(form.values.invitationToken)}
+				>
+					{#snippet labelExtra()}
 						{#if validatingToken}
 							<span class="text-xs text-(--text-muted)">Validating...</span>
 						{:else if tokenStatus?.valid}
@@ -154,7 +153,7 @@
 								<WarningCircle size={13} weight="bold" /> Invalid
 							</span>
 						{/if}
-					</svelte:fragment>
+					{/snippet}
 				</Input>
 			{/if}
 
@@ -165,9 +164,8 @@
 				type="text"
 				placeholder="Alex Rivera"
 				inputClass="h-10 px-3.5 bg-(--bg-muted)"
-				error={fieldError($errors, 'displayName')}
-				bind:value={$form.displayName}
-				{...$constraints.displayName}
+				error={form.errors.displayName}
+				bind:value={form.values.displayName}
 			/>
 
 			<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -179,9 +177,8 @@
 					placeholder="alex"
 					autocomplete="username"
 					inputClass="h-10 px-3.5 bg-(--bg-muted)"
-					error={fieldError($errors, 'username')}
-					bind:value={$form.username}
-					{...$constraints.username}
+					error={form.errors.username}
+					bind:value={form.values.username}
 				/>
 
 				<Input
@@ -192,9 +189,8 @@
 					placeholder="alex@example.com"
 					autocomplete="email"
 					inputClass="h-10 px-3.5 bg-(--bg-muted)"
-					error={fieldError($errors, 'email')}
-					bind:value={$form.email}
-					{...$constraints.email}
+					error={form.errors.email}
+					bind:value={form.values.email}
 				/>
 			</div>
 
@@ -207,9 +203,8 @@
 					placeholder="•••••••• (min 8 characters)"
 					autocomplete="new-password"
 					inputClass="h-10 px-3.5 bg-(--bg-muted)"
-					error={fieldError($errors, 'password')}
-					bind:value={$form.password}
-					{...$constraints.password}
+					error={form.errors.password}
+					bind:value={form.values.password}
 				/>
 
 				<Input
@@ -220,19 +215,21 @@
 					placeholder="••••••••"
 					autocomplete="new-password"
 					inputClass="h-10 px-3.5 bg-(--bg-muted)"
-					error={fieldError($errors, 'confirmPassword')}
-					bind:value={$form.confirmPassword}
-					{...$constraints.confirmPassword}
+					error={form.errors.confirmPassword}
+					bind:value={form.values.confirmPassword}
 				/>
 			</div>
 
-			<button
+			<Button
 				type="submit"
-				class="btn btn-primary w-full py-2.5 mt-2 text-sm font-medium"
-				disabled={$submitting}
+				variant="primary"
+				size="md"
+				class="w-full mt-2 font-medium"
+				loading={form.isSubmitting}
+				disabled={form.isSubmitting}
 			>
-				{$submitting ? 'Creating account...' : 'Create account'}
-			</button>
+				{form.isSubmitting ? 'Creating account...' : 'Create account'}
+			</Button>
 		</form>
 	{/if}
 

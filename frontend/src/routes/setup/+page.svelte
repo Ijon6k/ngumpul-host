@@ -1,36 +1,45 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
-	import { superForm } from 'sveltekit-superforms';
-	import { valibotClient } from 'sveltekit-superforms/adapters';
-	import { setupSchema } from '$lib/schemas/auth';
-	import { user } from '$lib/stores/auth';
-	import { AuthSplitLayout } from '$lib/components/layout';
-	import { Alert, Input } from '$lib/components/ui';
 	import { goto } from '$app/navigation';
-	import type { PageData } from './$types';
+	import { createForm } from '$lib/utils/form.svelte';
+	import { setupSchema } from '$lib/schemas/auth';
+	import { setupApi } from '$lib/api/setup';
+	import { user } from '$lib/stores/auth';
+	import { nodeDomain } from '$lib/stores/node';
+	import { AuthSplitLayout } from '$lib/components/layout';
+	import { Alert, Input, Button } from '$lib/components/ui';
 
-	let { data }: { data: PageData } = $props();
+	const form = createForm({
+		schema: setupSchema,
+		initialValues: {
+			domain: '',
+			name: '',
+			username: '',
+			email: '',
+			password: '',
+			confirmPassword: ''
+		},
+		onSubmit: async (values) => {
+			const res = await setupApi.setup({
+				name: values.name.trim(),
+				username: values.username.trim().toLowerCase(),
+				email: values.email.trim().toLowerCase(),
+				password: values.password,
+				domain: values.domain.trim()
+			});
 
-	const { form, errors, constraints, message, submitting, enhance } = superForm(
-		untrack(() => data.form),
-		{
-			validators: valibotClient(setupSchema),
-			resetForm: false,
-			onResult: handleResult
+			if (res?.user) {
+				user.set(res.user);
+				if (values.domain) {
+					const clean = values.domain
+						.replace(/^https?:\/\//, '')
+						.replace(/:\d+$/, '')
+						.trim();
+					if (clean) nodeDomain.set(clean);
+				}
+				await goto('/admin');
+			}
 		}
-	);
-
-	function handleResult({ result }: { result: { type: string; data?: any } }) {
-		if (result.type === 'success' && result.data?.user) {
-			user.set(result.data.user);
-			goto('/admin');
-		}
-	}
-
-	function fieldError(errors: Record<string, any> | undefined, field: string): string {
-		const val = errors?.[field];
-		return Array.isArray(val) && val.length > 0 ? val[0] : '';
-	}
+	});
 </script>
 
 <svelte:head>
@@ -41,15 +50,11 @@
 	title="Host Node Setup"
 	description="Configure the canonical node domain and initialize the primary administrator account."
 >
-	{#if $message}
-		<Alert variant="danger">{$message}</Alert>
+	{#if form.serverError}
+		<Alert variant="danger">{form.serverError}</Alert>
 	{/if}
 
-	{#if $errors._errors}
-		<Alert variant="danger">{$errors._errors[0]}</Alert>
-	{/if}
-
-	<form method="POST" use:enhance class="flex flex-col gap-4">
+	<form onsubmit={form.handleSubmit} class="flex flex-col gap-4">
 		<Input
 			id="setup-domain"
 			name="domain"
@@ -58,13 +63,12 @@
 			placeholder="ngumpul.example.com"
 			helperText="Canonical host address used for system telemetry and hosted project subdomains."
 			inputClass="h-10 px-3.5 bg-(--bg-muted) font-mono"
-			error={fieldError($errors, 'domain')}
-			bind:value={$form.domain}
-			{...$constraints.domain}
+			error={form.errors.domain}
+			bind:value={form.values.domain}
 		>
-			<svelte:fragment slot="label-extra">
+			{#snippet labelExtra()}
 				<span class="text-xs text-(--text-muted) font-mono">e.g. ngumpul.id</span>
-			</svelte:fragment>
+			{/snippet}
 		</Input>
 
 		<div class="h-px bg-(--border-hairline) my-0.5"></div>
@@ -76,9 +80,8 @@
 			type="text"
 			placeholder="Site Operator"
 			inputClass="h-10 px-3.5 bg-(--bg-muted)"
-			error={fieldError($errors, 'name')}
-			bind:value={$form.name}
-			{...$constraints.name}
+			error={form.errors.name}
+			bind:value={form.values.name}
 		/>
 
 		<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -90,9 +93,8 @@
 				placeholder="admin"
 				autocomplete="username"
 				inputClass="h-10 px-3.5 bg-(--bg-muted)"
-				error={fieldError($errors, 'username')}
-				bind:value={$form.username}
-				{...$constraints.username}
+				error={form.errors.username}
+				bind:value={form.values.username}
 			/>
 
 			<Input
@@ -103,9 +105,8 @@
 				placeholder="admin@example.com"
 				autocomplete="email"
 				inputClass="h-10 px-3.5 bg-(--bg-muted)"
-				error={fieldError($errors, 'email')}
-				bind:value={$form.email}
-				{...$constraints.email}
+				error={form.errors.email}
+				bind:value={form.values.email}
 			/>
 		</div>
 
@@ -118,9 +119,8 @@
 				placeholder="••••••••"
 				autocomplete="new-password"
 				inputClass="h-10 px-3.5 bg-(--bg-muted)"
-				error={fieldError($errors, 'password')}
-				bind:value={$form.password}
-				{...$constraints.password}
+				error={form.errors.password}
+				bind:value={form.values.password}
 			/>
 
 			<Input
@@ -131,19 +131,21 @@
 				placeholder="••••••••"
 				autocomplete="new-password"
 				inputClass="h-10 px-3.5 bg-(--bg-muted)"
-				error={fieldError($errors, 'confirmPassword')}
-				bind:value={$form.confirmPassword}
-				{...$constraints.confirmPassword}
+				error={form.errors.confirmPassword}
+				bind:value={form.values.confirmPassword}
 			/>
 		</div>
 
-		<button
+		<Button
 			type="submit"
-			class="btn btn-primary w-full py-2.5 mt-2 text-sm font-medium"
-			disabled={$submitting}
+			variant="primary"
+			size="md"
+			class="w-full mt-2 font-medium"
+			loading={form.isSubmitting}
+			disabled={form.isSubmitting}
 		>
-			{$submitting ? 'Configuring node...' : 'Complete Node Setup'}
-		</button>
+			{form.isSubmitting ? 'Configuring node...' : 'Complete Node Setup'}
+		</Button>
 	</form>
 
 	<svelte:fragment slot="footer">

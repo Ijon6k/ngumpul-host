@@ -72,7 +72,7 @@ Hash format: `$argon2id$v=19$m=65536,t=3,p=2$<base64-salt>$<base64-hash>`
 ## 3. Rate Limiting
 
 ### 3.1 IP-based Sliding-Window Limiter (`internal/ratelimit`)
-A custom in-memory sliding-window limiter keys on the client's real IP (first value of `X-Forwarded-For`, falling back to `X-Real-IP`, then `RemoteAddr`). Stale entries are purged in the background every `2 × window` (minimum 1 minute). Stores per-IP timestamps in a `map[string][]time.Time` guarded by `sync.RWMutex`.
+A custom in-memory sliding-window limiter keys on the client's real IP, prioritizing `X-Real-IP` (set unconditionally by Nginx reverse proxy from `$remote_addr` to eliminate header spoofing bypasses), falling back to `X-Forwarded-For`, then `RemoteAddr`. Stale entries are purged in the background every `2 × window` (minimum 1 minute). Stores per-IP timestamps in a `map[string][]time.Time` guarded by `sync.RWMutex`.
 
 **Limits applied in `cmd/server/main.go`:**
 

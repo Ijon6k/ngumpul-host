@@ -103,8 +103,14 @@ func (rl *IPRateLimiter) cleanupLoop(interval time.Duration) {
 }
 
 // GetClientIP extracts the real client IP from headers or RemoteAddr.
+// X-Real-IP is prioritized because reverse proxies like Nginx set it unconditionally
+// from the TCP socket remote address ($remote_addr), preventing client header spoofing.
 func GetClientIP(r *http.Request) string {
-	// Respect X-Forwarded-For if behind reverse proxy
+	if xrip := r.Header.Get("X-Real-IP"); xrip != "" {
+		return strings.TrimSpace(xrip)
+	}
+
+	// Fallback to X-Forwarded-For if X-Real-IP is absent
 	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
 		parts := strings.Split(xff, ",")
 		if len(parts) > 0 {
@@ -113,10 +119,6 @@ func GetClientIP(r *http.Request) string {
 				return ip
 			}
 		}
-	}
-
-	if xrip := r.Header.Get("X-Real-IP"); xrip != "" {
-		return strings.TrimSpace(xrip)
 	}
 
 	host, _, err := net.SplitHostPort(r.RemoteAddr)

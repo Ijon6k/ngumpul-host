@@ -5,12 +5,17 @@
 	import { initAuth } from '$lib/stores/auth';
 	import { page } from '$app/stores';
 	import { Header, Footer } from '$lib/components/layout';
-	import { setupApi } from '$lib/api/setup';
-	import { goto } from '$app/navigation';
-	import { browser } from '$app/environment';
-
 	import { nodeDomain } from '$lib/stores/node';
 	import { Toaster } from 'svelte-sonner';
+	import type { Snippet } from 'svelte';
+	import type { LayoutData } from './$types';
+
+	interface Props {
+		data: LayoutData;
+		children?: Snippet;
+	}
+
+	let { data, children }: Props = $props();
 
 	const queryClient = new QueryClient({
 		defaultOptions: {
@@ -21,61 +26,35 @@
 		}
 	});
 
-	let setupChecked = false;
-	let isInitialized = true;
-
-	async function checkSetupState() {
-		if (!browser) return;
-		try {
-			const res = await setupApi.getStatus();
-			isInitialized = res.initialized;
-			if (res.domain) {
-				const clean = res.domain
-					.replace(/^https?:\/\//, '')
-					.replace(/:\d+$/, '')
-					.trim();
-				if (clean) {
-					nodeDomain.set(clean);
-				}
+	$effect(() => {
+		if (data?.setupDomain) {
+			const clean = data.setupDomain
+				.replace(/^https?:\/\//, '')
+				.replace(/:\d+$/, '')
+				.trim();
+			if (clean) {
+				nodeDomain.set(clean);
 			}
-			if (!res.initialized && $page.url.pathname !== '/setup') {
-				goto('/setup');
-			} else if (res.initialized && $page.url.pathname === '/setup') {
-				goto('/');
-			}
-		} catch (_) {
-			// In case of unexpected connection error, do not block
-		} finally {
-			setupChecked = true;
 		}
-	}
+	});
 
 	onMount(() => {
 		initAuth();
-		checkSetupState();
 	});
 
-	$: if (browser && setupChecked) {
-		if (!isInitialized && $page.url.pathname !== '/setup') {
-			goto('/setup');
-		} else if (isInitialized && $page.url.pathname === '/setup') {
-			goto('/');
-		}
-	}
-
-	$: isHome = $page.url.pathname === '/';
-	$: isAdminRoute = $page.url.pathname.startsWith('/admin');
-	$: isWorkspaceRoute = $page.url.pathname.startsWith('/me');
-	$: isAuthOrSetupRoute = $page.url.pathname === '/login' || $page.url.pathname === '/setup' || $page.url.pathname === '/register';
+	let isHome = $derived($page.url.pathname === '/');
+	let isAdminRoute = $derived($page.url.pathname.startsWith('/admin'));
+	let isWorkspaceRoute = $derived($page.url.pathname.startsWith('/me'));
+	let isAuthOrSetupRoute = $derived(
+		$page.url.pathname === '/login' ||
+		$page.url.pathname === '/setup' ||
+		$page.url.pathname === '/register'
+	);
 </script>
 
 <QueryClientProvider client={queryClient}>
-	{#if !setupChecked && !isInitialized && $page.url.pathname !== '/setup'}
-		<div class="min-h-screen flex items-center justify-center bg-(--bg-canvas)">
-			<div class="w-5 h-5 border-2 border-(--text-muted) border-t-transparent rounded-full animate-spin"></div>
-		</div>
-	{:else if isAdminRoute || isWorkspaceRoute || isAuthOrSetupRoute}
-		<slot />
+	{#if isAdminRoute || isWorkspaceRoute || isAuthOrSetupRoute}
+		{@render children?.()}
 	{:else}
 		<div class="min-h-screen flex flex-col bg-(--bg-canvas)">
 			<Header />
@@ -83,7 +62,7 @@
 			     Home ('/') has 0 top padding so hero image flows seamlessly behind transparent navbar.
 			     All other pages have pt-[60px] to start cleanly below the fixed 60px navbar without overlap. -->
 			<main class="flex-1 shrink-0 {isHome ? '' : 'pt-[60px]'}">
-				<slot />
+				{@render children?.()}
 			</main>
 			<Footer />
 		</div>
