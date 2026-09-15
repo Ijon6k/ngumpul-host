@@ -12,6 +12,7 @@ export interface SetupPayload {
 	email: string;
 	password: string;
 	domain: string;
+	subdomain?: string;
 }
 
 export interface SetupResponse {

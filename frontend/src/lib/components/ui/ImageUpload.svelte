@@ -12,7 +12,7 @@
 	}>();
 
 	export let value: string = '';
-	export let label: string = 'Cover Artwork';
+	export let label: string = 'Project Preview';
 	export let helperText: string = '(Optional · 16:9 standard)';
 	export let projectName: string = '';
 	export let disabled: boolean = false;
@@ -82,19 +82,19 @@
 				class="text-xs text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1 cursor-pointer"
 			>
 				<Trash size={13} />
-				<span>Remove cover</span>
+				<span>Remove preview</span>
 			</button>
 		{/if}
 	</div>
 
 	{#if value}
 		<div class="relative w-full aspect-[16/9] rounded-md overflow-hidden border border-(--border-hairline) bg-(--bg-muted) group">
-			<ProjectCover src={value} alt={projectName || 'Cover preview'} name={projectName || 'Project'} {aspectRatio} />
+			<ProjectCover src={value} alt={projectName || 'Project preview'} name={projectName || 'Project'} {aspectRatio} />
 			{#if !disabled}
 				<div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
 					<label class="btn btn-secondary btn-sm text-xs px-3 py-1.5 cursor-pointer inline-flex items-center gap-1.5 shadow-sm">
 						<UploadSimple size={13} weight="bold" />
-						<span>Change image</span>
+						<span>Change preview</span>
 						<input
 							type="file"
 							accept="image/jpeg,image/png,image/webp"
@@ -131,7 +131,7 @@
 					<Image size={20} />
 				</div>
 				<div>
-					<p class="text-xs sm:text-sm font-medium text-(--text-main)">Click to upload cover photo</p>
+					<p class="text-xs sm:text-sm font-medium text-(--text-main)">Click to upload project preview</p>
 					<p class="text-xs text-(--text-muted) mt-0.5">JPEG, PNG, or WebP (auto-compressed to WebP, max 10 MB)</p>
 				</div>
 			{/if}

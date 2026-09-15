@@ -405,10 +405,16 @@
 		<!-- TAB 1: OVERVIEW (Editorial 2-Column or Stacked Whitespace, Not 6-10 Cards) -->
 		{#if activeTab === 'overview'}
 			<div class="flex flex-col divide-y divide-(--border-hairline) gap-8">
-				<!-- Cover Artwork (16:9 Ratio) -->
+				<!-- Project Preview (16:9 Ratio) -->
 				{#if project.cover_image_url}
-					<div class="w-full aspect-[16/9] max-h-[420px] overflow-hidden rounded-md border border-(--border-hairline) bg-(--bg-muted)">
-						<ProjectCover src={project.cover_image_url} alt={project.name} name={project.name} aspectRatio="16/9" />
+					<div class="w-full aspect-[16/9] rounded-md overflow-hidden border border-(--border-hairline) bg-(--bg-muted) shadow-xs flex">
+						<ProjectCover
+							src={project.cover_image_url}
+							alt={project.name}
+							name={project.name}
+							aspectRatio="16/9"
+							class="w-full h-full !rounded-none !border-none"
+						/>
 					</div>
 				{/if}
 
@@ -442,58 +448,65 @@
 						{/if}
 					</div>
 
-					<!-- Multi-range quiet availability bar history -->
-					<div class="max-w-xl pt-2">
+					<!-- Multi-range quiet availability bar history (Full width) -->
+					<div class="w-full pt-2">
 						<UptimeHistory {availability} status={project.status} variant="detailed" showRangeSelector={true} />
 					</div>
 				</section>
 
-				<!-- Project Information -->
+				<!-- Project Information (Full-width responsive grid matching project details standard) -->
 				<section class="flex flex-col gap-4 pt-8">
 					<h2 class="text-sm font-medium text-(--text-main) tracking-tight">Project information</h2>
-					<dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-xs max-w-xl">
-						<div class="flex items-baseline justify-between gap-4 py-1 border-b border-(--border-hairline)/50">
+					<dl class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 pt-4 border-t border-(--border-hairline) text-xs w-full">
+						<div class="flex flex-col gap-1">
 							<dt class="text-(--text-muted)">Published</dt>
 							<dd class="text-(--text-main) font-medium">{formatDate(project.published_at || project.created_at)}</dd>
 						</div>
-						<div class="flex items-baseline justify-between gap-4 py-1 border-b border-(--border-hairline)/50">
+
+						<div class="flex flex-col gap-1">
 							<dt class="text-(--text-muted)">Hosted since</dt>
 							<dd class="text-(--text-main) font-medium">{formatDate(project.created_at)}</dd>
 						</div>
-						<div class="flex items-baseline justify-between gap-4 py-1 border-b border-(--border-hairline)/50">
+
+						<div class="flex flex-col gap-1">
 							<dt class="text-(--text-muted)">Last updated</dt>
 							<dd class="text-(--text-main) font-medium">{formatDate(project.updated_at || project.created_at)}</dd>
 						</div>
-						<div class="flex items-baseline justify-between gap-4 py-1 border-b border-(--border-hairline)/50">
-							<dt class="text-(--text-muted)">Public URL</dt>
-							<dd class="text-(--text-main) font-mono truncate max-w-[200px]">
-								{#if project.public_url}
-									<a href="/go/{project.slug}" target="_blank" class="text-(--accent-sky) hover:underline">{project.public_url}</a>
-								{:else}
-									<span class="text-(--text-muted)">—</span>
-								{/if}
-							</dd>
-						</div>
-						{#if project.repository_url}
-							{@const repoInfo = detectLinkInfo(project.repository_url, 'Source')}
-							<div class="flex items-baseline justify-between gap-4 py-1 border-b border-(--border-hairline)/50">
-								<dt class="text-(--text-muted)">{repoInfo.label}</dt>
-								<dd class="text-(--text-main) font-mono truncate max-w-[200px]">
-									<a href={project.repository_url} target="_blank" rel="noreferrer" class="hover:underline flex items-center gap-1.5">
-										<svelte:component this={repoInfo.icon} size={13} />
-										<span class="truncate">{project.repository_url}</span>
+
+						{#if project.public_url}
+							<div class="flex flex-col gap-1">
+								<dt class="text-(--text-muted)">Public URL</dt>
+								<dd class="text-(--text-main) font-mono truncate">
+									<a href="/go/{project.slug}" target="_blank" class="text-(--accent-sky) hover:underline break-all">
+										{project.public_url.replace(/^https?:\/\//, '')}
 									</a>
 								</dd>
 							</div>
 						{/if}
+
+						{#if project.repository_url}
+							{@const repoInfo = detectLinkInfo(project.repository_url, 'Source')}
+							{@const RepoIcon = repoInfo.icon}
+							<div class="flex flex-col gap-1">
+								<dt class="text-(--text-muted)">{repoInfo.label}</dt>
+								<dd class="text-(--text-main) font-mono truncate">
+									<a href={project.repository_url} target="_blank" rel="noreferrer" class="hover:underline flex items-center gap-1.5 break-all">
+										<RepoIcon size={13} />
+										<span class="truncate">{project.repository_url.replace(/^https?:\/\//, '')}</span>
+									</a>
+								</dd>
+							</div>
+						{/if}
+
 						{#if project.documentation_url}
 							{@const docInfo = detectLinkInfo(project.documentation_url, 'Documentation')}
-							<div class="flex items-baseline justify-between gap-4 py-1 border-b border-(--border-hairline)/50">
+							{@const DocIcon = docInfo.icon}
+							<div class="flex flex-col gap-1">
 								<dt class="text-(--text-muted)">{docInfo.label}</dt>
-								<dd class="text-(--text-main) font-mono truncate max-w-[200px]">
-									<a href={project.documentation_url} target="_blank" rel="noreferrer" class="hover:underline flex items-center gap-1.5">
-										<svelte:component this={docInfo.icon} size={13} />
-										<span class="truncate">{project.documentation_url}</span>
+								<dd class="text-(--text-main) font-mono truncate">
+									<a href={project.documentation_url} target="_blank" rel="noreferrer" class="hover:underline flex items-center gap-1.5 break-all">
+										<DocIcon size={13} />
+										<span class="truncate">{project.documentation_url.replace(/^https?:\/\//, '')}</span>
 									</a>
 								</dd>
 							</div>
@@ -649,9 +662,9 @@
 				{/if}
 			</div>
 
-		<!-- TAB 4: SETTINGS (Editorial Sections, No Boxed Form Cards) -->
+		<!-- TAB 4: SETTINGS (Editorial Sections, Full Width, No Boxed Form Cards) -->
 		{:else if activeTab === 'settings'}
-			<form on:submit|preventDefault={handleSaveSettings} class="flex flex-col gap-8 max-w-xl">
+			<form on:submit|preventDefault={handleSaveSettings} class="flex flex-col gap-8 w-full">
 				{#if saveSuccess}
 					<Alert variant="success">{saveSuccess}</Alert>
 				{/if}
@@ -659,6 +672,46 @@
 				{#if saveError}
 					<Alert variant="danger">{saveError}</Alert>
 				{/if}
+
+				<!-- Section: Project Preview (16:9) - Placed at Top -->
+				<section class="flex flex-col gap-4">
+					<div>
+						<h2 class="text-sm font-medium text-(--text-main) tracking-tight">Project preview (16:9)</h2>
+						<p class="text-xs text-(--text-secondary) mt-0.5">Recommended 16:9 preview screenshot representing your project.</p>
+					</div>
+
+					<div class="flex flex-col sm:flex-row sm:items-center gap-4">
+						<div class="w-64 aspect-[16/9] rounded-xs overflow-hidden border border-(--border-hairline) bg-(--bg-muted) shrink-0">
+							<ProjectCover src={formCover} alt="Project preview" name={project.name} aspectRatio="16/9" />
+						</div>
+
+						<div class="flex flex-col gap-2">
+							<input
+								type="file"
+								accept="image/*"
+								bind:this={fileInput}
+								on:change={handleCoverUpload}
+								class="hidden"
+							/>
+							<button
+								type="button"
+								class="btn btn-secondary btn-sm text-xs px-3 py-1.5 inline-flex items-center gap-1.5 self-start cursor-pointer"
+								on:click={() => fileInput.click()}
+								disabled={uploadingCover}
+							>
+								{#if uploadingCover}
+									<span class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+								{:else}
+									<UploadSimple size={14} />
+								{/if}
+								<span>Change preview</span>
+							</button>
+							<span class="text-xs text-(--text-muted)">JPG, PNG, WebP up to 10MB (16:9 standard ratio).</span>
+						</div>
+					</div>
+				</section>
+
+				<div class="h-px bg-(--border-hairline)/60"></div>
 
 				<!-- Section: Project Details -->
 				<section class="flex flex-col gap-4">
@@ -812,42 +865,6 @@
 							bind:value={formTech}
 							class="text-xs px-3 py-2 rounded-sm border border-(--border-hairline) bg-(--bg-canvas) text-(--text-main) focus:border-(--accent-sky) outline-none font-mono"
 						/>
-					</div>
-				</section>
-
-				<div class="h-px bg-(--border-hairline)/60"></div>
-
-				<!-- Section: Cover Artwork (16:9 Ratio) -->
-				<section class="flex flex-col gap-4">
-					<h2 class="text-sm font-medium text-(--text-main) tracking-tight">Cover artwork (16:9)</h2>
-					<div class="flex flex-col sm:flex-row sm:items-center gap-4">
-						<div class="w-56 aspect-[16/9] rounded-xs overflow-hidden border border-(--border-hairline) bg-(--bg-muted) shrink-0">
-							<ProjectCover src={formCover} alt="Cover preview" name={project.name} aspectRatio="16/9" />
-						</div>
-
-						<div class="flex flex-col gap-2">
-							<input
-								type="file"
-								accept="image/*"
-								bind:this={fileInput}
-								on:change={handleCoverUpload}
-								class="hidden"
-							/>
-							<button
-								type="button"
-								class="btn btn-secondary btn-sm text-xs px-3 py-1.5 inline-flex items-center gap-1.5 self-start cursor-pointer"
-								on:click={() => fileInput.click()}
-								disabled={uploadingCover}
-							>
-								{#if uploadingCover}
-									<span class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
-								{:else}
-									<UploadSimple size={14} />
-								{/if}
-								<span>Change cover</span>
-							</button>
-							<span class="text-xs text-(--text-muted)">JPG, PNG, WebP up to 10MB (16:9 standard ratio).</span>
-						</div>
 					</div>
 				</section>
 

@@ -20,25 +20,30 @@
 			confirmPassword: ''
 		},
 		onSubmit: async (values) => {
-			const sub = values.subdomain?.trim().toLowerCase();
+			const sub = values.subdomain?.trim().toLowerCase()
+				.replace(/^https?:\/\//, '')
+				.replace(/:\d+$/, '')
+				.replace(/^\.+/, '')
+				.replace(/\.+$/, '');
 			const baseDom = values.domain.trim().toLowerCase()
 				.replace(/^https?:\/\//, '')
 				.replace(/:\d+$/, '')
-				.replace(/^\.+/, '');
-			const combinedDomain = sub ? `${sub.replace(/\.+$/, '')}.${baseDom}` : baseDom;
+				.replace(/^\.+/, '')
+				.replace(/\/.*$/, '');
 
 			const res = await setupApi.setup({
 				name: values.name.trim(),
 				username: values.username.trim().toLowerCase(),
 				email: values.email.trim().toLowerCase(),
 				password: values.password,
-				domain: combinedDomain
+				domain: baseDom,
+				subdomain: sub || undefined
 			});
 
 			if (res?.user) {
 				user.set(res.user);
-				if (combinedDomain) {
-					nodeDomain.set(combinedDomain);
+				if (baseDom) {
+					nodeDomain.set(baseDom);
 				}
 				await goto('/admin');
 			}

@@ -41,9 +41,9 @@
 	let hostedDate = $derived(formatHostedDate(project.published_at || project.created_at));
 </script>
 
-<article class="group relative flex flex-col bg-(--bg-surface) border border-(--border-hairline) hover:border-(--border-subtle) rounded-md overflow-hidden transition-all duration-200 hover:shadow-xs">
+<article class="group relative flex flex-col bg-(--bg-surface) border border-(--border-hairline) hover:border-(--border-subtle) rounded-md overflow-hidden transition-all duration-200 hover:shadow-xs cursor-pointer">
 	<!-- Cover area (16:9 aspect ratio with status badge overlay) -->
-	<a href="/projects/{project.slug}" class="block relative w-full aspect-[16/9] overflow-hidden bg-(--bg-muted)" tabindex="-1">
+	<div class="relative w-full aspect-[16/9] overflow-hidden bg-(--bg-muted)">
 		<ProjectCover
 			src={project.cover_image_url}
 			alt={project.name}
@@ -58,13 +58,13 @@
 				</span>
 			</div>
 		</div>
-	</a>
+	</div>
 
 	<!-- Card Body: Editorial Hierarchy -->
 	<div class="flex flex-col grow p-5 gap-3">
 		<div class="flex flex-col gap-1.5">
 			<h3 class="font-sans font-semibold text-base sm:text-lg text-(--text-main) tracking-[-0.01em] line-clamp-1 leading-snug">
-				<a href="/projects/{project.slug}" class="hover:text-(--accent-strong) transition-colors">
+				<a href="/projects/{project.slug}" class="hover:text-(--accent-strong) transition-colors after:absolute after:inset-0 after:z-0">
 					{project.name}
 				</a>
 			</h3>
@@ -75,9 +75,13 @@
 		</div>
 
 		<!-- Creator & Tech Stack (Consistent vertical slot, clean typographic hierarchy) -->
-		<div class="flex items-center gap-x-2 text-xs text-(--text-muted) min-h-[1.35rem]">
+		<div class="flex items-center gap-x-2 text-xs text-(--text-muted) min-h-[1.35rem] relative z-10">
 			{#if project.owner}
-				<a href="/people/{project.owner.username}" class="font-medium text-(--text-main) hover:underline shrink-0">
+				<a
+					href="/people/{project.owner.username}"
+					class="font-medium text-(--text-main) hover:underline shrink-0"
+					onclick={(e) => e.stopPropagation()}
+				>
 					{project.owner.display_name}
 				</a>
 			{/if}
@@ -91,7 +95,7 @@
 		</div>
 
 		<!-- Footer Metadata: Hosted Since & Direct Link -->
-		<div class="flex items-center justify-between mt-auto pt-3 border-t border-(--border-hairline) text-xs text-(--text-muted)">
+		<div class="flex items-center justify-between mt-auto pt-3 border-t border-(--border-hairline) text-xs text-(--text-muted) relative z-10">
 			<span class="text-xs">
 				{#if project.hosting_type === 'HOSTED_HERE'}
 					{hostedDate ? `Hosted since ${hostedDate}` : 'Hosted on node'}

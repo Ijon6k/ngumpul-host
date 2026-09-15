@@ -23,11 +23,12 @@ var (
 var validUsernameRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]{3,30}$`)
 
 type SetupRequest struct {
-	Name     string `json:"name"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Domain   string `json:"domain"`
+	Name      string `json:"name"`
+	Username  string `json:"username"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
+	Domain    string `json:"domain"`
+	Subdomain string `json:"subdomain"`
 }
 
 type Service struct {
@@ -140,7 +141,7 @@ func (s *Service) ExecuteSetup(ctx context.Context, req SetupRequest) (*auth.Use
 		return nil, nil, fmt.Errorf("failed to insert operator account: %w", err)
 	}
 
-	// Save domain into instance_settings
+	// Save base domain into instance_settings (used for user project subdomains: project.domain)
 	_, err = tx.Exec(ctx, `
 		INSERT INTO instance_settings (key, value, updated_at)
 		VALUES ('domain', $1, NOW())
@@ -150,12 +151,20 @@ func (s *Service) ExecuteSetup(ctx context.Context, req SetupRequest) (*auth.Use
 		return nil, nil, fmt.Errorf("failed to save domain setting: %w", err)
 	}
 
-	// Save app_url into instance_settings for system referencing
-	appURL := fmt.Sprintf("http://%s", domain)
-	if strings.Contains(domain, "localhost") || strings.Contains(domain, "127.0.0.1") {
-		appURL = fmt.Sprintf("http://%s", domain)
-	} else if !strings.HasPrefix(domain, "http") {
-		appURL = fmt.Sprintf("https://%s", domain)
+	// Save app_url for host console / invite tokens / system referencing
+	subdomain := strings.TrimSpace(req.Subdomain)
+	subdomain = strings.TrimPrefix(subdomain, "http://")
+	subdomain = strings.TrimPrefix(subdomain, "https://")
+	subdomain = strings.Trim(subdomain, "/.")
+
+	hostDomain := domain
+	if subdomain != "" {
+		hostDomain = fmt.Sprintf("%s.%s", subdomain, domain)
+	}
+
+	appURL := fmt.Sprintf("https://%s", hostDomain)
+	if strings.Contains(hostDomain, "localhost") || strings.Contains(hostDomain, "127.0.0.1") {
+		appURL = fmt.Sprintf("http://%s", hostDomain)
 	}
 	_, err = tx.Exec(ctx, `
 		INSERT INTO instance_settings (key, value, updated_at)
@@ -168,8 +177,10 @@ func (s *Service) ExecuteSetup(ctx context.Context, req SetupRequest) (*auth.Use
 
 	// Record audit log
 	metaJSON, _ := json.Marshal(map[string]any{
-		"operator": user.Username,
-		"domain":   domain,
+		"operator":  user.Username,
+		"domain":    domain,
+		"subdomain": subdomain,
+		"app_url":   appURL,
 	})
 	_, err = tx.Exec(ctx, `
 		INSERT INTO audit_logs (actor_id, action, target_type, target_id, metadata)
