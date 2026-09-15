@@ -224,7 +224,7 @@
 											{/if}
 										</td>
 										<td class="py-4 px-4">
-											<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-(--cf-green-pastel) text-(--cf-green-text)">
+											<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-(--bg-muted) dark:bg-neutral-900 text-emerald-600 dark:text-emerald-400">
 												{p.status || 'ONLINE'}
 											</span>
 										</td>

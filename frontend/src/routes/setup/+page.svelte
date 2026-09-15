@@ -11,6 +11,7 @@
 	const form = createForm({
 		schema: setupSchema,
 		initialValues: {
+			subdomain: '',
 			domain: '',
 			name: '',
 			username: '',
@@ -19,22 +20,25 @@
 			confirmPassword: ''
 		},
 		onSubmit: async (values) => {
+			const sub = values.subdomain?.trim().toLowerCase();
+			const baseDom = values.domain.trim().toLowerCase()
+				.replace(/^https?:\/\//, '')
+				.replace(/:\d+$/, '')
+				.replace(/^\.+/, '');
+			const combinedDomain = sub ? `${sub.replace(/\.+$/, '')}.${baseDom}` : baseDom;
+
 			const res = await setupApi.setup({
 				name: values.name.trim(),
 				username: values.username.trim().toLowerCase(),
 				email: values.email.trim().toLowerCase(),
 				password: values.password,
-				domain: values.domain.trim()
+				domain: combinedDomain
 			});
 
 			if (res?.user) {
 				user.set(res.user);
-				if (values.domain) {
-					const clean = values.domain
-						.replace(/^https?:\/\//, '')
-						.replace(/:\d+$/, '')
-						.trim();
-					if (clean) nodeDomain.set(clean);
+				if (combinedDomain) {
+					nodeDomain.set(combinedDomain);
 				}
 				await goto('/admin');
 			}
@@ -55,24 +59,47 @@
 	{/if}
 
 	<form onsubmit={form.handleSubmit} class="flex flex-col gap-4">
-		<Input
-			id="setup-domain"
-			name="domain"
-			label="Node Domain"
-			type="text"
-			placeholder="ngumpul.example.com"
-			helperText="Canonical host address used for system telemetry and hosted project subdomains."
-			inputClass="h-10 px-3.5 bg-(--bg-muted) font-mono"
-			error={form.errors.domain}
-			bind:value={form.values.domain}
-		>
-			{#snippet labelExtra()}
-				<span class="text-xs text-(--text-muted) font-mono">e.g. ngumpul.id</span>
-			{/snippet}
-		</Input>
+		<!-- Domain & Optional Subdomain -->
+		<div class="flex flex-col gap-1.5">
+			<span class="text-xs sm:text-sm font-medium text-(--text-main) select-none">
+				Host Domain
+			</span>
+			<div class="flex items-start gap-2">
+				<div class="w-2/5 min-w-[110px]">
+					<Input
+						id="setup-subdomain"
+						name="subdomain"
+						type="text"
+						placeholder="subdomain (opt)"
+						inputClass="h-10 px-3 bg-(--bg-muted) font-mono text-xs"
+						error={form.errors.subdomain}
+						bind:value={form.values.subdomain}
+					/>
+				</div>
+				<div class="flex-1">
+					<Input
+						id="setup-domain"
+						name="domain"
+						type="text"
+						placeholder="example.com"
+						inputClass="h-10 px-3.5 bg-(--bg-muted) font-mono"
+						error={form.errors.domain}
+						bind:value={form.values.domain}
+					/>
+				</div>
+			</div>
+			<p class="text-xs text-(--text-muted) leading-relaxed">
+				{#if form.values.domain}
+					Canonical address: <span class="font-mono text-(--accent-sky)">https://{form.values.subdomain ? `${form.values.subdomain.trim()}.${form.values.domain.trim()}` : form.values.domain.trim()}</span> (used for invite links and discovery)
+				{:else}
+					Subdomain is optional (e.g. <span class="font-mono">host</span>.<span class="font-mono">example.com</span>).
+				{/if}
+			</p>
+		</div>
 
 		<div class="h-px bg-(--border-hairline) my-0.5"></div>
 
+		<!-- Vertical Stack: Name, Username, Email, Password, Confirm Password -->
 		<Input
 			id="setup-name"
 			name="name"
@@ -84,57 +111,53 @@
 			bind:value={form.values.name}
 		/>
 
-		<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-			<Input
-				id="setup-username"
-				name="username"
-				label="Username"
-				type="text"
-				placeholder="admin"
-				autocomplete="username"
-				inputClass="h-10 px-3.5 bg-(--bg-muted)"
-				error={form.errors.username}
-				bind:value={form.values.username}
-			/>
+		<Input
+			id="setup-username"
+			name="username"
+			label="Username"
+			type="text"
+			placeholder="admin"
+			autocomplete="username"
+			inputClass="h-10 px-3.5 bg-(--bg-muted)"
+			error={form.errors.username}
+			bind:value={form.values.username}
+		/>
 
-			<Input
-				id="setup-email"
-				name="email"
-				label="Email"
-				type="email"
-				placeholder="admin@example.com"
-				autocomplete="email"
-				inputClass="h-10 px-3.5 bg-(--bg-muted)"
-				error={form.errors.email}
-				bind:value={form.values.email}
-			/>
-		</div>
+		<Input
+			id="setup-email"
+			name="email"
+			label="Email"
+			type="email"
+			placeholder="admin@example.com"
+			autocomplete="email"
+			inputClass="h-10 px-3.5 bg-(--bg-muted)"
+			error={form.errors.email}
+			bind:value={form.values.email}
+		/>
 
-		<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-			<Input
-				id="setup-password"
-				name="password"
-				label="Password"
-				type="password"
-				placeholder="••••••••"
-				autocomplete="new-password"
-				inputClass="h-10 px-3.5 bg-(--bg-muted)"
-				error={form.errors.password}
-				bind:value={form.values.password}
-			/>
+		<Input
+			id="setup-password"
+			name="password"
+			label="Password"
+			type="password"
+			placeholder="••••••••"
+			autocomplete="new-password"
+			inputClass="h-10 px-3.5 bg-(--bg-muted)"
+			error={form.errors.password}
+			bind:value={form.values.password}
+		/>
 
-			<Input
-				id="setup-confirm-password"
-				name="confirmPassword"
-				label="Confirm"
-				type="password"
-				placeholder="••••••••"
-				autocomplete="new-password"
-				inputClass="h-10 px-3.5 bg-(--bg-muted)"
-				error={form.errors.confirmPassword}
-				bind:value={form.values.confirmPassword}
-			/>
-		</div>
+		<Input
+			id="setup-confirm-password"
+			name="confirmPassword"
+			label="Confirm Password"
+			type="password"
+			placeholder="••••••••"
+			autocomplete="new-password"
+			inputClass="h-10 px-3.5 bg-(--bg-muted)"
+			error={form.errors.confirmPassword}
+			bind:value={form.values.confirmPassword}
+		/>
 
 		<Button
 			type="submit"

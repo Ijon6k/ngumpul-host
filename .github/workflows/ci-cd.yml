@@ -167,7 +167,7 @@ jobs:
 
       - name: Verify Frontend SSR Status 200
         run: |
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:1111/)
+          HTTP_STATUS=$(curl -s -L -o /dev/null -w "%{http_code}" http://localhost:1111/)
           if [ "$HTTP_STATUS" -eq 200 ]; then
             echo "Frontend SSR responded with HTTP 200."
           else

@@ -71,15 +71,15 @@
 			</nav>
 		</div>
 
-		<!-- Right actions -->
-		<div class="flex items-center gap-2">
+		<!-- Desktop Right actions (hidden on mobile) -->
+		<div class="hidden md:flex items-center gap-2">
 			<ThemeToggle {isTransparent} />
 
 			{#if $user}
 				{#if $user.role === 'ADMIN'}
 					<a
 						href="/admin"
-						class="hidden sm:inline-flex btn btn-sm text-xs items-center gap-1.5 relative {isTransparent ? 'bg-white/10 text-white hover:bg-white/20 border-white/20' : 'btn-secondary'}"
+						class="btn btn-sm text-xs items-center gap-1.5 relative {isTransparent ? 'bg-white/10 text-white hover:bg-white/20 border-white/20' : 'btn-secondary'}"
 					>
 						<span>Console</span>
 						{#if ($adminPendingCount + $adminOpenReportsCount) > 0}
@@ -99,7 +99,7 @@
 							{($user.display_name || 'U').slice(0, 1)}
 						</span>
 					{/if}
-					<span class="hidden sm:inline">Workspace</span>
+					<span>Workspace</span>
 					{#if $unreadNotificationsCount > 0}
 						<span class="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" title="You have unread notifications"></span>
 					{/if}
@@ -110,11 +110,13 @@
 					class="btn btn-sm text-xs {isTransparent ? 'bg-white text-neutral-950 hover:bg-neutral-100' : 'btn-primary'}"
 				>Sign in</a>
 			{/if}
+		</div>
 
-			<!-- Mobile hamburger (visible < md) -->
+		<!-- Mobile Hamburger Button (visible < md) -->
+		<div class="md:hidden flex items-center">
 			<button
 				type="button"
-				class="md:hidden p-1.5 rounded-sm border {isTransparent ? 'border-white/20 text-white hover:bg-white/10' : 'border-(--border-hairline) text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted)'} transition-colors cursor-pointer"
+				class="p-1.5 rounded-sm border {isTransparent ? 'border-white/20 text-white hover:bg-white/10' : 'border-(--border-hairline) text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted)'} transition-colors cursor-pointer"
 				aria-label={mobileNavOpen ? 'Close navigation' : 'Open navigation'}
 				aria-expanded={mobileNavOpen}
 				on:click={() => (mobileNavOpen = !mobileNavOpen)}
@@ -131,10 +133,62 @@
 			<a href="/people" on:click={() => (mobileNavOpen = false)} class="px-3 py-2.5 text-sm text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted) rounded-sm transition-colors">People</a>
 			<a href="/activity" on:click={() => (mobileNavOpen = false)} class="px-3 py-2.5 text-sm text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted) rounded-sm transition-colors">Activity</a>
 			<a href="/status" on:click={() => (mobileNavOpen = false)} class="px-3 py-2.5 text-sm text-(--text-secondary) hover:text-(--text-main) hover:bg-(--bg-muted) rounded-sm transition-colors">Status</a>
-			{#if !$user}
-				<div class="h-px bg-(--border-hairline) my-1"></div>
-				<a href="/login" on:click={() => (mobileNavOpen = false)} class="px-3 py-2.5 text-sm font-medium text-(--text-main) hover:bg-(--bg-muted) rounded-sm transition-colors">Sign in →</a>
+
+			<div class="h-px bg-(--border-hairline) my-1.5"></div>
+
+			{#if $user}
+				<a
+					href="/me"
+					on:click={() => (mobileNavOpen = false)}
+					class="px-3 py-2.5 text-sm flex items-center justify-between text-(--text-main) hover:bg-(--bg-muted) rounded-sm transition-colors"
+				>
+					<div class="flex items-center gap-2.5">
+						{#if $user.avatar_url}
+							<img src={$user.avatar_url} alt={$user.display_name} class="w-5 h-5 rounded-full object-cover" />
+						{:else}
+							<span class="w-5 h-5 rounded-full bg-(--accent-soft) text-(--accent-strong) text-xs flex items-center justify-center font-bold">
+								{($user.display_name || 'U').slice(0, 1)}
+							</span>
+						{/if}
+						<span>Workspace</span>
+					</div>
+					{#if $unreadNotificationsCount > 0}
+						<span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-(--accent-orange) text-white">
+							{$unreadNotificationsCount}
+						</span>
+					{/if}
+				</a>
+
+				{#if $user.role === 'ADMIN'}
+					<a
+						href="/admin"
+						on:click={() => (mobileNavOpen = false)}
+						class="px-3 py-2.5 text-sm flex items-center justify-between text-(--text-main) hover:bg-(--bg-muted) rounded-sm transition-colors"
+					>
+						<span>Operator Console</span>
+						{#if ($adminPendingCount + $adminOpenReportsCount) > 0}
+							<span class="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
+						{/if}
+					</a>
+				{/if}
+			{:else}
+				<a
+					href="/login"
+					on:click={() => (mobileNavOpen = false)}
+					class="px-3 py-2.5 text-sm font-medium text-(--text-main) hover:bg-(--bg-muted) rounded-sm transition-colors flex items-center justify-between"
+				>
+					<span>Sign in</span>
+					<span>→</span>
+				</a>
 			{/if}
+
+			<div class="h-px bg-(--border-hairline) my-1.5"></div>
+
+			<!-- Mobile Theme Switcher Row -->
+			<div class="px-3 py-2 flex items-center justify-between text-xs text-(--text-secondary)">
+				<span>Appearance</span>
+				<ThemeToggle isTransparent={false} />
+			</div>
 		</div>
 	{/if}
 </header>

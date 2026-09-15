@@ -32,7 +32,7 @@
 			</div>
 
 			<div>
-				<span>Open source (MIT) · Self-hosted modular monolith</span>
+				<span>Running on quiet hardware in Jakarta · Open source (MIT)</span>
 			</div>
 		</div>
 	</div>

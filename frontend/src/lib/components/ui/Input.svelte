@@ -3,6 +3,8 @@
 	import type { HTMLInputAttributes } from 'svelte/elements';
 	import type { Snippet } from 'svelte';
 
+	import { Eye, EyeSlash } from 'phosphor-svelte';
+
 	interface Props extends HTMLInputAttributes {
 		value?: string | number;
 		type?: string;
@@ -41,6 +43,8 @@
 		...restProps
 	}: Props = $props();
 
+	let showPassword = $state(false);
+	let effectiveType = $derived(type === 'password' ? (showPassword ? 'text' : 'password') : type);
 	let inputId = $derived(id || (label ? `input-${label.toLowerCase().replace(/\s+/g, '-')}` : undefined));
 </script>
 
@@ -59,7 +63,7 @@
 	<div class="relative flex items-center w-full">
 		<input
 			id={inputId}
-			{type}
+			type={effectiveType}
 			{placeholder}
 			{disabled}
 			{readonly}
@@ -68,6 +72,7 @@
 			bind:value
 			class={cn(
 				'w-full h-9 px-3 text-xs sm:text-sm bg-(--bg-surface) text-(--text-main) placeholder:text-(--text-muted) border rounded-[4px] outline-none transition-colors duration-150',
+				type === 'password' && 'pr-9',
 				error
 					? 'border-rose-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-500'
 					: 'border-(--border-hairline) focus:border-(--accent-sky) focus:ring-1 focus:ring-(--accent-sky)',
@@ -76,6 +81,21 @@
 			)}
 			{...restProps}
 		/>
+		{#if type === 'password'}
+			<button
+				type="button"
+				tabindex="-1"
+				onclick={() => (showPassword = !showPassword)}
+				class="absolute right-2 text-(--text-muted) hover:text-(--text-main) p-1 rounded-sm cursor-pointer transition-colors"
+				aria-label={showPassword ? 'Hide password' : 'Show password'}
+			>
+				{#if showPassword}
+					<EyeSlash size={16} />
+				{:else}
+					<Eye size={16} />
+				{/if}
+			</button>
+		{/if}
 	</div>
 
 	{#if error}

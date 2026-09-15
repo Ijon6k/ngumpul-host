@@ -199,17 +199,17 @@
 								{#if (c.report_count ?? 0) > 0}
 									<a
 										href="/admin/reports"
-										class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+										class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-(--bg-muted) dark:bg-neutral-900 text-amber-600 dark:text-amber-400"
 									>
 										<ShieldWarning size={12} weight="bold" />
 										<span>{c.report_count} reported</span>
 									</a>
 								{:else if c.deleted_at}
-									<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-neutral-200 dark:bg-neutral-800 text-neutral-500">
+									<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-(--bg-muted) dark:bg-neutral-900 text-(--text-muted)">
 										Deleted
 									</span>
 								{:else}
-									<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+									<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-(--bg-muted) dark:bg-neutral-900 text-emerald-600 dark:text-emerald-400">
 										Active
 									</span>
 								{/if}

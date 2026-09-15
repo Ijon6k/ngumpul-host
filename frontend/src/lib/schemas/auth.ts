@@ -33,6 +33,11 @@ export const registerSchema = z
 
 export const setupSchema = z
 	.object({
+		subdomain: z
+			.string()
+			.regex(/^[a-z0-9-]*$/, 'Subdomain may only contain lowercase letters, numbers, and hyphens.')
+			.optional()
+			.default(''),
 		domain: z.string().min(1, 'Node domain is required.'),
 		name: z
 			.string()

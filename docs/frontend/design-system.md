@@ -66,9 +66,9 @@ $$\text{Radius}_{\text{inner}} = \text{Radius}_{\text{outer}} - \text{Padding}$$
 ## 4. Typography & Information Architecture
 
 ### Font Families
-* **Display & Headings:** `Geist` / `Inter` / `Plus Jakarta Sans` (sans-serif)
-  * Clean, geometric, neutral grotesque with high legibility and tight letter-spacing (`tracking-[-0.02em]` to `tracking-[-0.035em]`).
-* **Body & Labels:** `Inter` / `Geist` (sans-serif)
+* **Display & Headings:** `Plus Jakarta Sans` / `Inter` (sans-serif)
+  * Sharp, geometric punch with high legibility and tight letter-spacing (`tracking-[-0.02em]` to `tracking-[-0.035em]`).
+* **Body & Labels:** `Plus Jakarta Sans` / `Inter` (sans-serif)
   * Optimized for sustained readability across light and dark modes. Pacing: `leading-relaxed`, line length capped at `65ch`.
 * **Technical Telemetry & Code:** `JetBrains Mono` / `ui-monospace`
   * Exclusively for IP addresses, git commit SHAs, latency numbers (`29 ms`), port numbers, memory sizes (`23.1 GB`), and terminal outputs.

@@ -435,7 +435,7 @@
 								@{reqData.requester?.username || 'user'}
 							</div>
 							{#if reqData.requester?.role}
-								<span class="inline-block text-[11px] font-mono px-2 py-0.5 rounded-full bg-(--bg-muted) text-(--text-muted) mt-1">
+								<span class="inline-block text-xs font-mono px-2 py-0.5 rounded-sm bg-(--bg-muted) dark:bg-neutral-900 text-(--text-muted) mt-1">
 									{reqData.requester.role}
 								</span>
 							{/if}

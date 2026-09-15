@@ -238,19 +238,19 @@ Interactive action element conforming strictly to the `radius-sm` (`rounded-[4px
 
 ### `Badge`
 
-Semantic metadata indicator with `radius-full` token. Used for status, type tags, or categories.
+Semantic metadata indicator with `radius-full` token. Designed with a calm, neutral light/dark background (`bg-(--bg-muted) dark:bg-neutral-900`) and semantic text color without tacky colored borders.
 
 #### Props
 | Prop | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `variant` | `'success' \| 'warning' \| 'danger' \| 'sky' \| 'neutral'` | `'neutral'` | Semantic color palette |
+| `variant` | `'success' \| 'warning' \| 'danger' \| 'sky' \| 'neutral'` | `'neutral'` | Semantic text color palette on neutral background |
 | `size` | `'sm' \| 'md'` | `'sm'` | Text and padding size |
 | `dot` | `boolean` | `false` | Renders a small circular dot on the left side |
 
 #### Usage Example
 ```svelte
 <Badge variant="success" dot>Operational</Badge>
-<Badge variant="sky">Docker</Badge>
+<Badge variant="sky">Active</Badge>
 ```
 
 ---
